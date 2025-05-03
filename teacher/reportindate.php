@@ -4,6 +4,9 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['rol
     header('Location: ../login.php');
     exit;
 }
+// Read configuration from JSON file
+$config = json_decode(file_get_contents('../config.json'), true);
+$global = $config['global'];
 require_once('header.php');
 ?>
 <body class="hold-transition sidebar-mini layout-fixed light-mode bg-gray-50">
