@@ -41,6 +41,15 @@ try {
             $data = json_decode(file_get_contents('php://input'), true);
             $rows = $data['rows'] ?? [];
             $attendanceLogs = $data['attendance_logs'] ?? [];
+            // --- เพิ่มการ trim และ validate student_id ---
+            $attendanceLogs = array_values(array_filter(array_map(function($log) {
+                $log['student_id'] = trim($log['student_id']);
+                // กรองเฉพาะ student_id ที่เป็นตัวเลขเท่านั้น
+                if ($log['student_id'] !== '' && ctype_digit($log['student_id'])) {
+                    return $log;
+                }
+                return null;
+            }, $attendanceLogs)));
             $success = $reportModel->createMultiple($rows, $attendanceLogs);
             echo json_encode(['success' => $success]);
             break;
