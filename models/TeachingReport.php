@@ -110,6 +110,13 @@ class TeachingReport
         return $reports;
     }
 
+    public function getAllByTeacherAndDateRange($teacher_id, $date_start, $date_end) {
+        $sql = "SELECT * FROM teaching_reports WHERE teacher_id = ? AND report_date BETWEEN ? AND ? ORDER BY report_date DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$teacher_id, $date_start, $date_end]);
+        return $stmt->fetchAll();
+    }
+
     public function getById($id)
     {
         $sql = "SELECT r.*, s.name AS subject_name
