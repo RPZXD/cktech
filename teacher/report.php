@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
          document.querySelectorAll('.btn-print-report').forEach(btn => {
           btn.addEventListener('click', function() {
             const reportId = btn.getAttribute('data-id');
-            window.open('../print_report.php?id=' + encodeURIComponent(reportId), '_blank');
+            window.open('../teacher/print_report.php?id=' + encodeURIComponent(reportId), '_blank');
           });
         });
 
