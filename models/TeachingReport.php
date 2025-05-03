@@ -19,6 +19,11 @@ class TeachingReport
 
     public function getAllByTeacher($teacher_id)
     {
+        // ตรวจสอบการเชื่อมต่อฐานข้อมูล DatabaseTeachingReport
+        if (!$this->pdo) {
+            throw new \Exception('ไม่สามารถเชื่อมต่อฐานข้อมูล TeachingReport');
+        }
+
         $sql = "SELECT r.*, s.name AS subject_name
                 FROM teaching_reports r
                 LEFT JOIN subjects s ON r.subject_id = s.id
@@ -29,9 +34,11 @@ class TeachingReport
         $reports = $stmt->fetchAll();
 
         // เตรียมเชื่อมต่อฐานข้อมูล student
-        require_once __DIR__ . '/../classes/DatabaseUsers.php';
-        $dbUsers = new \App\DatabaseUsers();
-        $pdoUsers = $dbUsers->getPDO();
+        // ตรวจสอบ DatabaseUsers ว่าเชื่อมต่อสำเร็จหรือไม่
+        if (!$this->dbUsers) {
+            throw new \Exception('ไม่สามารถเชื่อมต่อฐานข้อมูล Users');
+        }
+        $pdoUsers = $this->dbUsers->getPDO();
 
         // กำหนด mapping สำหรับ label ภาษาไทย
         $statusLabelMap = [
