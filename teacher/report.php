@@ -715,12 +715,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let rows = [];
     checkedRooms.forEach(room => {
       (checkedPeriods[room] || []).forEach(period => {
+        // --- trim ค่า class_room, period_start, period_end ---
+        const classRoom = (room.replace('ห้อง ', '') + '').trim();
+        const periodStart = (period.period_start + '').trim();
+        const periodEnd = (period.period_end + '').trim();
         rows.push({
           report_date: reportDate,
           subject_id: subjectId,
-          class_room: room.replace('ห้อง ', ''),
-          period_start: period.period_start,
-          period_end: period.period_end,
+          class_room: classRoom,
+          period_start: periodStart,
+          period_end: periodEnd,
           plan_number: formData.get('plan_number'),
           plan_topic: formData.get('plan_topic'),
           activity: formData.get('activity'),

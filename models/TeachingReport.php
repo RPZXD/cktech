@@ -126,6 +126,7 @@ class TeachingReport
         try {
             $this->pdo->beginTransaction();
             $reportIds = [];
+            $invalidRows = [];
             foreach ($rows as $row) {
                 // ตรวจสอบข้อมูลจำเป็น
                 if (
@@ -136,6 +137,7 @@ class TeachingReport
                     empty($row['period_end']) ||
                     empty($row['teacher_id'])
                 ) {
+                    $invalidRows[] = $row;
                     continue;
                 }
                 // ถ้าไม่ได้อัปโหลดรูป ให้ใส่ NULL แทน string ว่าง
@@ -166,7 +168,8 @@ class TeachingReport
                 $reportIds[] = $this->pdo->lastInsertId();
             }
             if (empty($reportIds)) {
-                throw new \Exception('No valid report rows to insert');
+                // เพิ่ม error message สำหรับ debug
+                throw new \Exception('No valid report rows to insert. Invalid rows: ' . json_encode($invalidRows));
             }
             // บันทึก attendance logs (เช็คชื่อ)
             if (!empty($attendanceLogs) && !empty($reportIds)) {
