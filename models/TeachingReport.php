@@ -6,6 +6,7 @@ use PDO;
 class TeachingReport
 {
     private $pdo;
+    protected $dbUsers;
 
     public function __construct()
     {
