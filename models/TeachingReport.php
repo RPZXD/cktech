@@ -10,8 +10,10 @@ class TeachingReport
     public function __construct()
     {
         require_once __DIR__ . '/../classes/DatabaseTeachingReport.php';
+        require_once __DIR__ . '/../classes/DatabaseUsers.php';
         $db = new \App\DatabaseTeachingReport();
         $this->pdo = $db->getPDO();
+        $this->dbUsers = new \App\DatabaseUsers();
     }
 
     public function getAllByTeacher($teacher_id)
