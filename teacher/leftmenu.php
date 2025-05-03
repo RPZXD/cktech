@@ -13,6 +13,7 @@ function createNavItem($href, $iconClass, $text) {
     echo createNavItem('index.php', 'bi-house', 'หน้าหลัก');
 
     echo createNavItem('report.php', 'bi-journal-text', 'รายงานการสอน');
+    echo createNavItem('reportindate.php', 'bi-calendar3', 'ปฏิทินการรายงานการสอน');
 
     echo createNavItem('subject.php', 'bi-book', 'จัดการรายวิชา');
 
