@@ -29,24 +29,59 @@ switch ($action) {
         error_log("DEBUG: SubjectController teacher_id = " . print_r($teacher_id, true));
         $subjects = $subjectModel->getAllByTeacherWithUsername($teacher_id);
         error_log("DEBUG: SubjectController subjects = " . print_r($subjects, true));
+
+        // ดึงคาบสอนแต่ละวิชา
+        foreach ($subjects as &$subject) {
+            $stmt = $pdo->prepare("SELECT class_room, day_of_week, period_start, period_end FROM subject_classes WHERE subject_id = ?");
+            $stmt->execute([$subject['id']]);
+            $subject['class_periods'] = $stmt->fetchAll();
+        }
+
         echo json_encode($subjects);
+        break;
+    case 'detail':
+        $subject_id = $_GET['subjectId'] ?? 0;
+        // ดึงข้อมูล subject หลัก
+        $stmt = $pdo->prepare("SELECT * FROM subjects WHERE id = ?");
+        $stmt->execute([$subject_id]);
+        $subject = $stmt->fetch();
+        // ดึงข้อมูล subject_classes
+        $stmt2 = $pdo->prepare("SELECT class_room, day_of_week, period_start, period_end FROM subject_classes WHERE subject_id = ?");
+        $stmt2->execute([$subject_id]);
+        $classes = $stmt2->fetchAll();
+        echo json_encode([
+            'subject' => $subject,
+            'classes' => $classes
+        ]);
         break;
     case 'create':
         $data = json_decode(file_get_contents('php://input'), true);
-        $teacher_id = $_SESSION['user_id'] ?? 0;
+        $teacher_id = $_SESSION['username'] ?? 0; // ใช้ username เป็น teacher_id
+        // 1. เพิ่ม subject พร้อม class_rooms
         $result = $subjectModel->create([
             'name' => $data['name'],
             'code' => $data['code'],
             'level' => $data['level'],
             'subject_type' => $data['subject_type'],
             'status' => $data['status'],
-            'created_by' => $teacher_id
+            'created_by' => $teacher_id,
+            'class_rooms' => $data['class_rooms'] ?? [] // เพิ่มตรงนี้
         ]);
-        echo json_encode(['success' => $result]);
+        if ($result) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
         break;
     case 'update':
         $data = json_decode(file_get_contents('php://input'), true);
         $result = $subjectModel->update($data['id'], $data);
+        echo json_encode(['success' => $result]);
+        break;
+    case 'updateStatus':
+        $data = json_decode(file_get_contents('php://input'), true);
+        $stmt = $pdo->prepare("UPDATE subjects SET status=? WHERE id=?");
+        $result = $stmt->execute([$data['status'], $data['id']]);
         echo json_encode(['success' => $result]);
         break;
     case 'delete':

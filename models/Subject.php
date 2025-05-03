@@ -50,33 +50,117 @@ class Subject
 
     public function create($data)
     {
-        $stmt = $this->pdo->prepare("INSERT INTO subjects (name, code, level, subject_type, status, created_by) VALUES (?, ?, ?, ?, ?, ?)");
-        return $stmt->execute([
-            $data['name'],
-            $data['code'],
-            $data['level'],
-            $data['subject_type'],
-            $data['status'],
-            $data['created_by']
-        ]);
+        try {
+            $this->pdo->beginTransaction();
+
+            // Debug: log input data
+            error_log('DEBUG SubjectModel::create input: ' . print_r($data, true));
+
+            $stmt = $this->pdo->prepare("INSERT INTO subjects (name, code, level, subject_type, status, created_by) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $data['name'],
+                $data['code'],
+                $data['level'],
+                $data['subject_type'],
+                $data['status'],
+                $data['created_by']
+            ]);
+
+            $subjectId = $this->pdo->lastInsertId();
+
+            // Debug: log subjectId
+            error_log('DEBUG SubjectModel::create subjectId: ' . $subjectId);
+
+            // บันทึก subject_classes แยกแต่ละแถว
+            if (!empty($data['class_rooms'])) {
+                $stmtClasses = $this->pdo->prepare("INSERT INTO subject_classes (subject_id, class_room, period_start, period_end, day_of_week) VALUES (?, ?, ?, ?, ?)");
+                foreach ($data['class_rooms'] as $row) {
+                    error_log('DEBUG SubjectModel::create class_row: ' . print_r($row, true));
+                    $stmtClasses->execute([
+                        $subjectId,
+                        $row['class_room'],
+                        $row['period_start'],
+                        $row['period_end'],
+                        $row['day_of_week']
+                    ]);
+                }
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (\PDOException $e) {
+            error_log('ERROR SubjectModel::create: ' . $e->getMessage());
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            return false;
+        }
     }
 
     public function update($id, $data)
     {
-        $stmt = $this->pdo->prepare("UPDATE subjects SET name=?, code=?, level=?, subject_type=?, status=? WHERE id=?");
-        return $stmt->execute([
-            $data['name'],
-            $data['code'],
-            $data['level'],
-            $data['subject_type'],
-            $data['status'],
-            $id
-        ]);
+        try {
+            $this->pdo->beginTransaction();
+
+            // อัปเดต subject หลัก
+            $stmt = $this->pdo->prepare("UPDATE subjects SET name=?, code=?, level=?, subject_type=?, status=? WHERE id=?");
+            $stmt->execute([
+                $data['name'],
+                $data['code'],
+                $data['level'],
+                $data['subject_type'],
+                $data['status'],
+                $id
+            ]);
+
+            // ลบ subject_classes เดิม
+            $stmtDel = $this->pdo->prepare("DELETE FROM subject_classes WHERE subject_id=?");
+            $stmtDel->execute([$id]);
+
+            // เพิ่ม subject_classes ใหม่
+            if (!empty($data['class_rooms'])) {
+                $stmtClasses = $this->pdo->prepare("INSERT INTO subject_classes (subject_id, class_room, period_start, period_end, day_of_week) VALUES (?, ?, ?, ?, ?)");
+                foreach ($data['class_rooms'] as $row) {
+                    $stmtClasses->execute([
+                        $id,
+                        $row['class_room'],
+                        $row['period_start'],
+                        $row['period_end'],
+                        $row['day_of_week']
+                    ]);
+                }
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (\PDOException $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            return false;
+        }
     }
 
     public function delete($id)
     {
-        $stmt = $this->pdo->prepare("DELETE FROM subjects WHERE id=?");
-        return $stmt->execute([$id]);
+        try {
+            $this->pdo->beginTransaction();
+
+            // ลบ subject_classes ก่อน (child)
+            $stmt1 = $this->pdo->prepare("DELETE FROM subject_classes WHERE subject_id=?");
+            $stmt1->execute([$id]);
+
+            // ลบ subject (parent)
+            $stmt2 = $this->pdo->prepare("DELETE FROM subjects WHERE id=?");
+            $result = $stmt2->execute([$id]);
+
+            $this->pdo->commit();
+            return $result;
+        } catch (\PDOException $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            return false;
+        }
     }
 }
