@@ -303,13 +303,14 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         });
 
-        // Event: พิมพ์รายงาน
-        document.querySelectorAll('.btn-print-report').forEach(btn => {
+         // Event: พิมพ์รายงาน
+         document.querySelectorAll('.btn-print-report').forEach(btn => {
           btn.addEventListener('click', function() {
             const reportId = btn.getAttribute('data-id');
-            window.open('../print/teaching_report.php?id=' + encodeURIComponent(reportId), '_blank');
+            window.open('../print_report.php?id=' + encodeURIComponent(reportId), '_blank');
           });
         });
+
 
         // Event: แก้ไขรายงาน (แสดง modal พร้อมข้อมูลเดิม)
         document.querySelectorAll('.btn-edit-report').forEach(btn => {
@@ -614,6 +615,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         });
     }
+  
 
 
 
@@ -687,7 +689,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const formData = new FormData(formReport);
 
-    console.log('Form Data:', Object.fromEntries(formData.entries()));
 
     // 1. เก็บข้อมูลห้อง/คาบที่เลือก
     const subjectId = formData.get('subject_id');
