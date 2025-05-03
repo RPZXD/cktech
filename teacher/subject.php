@@ -64,7 +64,7 @@ input:checked + .toggle-slider:before {
         <div class="row mb-2">
           <div class="col-sm-6">
             <h1 class="m-0 text-2xl font-bold text-blue-700 flex items-center">
-              📚 จัดการรายวิชา  <?php echo isset($_SESSION['username']) ? json_encode($_SESSION['username']) : 'null'; ?>
+              📚 จัดการรายวิชา 
             </h1>
           </div>
         </div>
