@@ -14,15 +14,7 @@ try {
     switch ($action) {
         case 'list':
             $teacher_id = $_SESSION['username'] ?? 0;
-            // เพิ่ม: รับช่วงวันที่จาก query string
-            $date_start = $_GET['date_start'] ?? null;
-            $date_end = $_GET['date_end'] ?? null;
-            if ($date_start && $date_end) {
-                // เรียกใช้ฟังก์ชันใหม่ที่ filter ตามวันที่
-                $reports = $reportModel->getAllByTeacherAndDateRange($teacher_id, $date_start, $date_end);
-            } else {
-                $reports = $reportModel->getAllByTeacher($teacher_id);
-            }
+            $reports = $reportModel->getAllByTeacher($teacher_id);
             echo json_encode($reports);
             break;
         case 'detail':
