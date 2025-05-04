@@ -127,6 +127,10 @@ class TeachingReport
             $this->pdo->beginTransaction();
             $reportIds = [];
             $invalidRows = [];
+            // กำหนด whitelist ของ status ที่อนุญาต
+            $allowedStatuses = [
+                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน', 'มาสาย', 'เข้าร่วมกิจกรรม'
+            ];
             foreach ($rows as $row) {
                 // ตรวจสอบข้อมูลจำเป็น
                 if (
@@ -178,9 +182,13 @@ class TeachingReport
             // บันทึก attendance logs (เช็คชื่อ)
             if (!empty($attendanceLogs) && !empty($reportIds)) {
                 foreach ($attendanceLogs as $log) {
+                    // ตรวจสอบ student_id, status และ whitelist
+                    if (
+                        empty($log['student_id']) ||
+                        empty($log['status']) ||
+                        !in_array($log['status'], $allowedStatuses, true)
+                    ) continue;
                     foreach ($reportIds as $reportId) {
-                        // ตรวจสอบ student_id และ status
-                        if (empty($log['student_id']) || empty($log['status'])) continue;
                         $stmt = $this->pdo->prepare("INSERT INTO teaching_attendance_logs (report_id, student_id, status) VALUES (?, ?, ?)");
                         $stmt->execute([
                             $reportId,
