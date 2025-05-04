@@ -127,9 +127,9 @@ class TeachingReport
             $this->pdo->beginTransaction();
             $reportIds = [];
             $invalidRows = [];
-            // กำหนด whitelist ของ status ที่อนุญาต
+            // กำหนด whitelist ของ status ที่อนุญาต (ตาม enum ในฐานข้อมูล)
             $allowedStatuses = [
-                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน', 'มาสาย', 'เข้าร่วมกิจกรรม'
+                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน'
             ];
             foreach ($rows as $row) {
                 // ตรวจสอบข้อมูลจำเป็น
