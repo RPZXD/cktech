@@ -34,6 +34,7 @@ class LoginController
                     'Teach_name' => $user['Teach_name'],
                     'role_edoc' => $user['role_edoc'],
                     'Teach_photo' => $user['Teach_photo'],
+                    'Teach_major' => $user['Teach_major'],
                 ];
             }
             // เพิ่มเก็บ term pee ลง session

@@ -94,8 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <select name="role" id="role" class="mt-1 p-3 w-full border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                         <option value="">-- เลือกบทบาท --</option>
                         <option value="ครู" selected>ครู</option>
-                        <!-- <option value="นักเรียน">นักเรียน</option> -->
                         <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
+                        <option value="หัวหน้ากลุ่มสาระ">หัวหน้ากลุ่มสาระ</option>
                         <option value="ผู้บริหาร">ผู้บริหาร</option>
                         <option value="admin">admin</option>
                     </select>
@@ -149,8 +149,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $redirect = 'dashboard.php';
             if (isset($_POST['role']) && $_POST['role'] === 'ครู') {
                 $redirect = 'teacher/index.php';
-            } else if (isset($_POST['role']) && $_POST['role'] === 'นักเรียน') {
-                $redirect = 'student/index.php';
+            } else if (isset($_POST['role']) && $_POST['role'] === 'หัวหน้ากลุ่มสาระ') {
+                $redirect = 'department/index.php';
             }
             ?>
             window.location.href = <?= json_encode($redirect) ?>;

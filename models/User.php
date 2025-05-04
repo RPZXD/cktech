@@ -8,6 +8,7 @@ class User
     private static $allowedUserRoles = [
         'ครู' => ['T', 'ADM', 'VP', 'OF', 'DIR'],
         'เจ้าหน้าที่' => ['ADM', 'OF'],
+        'หัวหน้ากลุ่มสาระ' => ['HOD', 'ADM'],
         'ผู้บริหาร' => ['VP', 'DIR', 'ADM'],
         'admin' => ['ADM'],
         // เพิ่มนักเรียน
