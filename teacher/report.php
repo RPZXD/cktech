@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <tr class="hover:bg-blue-50">
               <td class="py-2 px-3 border-b text-center">${formatThaiDate(report.report_date)}</td>
               <td class="py-2 px-3 border-b text-center">${report.subject_name || '-'}</td>
-              <td class="py-2 px-3 border-b text-center">${report.class_room}</td>
+              <td class="py-2 px-3 border-b text-center">ม.${report.level}/${report.class_room}</td>
               <td class="py-2 px-3 border-b text-center">${report.period_start} - ${report.period_end}</td>
               <td class="py-2 px-3 border-b text-center">${report.plan_topic ? report.plan_topic.substring(0, 20) + '...' : '-'}</td>
               <td class="py-2 px-3 border-b text-center">${report.activity ? report.activity.substring(0, 20) + '...' : '-'}</td>
@@ -624,9 +624,9 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(res => res.json())
       .then(report => {
         let html = `<div class="text-lg font-bold mb-2">รายละเอียดรายงานการสอน</div>
-        <div class="mb-2 text-left"><span class="font-semibold">📅 วันที่:</span> ${report.report_date}</div>
+        <div class="mb-2 text-left"><span class="font-semibold">📅 วันที่:</span> ${formatThaiDate(report.report_date)}</div>
         <div class="mb-2 text-left"><span class="font-semibold">📖 วิชา:</span> ${report.subject_name || '-'}</div>
-        <div class="mb-2 text-left"><span class="font-semibold">🏫 ห้อง:</span> ${report.class_room}</div>
+        <div class="mb-2 text-left"><span class="font-semibold">🏫 ห้อง:</span> ม.${report.level}/${report.class_room}</div>
         <div class="mb-2 text-left"><span class="font-semibold">⏰ คาบ:</span> ${report.period_start} - ${report.period_end}</div>
         <div class="mb-2 text-left"><span class="font-semibold">📝 แผน/หัวข้อ:</span> ${report.plan_topic || '-'}</div>
         <div class="mb-2 text-left"><span class="font-semibold">👨‍🏫 กิจกรรม:</span> ${report.activity || '-'}</div>

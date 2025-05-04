@@ -147,7 +147,7 @@ if (!empty($report['teacher_id'])) {
         <div class="flex flex-row justify-between items-start mb-2 gap-4">
             <div class="w-1/2 text-left">
                 <div class="line-space"><span class="font-semibold">📖 วิชา:</span> <span class="truncate"><?= htmlspecialchars($report['subject_name'] ?? '-') ?></span></div>
-                <div class="line-space"><span class="font-semibold">🏫 ระดับชั้น:</span> ม.<?= htmlspecialchars($report['class_room']) ?></div>
+                <div class="line-space"><span class="font-semibold">🏫 ระดับชั้น:</span> ม.<?= htmlspecialchars($report['level'].'/' .$report['class_room']) ?></div>
                 <div class="line-space"><span class="font-semibold">📝 แผน / หัวข้อ:</span> <span class="truncate"><?= htmlspecialchars($report['plan_topic'] ?? '-') ?></span></div>
             </div>
             <div class="w-1/2 text-left">

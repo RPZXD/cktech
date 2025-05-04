@@ -24,7 +24,7 @@ class TeachingReport
             throw new \Exception('ไม่สามารถเชื่อมต่อฐานข้อมูล TeachingReport');
         }
 
-        $sql = "SELECT r.*, s.name AS subject_name
+        $sql = "SELECT r.*, s.name AS subject_name , s.level
                 FROM teaching_reports r
                 LEFT JOIN subjects s ON r.subject_id = s.id
                 WHERE r.teacher_id = ?
@@ -112,7 +112,7 @@ class TeachingReport
 
     public function getById($id)
     {
-        $sql = "SELECT r.*, s.name AS subject_name
+        $sql = "SELECT r.*, s.name AS subject_name, s.level
                 FROM teaching_reports r
                 LEFT JOIN subjects s ON r.subject_id = s.id
                 WHERE r.id = ?";

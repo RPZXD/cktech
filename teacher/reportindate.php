@@ -40,6 +40,22 @@ require_once('header.php');
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+
+      // ฟังก์ชันแปลงวันที่เป็นภาษาไทย
+ function formatThaiDate(dateStr) {
+    if (!dateStr) return '-';
+    const months = [
+      '', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+    ];
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+    const day = d.getDate();
+    const month = months[d.getMonth() + 1];
+    const year = d.getFullYear() + 543;
+    return `${day} ${month} ${year}`;
+  }
+
 document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -68,9 +84,9 @@ document.addEventListener('DOMContentLoaded', function() {
         eventClick: function(info) {
             const report = info.event.extendedProps;
             let html = `<div class="text-lg font-bold mb-2">รายละเอียดรายงานการสอน</div>
-                <div class="mb-2 text-left"><span class="font-semibold">📅 วันที่:</span> ${report.report_date}</div>
+                <div class="mb-2 text-left"><span class="font-semibold">📅 วันที่:</span> ${formatThaiDate(report.report_date)}</div>
                 <div class="mb-2 text-left"><span class="font-semibold">📖 วิชา:</span> ${report.subject_name || '-'}</div>
-                <div class="mb-2 text-left"><span class="font-semibold">🏫 ห้อง:</span> ${report.class_room}</div>
+                <div class="mb-2 text-left"><span class="font-semibold">🏫 ห้อง:</span> ม.${report.level}/${report.class_room}</div>
                 <div class="mb-2 text-left"><span class="font-semibold">⏰ คาบ:</span> ${report.period_start} - ${report.period_end}</div>
                 <div class="mb-2 text-left"><span class="font-semibold">📝 แผน/หัวข้อ:</span> ${report.plan_topic || '-'}</div>
                 <div class="mb-2 text-left"><span class="font-semibold">👨‍🏫 กิจกรรม:</span> ${report.activity || '-'}</div>
