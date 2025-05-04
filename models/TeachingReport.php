@@ -169,7 +169,11 @@ class TeachingReport
             }
             if (empty($reportIds)) {
                 // เพิ่ม error message สำหรับ debug
-                throw new \Exception('No valid report rows to insert. Invalid rows: ' . json_encode($invalidRows));
+                $this->pdo->rollBack();
+                return [
+                    'success' => false,
+                    'error' => 'ไม่มีข้อมูลแถวที่ถูกต้องสำหรับบันทึก: ' . json_encode($invalidRows, JSON_UNESCAPED_UNICODE)
+                ];
             }
             // บันทึก attendance logs (เช็คชื่อ)
             if (!empty($attendanceLogs) && !empty($reportIds)) {
@@ -187,17 +191,23 @@ class TeachingReport
                 }
             }
             $this->pdo->commit();
-            return true;
+            return ['success' => true];
         } catch (\PDOException $e) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
-            return false;
+            return [
+                'success' => false,
+                'error' => 'PDOException: ' . $e->getMessage()
+            ];
         } catch (\Exception $e) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
-            return false;
+            return [
+                'success' => false,
+                'error' => 'Exception: ' . $e->getMessage()
+            ];
         }
     }
 

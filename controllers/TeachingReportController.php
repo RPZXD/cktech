@@ -50,11 +50,12 @@ try {
                 }
                 return null;
             }, $attendanceLogs)));
-            $success = $reportModel->createMultiple($rows, $attendanceLogs);
-            if ($success) {
+            $result = $reportModel->createMultiple($rows, $attendanceLogs);
+            if (is_array($result) && isset($result['success']) && $result['success'] === true) {
                 echo json_encode(['success' => true]);
             } else {
-                echo json_encode(['success' => false, 'error' => 'ไม่สามารถบันทึกรายงานได้']);
+                $errorMsg = is_array($result) && isset($result['error']) ? $result['error'] : 'ไม่สามารถบันทึกรายงานได้';
+                echo json_encode(['success' => false, 'error' => $errorMsg]);
             }
             break;
         case 'update':
