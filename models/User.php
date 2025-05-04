@@ -28,7 +28,7 @@ class User
                 // เปรียบเทียบรหัสผ่าน (plain text)
                 if ($password === $student['Stu_password']) {
                     // เพิ่ม role_edoc = 'STU' เพื่อความสอดคล้อง
-                    $student['role_edoc'] = 'STU';
+                    $student['role_ckteach'] = 'STU';
                     return $student;
                 }
             }
@@ -44,7 +44,7 @@ class User
             }
             if (
                 password_verify($password, $user['password']) &&
-                self::roleMatch($user['role_edoc'], $role)
+                self::roleMatch($user['role_ckteach'], $role)
             ) {
                 return $user;
             }
