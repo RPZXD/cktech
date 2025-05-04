@@ -172,11 +172,11 @@ class TeachingReport
                 $reportIds[] = $this->pdo->lastInsertId();
             }
             if (empty($reportIds)) {
-                // เพิ่ม error message สำหรับ debug
+                // ปิด debug: ไม่แสดงรายละเอียดข้อมูล invalidRows
                 $this->pdo->rollBack();
                 return [
                     'success' => false,
-                    'error' => 'ไม่มีข้อมูลแถวที่ถูกต้องสำหรับบันทึก: ' . json_encode($invalidRows, JSON_UNESCAPED_UNICODE)
+                    'error' => 'ไม่มีข้อมูลแถวที่ถูกต้องสำหรับบันทึก'
                 ];
             }
             // บันทึก attendance logs (เช็คชื่อ)
@@ -204,17 +204,19 @@ class TeachingReport
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
+            // ปิด debug: ไม่แสดงรายละเอียด exception
             return [
                 'success' => false,
-                'error' => 'PDOException: ' . $e->getMessage()
+                'error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล'
             ];
         } catch (\Exception $e) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
+            // ปิด debug: ไม่แสดงรายละเอียด exception
             return [
                 'success' => false,
-                'error' => 'Exception: ' . $e->getMessage()
+                'error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล'
             ];
         }
     }
