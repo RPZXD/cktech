@@ -31,14 +31,39 @@ class Stat
     public function getReportCountByDepartment($startDate, $endDate)
     {
         // ดึง teacher จาก DatabaseUsers
-        $sql = "SELECT t.Teach_major AS department, COUNT(r.id) AS count
-                FROM teaching_reports r
-                JOIN phichaia_student.teacher t ON r.teacher_id = t.Teach_id
-                WHERE r.created_at BETWEEN :start AND :end
-                GROUP BY t.Teach_major
-                ORDER BY count DESC";
-        $stmt = $this->dbReport->query($sql, ['start' => $startDate, 'end' => $endDate]);
-        return $stmt->fetchAll();
+        $sqlTeacher = "SELECT Teach_id, Teach_major FROM teacher WHERE Teach_status = 1";
+        $teachers = $this->dbUsers->query($sqlTeacher)->fetchAll();
+
+        // เตรียม mapping Teach_id => Teach_major
+        $teachMajorMap = [];
+        foreach ($teachers as $t) {
+            $teachMajorMap[$t['Teach_id']] = $t['Teach_major'];
+        }
+
+        // ดึงรายงานจาก teaching_reports
+        $sqlReport = "SELECT teacher_id FROM teaching_reports WHERE created_at BETWEEN :start AND :end";
+        $reports = $this->dbReport->query($sqlReport, ['start' => $startDate, 'end' => $endDate])->fetchAll();
+
+        // นับจำนวนรายงานแยกตามกลุ่มสาระ
+        $departmentCounts = [];
+        foreach ($reports as $r) {
+            $major = $teachMajorMap[$r['teacher_id']] ?? null;
+            if ($major) {
+                if (!isset($departmentCounts[$major])) $departmentCounts[$major] = 0;
+                $departmentCounts[$major]++;
+            }
+        }
+
+        // จัดรูปแบบผลลัพธ์
+        $result = [];
+        foreach ($departmentCounts as $department => $count) {
+            $result[] = ['department' => $department, 'count' => $count];
+        }
+        // เรียงลำดับมากไปน้อย
+        usort($result, function($a, $b) {
+            return $b['count'] <=> $a['count'];
+        });
+        return $result;
     }
 
     // จำนวนครูทั้งหมด
@@ -61,13 +86,38 @@ class Stat
     public function getReportCountByTeacher($startDate, $endDate)
     {
         // ดึง teacher จาก DatabaseUsers
-        $sql = "SELECT t.Teach_name AS teacher, COUNT(r.id) AS count
-                FROM teaching_reports r
-                JOIN phichaia_student.teacher t ON r.teacher_id = t.Teach_id
-                WHERE r.created_at BETWEEN :start AND :end
-                GROUP BY t.Teach_id
-                ORDER BY count DESC";
-        $stmt = $this->dbReport->query($sql, ['start' => $startDate, 'end' => $endDate]);
-        return $stmt->fetchAll();
+        $sqlTeacher = "SELECT Teach_id, Teach_name FROM teacher WHERE Teach_status = 1";
+        $teachers = $this->dbUsers->query($sqlTeacher)->fetchAll();
+
+        // เตรียม mapping Teach_id => Teach_name
+        $teachNameMap = [];
+        foreach ($teachers as $t) {
+            $teachNameMap[$t['Teach_id']] = $t['Teach_name'];
+        }
+
+        // ดึงรายงานจาก teaching_reports
+        $sqlReport = "SELECT teacher_id FROM teaching_reports WHERE created_at BETWEEN :start AND :end";
+        $reports = $this->dbReport->query($sqlReport, ['start' => $startDate, 'end' => $endDate])->fetchAll();
+
+        // นับจำนวนรายงานแยกตามครู
+        $teacherCounts = [];
+        foreach ($reports as $r) {
+            $name = $teachNameMap[$r['teacher_id']] ?? null;
+            if ($name) {
+                if (!isset($teacherCounts[$name])) $teacherCounts[$name] = 0;
+                $teacherCounts[$name]++;
+            }
+        }
+
+        // จัดรูปแบบผลลัพธ์
+        $result = [];
+        foreach ($teacherCounts as $teacher => $count) {
+            $result[] = ['teacher' => $teacher, 'count' => $count];
+        }
+        // เรียงลำดับมากไปน้อย
+        usort($result, function($a, $b) {
+            return $b['count'] <=> $a['count'];
+        });
+        return $result;
     }
 }
