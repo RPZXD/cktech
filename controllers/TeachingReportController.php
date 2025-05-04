@@ -51,7 +51,11 @@ try {
                 return null;
             }, $attendanceLogs)));
             $success = $reportModel->createMultiple($rows, $attendanceLogs);
-            echo json_encode(['success' => $success]);
+            if ($success) {
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'error' => 'ไม่สามารถบันทึกรายงานได้']);
+            }
             break;
         case 'update':
             $data = json_decode(file_get_contents('php://input'), true);
