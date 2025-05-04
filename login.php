@@ -27,8 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <html lang="th">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="dist/img/logo-phicha.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageConfig['pageTitle']); ?></title>
+    <title><?php echo htmlspecialchars($pageConfig['pageTitle']); ?> | <?php echo htmlspecialchars($pageConfig['nameschool']); ?></title>
     <link rel="icon" type="image/png" href="<?php echo htmlspecialchars($pageConfig['logoLink']); ?>" />
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <!-- Google Font: Mali -->
@@ -91,13 +92,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
                 <div class="mb-4">
                     <label for="role" class="block text-lg font-medium text-gray-700">เลือกบทบาท 🛡️</label>
-                    <select name="role" id="role" class="mt-1 p-3 w-full border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <select name="role" id="role" class="mt-1 p-3 w-full border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center" required>
                         <option value="">-- เลือกบทบาท --</option>
                         <option value="ครู" selected>ครู</option>
-                        <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
+                        <!-- <option value="เจ้าหน้าที่">เจ้าหน้าที่</option> -->
                         <option value="หัวหน้ากลุ่มสาระ">หัวหน้ากลุ่มสาระ</option>
                         <option value="ผู้บริหาร">ผู้บริหาร</option>
-                        <option value="admin">admin</option>
+                        <option value="admin">Admin</option>
                     </select>
                 </div>
                 <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg text-xl font-semibold hover:bg-blue-700 transition duration-300 transform hover:scale-105">เข้าสู่ระบบ</button>
@@ -151,6 +152,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $redirect = 'teacher/index.php';
             } else if (isset($_POST['role']) && $_POST['role'] === 'หัวหน้ากลุ่มสาระ') {
                 $redirect = 'department/index.php';
+            } else if (isset($_POST['role']) && $_POST['role'] === 'ผู้บริหาร') {
+                $redirect = 'director/index.php';
+            } else if (isset($_POST['role']) && $_POST['role'] === 'admin') {
+                $redirect = 'admin/index.php';
             }
             ?>
             window.location.href = <?= json_encode($redirect) ?>;
