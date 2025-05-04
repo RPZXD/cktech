@@ -13,7 +13,7 @@ try {
 
     switch ($action) {
         case 'list':
-            $teacher_id = $_SESSION['username'] ?? 0;
+            $teacher_id = $_GET['teacher_id'] ?? $_POST['teacher_id'] ?? ($_SESSION['username'] ?? 0);
             $reports = $reportModel->getAllByTeacher($teacher_id);
             echo json_encode($reports);
             break;

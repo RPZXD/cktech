@@ -38,6 +38,11 @@ require_once('header.php');
                                 <option value="">-- เลือกครู --</option>
                             </select>
                         </div>
+                        <div class="w-full md:w-1/2 flex justify-end mt-4 md:mt-0">
+                            <button id="btnReload" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow flex items-center gap-2">
+                                🔄 รีเฟรชข้อมูล
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div id="reportSection" class="hidden">
@@ -82,13 +87,14 @@ require_once('header.php');
 const teacherSelect = document.getElementById('teacherSelect');
 const reportSection = document.getElementById('reportSection');
 const noDataMsg = document.getElementById('noDataMsg');
+const btnReload = document.getElementById('btnReload');
 let calendar = null;
 let dataTable = null;
 
 const department = '<?php echo $department; ?>';
 
 // โหลดรายชื่อครูในกลุ่มสาระของหัวหน้ากลุ่มนี้
-function loadTeachersOfDepartmentHead() {
+function loadTeachersOfDepartmentHead(selectedTeacherId = null) {
     fetch('../controllers/DepartmentController.php?action=listTeachers&department=' + encodeURIComponent(department))
         .then(res => res.json())
         .then(data => {
@@ -96,18 +102,48 @@ function loadTeachersOfDepartmentHead() {
             data.forEach(teacher => {
                 teacherSelect.innerHTML += `<option value="${teacher.Teach_id}">${teacher.Teach_name}</option>`;
             });
+            // ถ้ามีการเลือกครูไว้ ให้เลือกอัตโนมัติ
+            if (selectedTeacherId) {
+                teacherSelect.value = selectedTeacherId;
+            }
         });
+}
+
+// ล้างข้อมูลตารางและปฏิทิน
+function clearReportDisplay() {
+    if (dataTable) {
+        dataTable.destroy();
+        dataTable = null;
+    }
+    if (calendar) {
+        calendar.destroy();
+        calendar = null;
+    }
+    document.querySelector('#reportTable tbody').innerHTML = '';
+    document.getElementById('calendar').innerHTML = '';
+    reportSection.classList.add('hidden');
+    noDataMsg.classList.remove('hidden');
 }
 
 // เมื่อเลือกครู โหลดรายงาน
 teacherSelect.addEventListener('change', function() {
+    clearReportDisplay();
     const teacherId = this.value;
     if (!teacherId) {
-        reportSection.classList.add('hidden');
-        noDataMsg.classList.remove('hidden');
         return;
     }
     loadReportsForTeacher(teacherId);
+});
+
+// ปุ่มรีเฟรชข้อมูล
+btnReload.addEventListener('click', function() {
+    const teacherId = teacherSelect.value;
+    clearReportDisplay();
+    loadTeachersOfDepartmentHead(teacherId); // โหลดรายชื่อครูใหม่ (และเลือกครูเดิมถ้ามี)
+    if (teacherId) {
+        // โหลดข้อมูลรายงานใหม่
+        setTimeout(() => loadReportsForTeacher(teacherId), 200);
+    }
 });
 
 // 4. โหลดรายงานการสอนของครู
