@@ -683,167 +683,169 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // ====== เพิ่ม event สำหรับ submit form เพื่อบันทึกข้อมูล ======
   formReport.addEventListener('submit', function(e) {
-    e.preventDefault();
+  e.preventDefault();
+  const formData = new FormData(formReport);
 
-    const formData = new FormData(formReport);
+  // === แสดงสถานะ Loading ===
+  Swal.fire({
+    title: 'กำลังบันทึกข้อมูล...',
+    text: 'กรุณารอสักครู่',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
 
+  const subjectId = formData.get('subject_id');
+  const reportDate = formData.get('report_date');
+  const checkedRooms = Array.from(document.querySelectorAll('.report-class-room-checkbox:checked')).map(cb => cb.value);
 
-    // 1. เก็บข้อมูลห้อง/คาบที่เลือก
-    const subjectId = formData.get('subject_id');
-    const reportDate = formData.get('report_date');
-    const checkedRooms = Array.from(document.querySelectorAll('.report-class-room-checkbox:checked')).map(cb => cb.value);
-
-    // 2. เก็บข้อมูลคาบที่เลือกในแต่ละห้อง
-    const checkedPeriods = {};
-    checkedRooms.forEach(room => {
-      checkedPeriods[room] = Array.from(document.querySelectorAll(`input[name="periods[${room}][]"]:checked`)).map(cb => {
-        const [start, end, day] = cb.value.split('|');
-        return { period_start: start, period_end: end, day_of_week: day };
-      });
+  const checkedPeriods = {};
+  checkedRooms.forEach(room => {
+    checkedPeriods[room] = Array.from(document.querySelectorAll(`input[name="periods[${room}][]"]:checked`)).map(cb => {
+      const [start, end, day] = cb.value.split('|');
+      return { period_start: start, period_end: end, day_of_week: day };
     });
+  });
 
-    // 3. เก็บข้อมูลเช็คชื่อ
-    const attendance = {};
-    document.querySelectorAll('input[name^="attendance["]').forEach(input => {
-      const stuId = input.name.match(/attendance\[(.+)\]/)[1];
-      attendance[stuId] = input.value;
-    });
+  const attendance = {};
+  document.querySelectorAll('input[name^="attendance["]').forEach(input => {
+    const stuId = input.name.match(/attendance\[(.+)\]/)[1];
+    attendance[stuId] = input.value;
+  });
 
-    // 4. เตรียมข้อมูลแยกตามห้อง/คาบ (1 ห้อง 1 row)
-    let rows = [];
-    checkedRooms.forEach(room => {
-      (checkedPeriods[room] || []).forEach(period => {
-        // --- trim ค่า class_room, period_start, period_end ---
-        const classRoom = (room.replace('ห้อง ', '') + '').trim();
-        const periodStart = (period.period_start + '').trim();
-        const periodEnd = (period.period_end + '').trim();
-        rows.push({
-          report_date: reportDate,
-          subject_id: subjectId,
-          class_room: classRoom,
-          period_start: periodStart,
-          period_end: periodEnd,
-          plan_number: formData.get('plan_number'),
-          plan_topic: formData.get('plan_topic'),
-          activity: formData.get('activity'),
-          absent_students: '', // ไม่ใช้แล้ว
-          reflection_k: formData.get('reflection_k'),
-          reflection_p: formData.get('reflection_p'),
-          reflection_a: formData.get('reflection_a'),
-          problems: formData.get('problems'),
-          suggestions: formData.get('suggestions'),
-          image1: null, // รูปภาพจะจัดการแยก
-          image2: null,
-          teacher_id: <?php echo json_encode($_SESSION['username']); ?>,
-          created_at: null // จะถูกเซ็ตอัตโนมัติในฐานข้อมูล
-        });
-      });
-    });
-
-    // 5. เตรียมข้อมูลเช็คชื่อ (attendance_logs)
-    let attendanceLogs = [];
-    Object.keys(attendance).forEach(stuId => {
-      let status = attendance[stuId];
-      if (status === 'present') status = 'มาเรียน';
-      else if (status === 'late') status = 'มาสาย';
-      else if (status === 'sick') status = 'ลาป่วย';
-      else if (status === 'personal') status = 'ลากิจ';
-      else if (status === 'activity') status = 'เข้าร่วมกิจกรรม';
-      else if (status === 'absent') status = 'ขาดเรียน';
-      attendanceLogs.push({ student_id: stuId, status });
-    });
-
-    // 6. อัปโหลดรูปภาพ (ถ้ามี) - อัปโหลดแยกตามห้อง
-    const uploadImages = () => {
-      return new Promise((resolve, reject) => {
-        // เก็บไฟล์รูปภาพแยกห้อง
-        const imagesByRoom = {};
-        checkedRooms.forEach(room => {
-          const img1 = formData.get(`image1_${room}`); // อาจเป็น null
-          const img2 = formData.get(`image2_${room}`);
-          imagesByRoom[room] = { image1: img1, image2: img2 };
-        });
-
-        // อัปโหลดทีละห้อง (Promise.all)
-        const uploadPromises = checkedRooms.map(room => {
-          const files = imagesByRoom[room];
-          const isValidFile = file => file && file instanceof File && file.size > 0;
-          if (!isValidFile(files.image1) && !isValidFile(files.image2)) {
-            return Promise.resolve({ room, image1: '', image2: '' });
-          }
-          const uploadData = new FormData();
-          if (isValidFile(files.image1)) uploadData.append('image1', files.image1);
-          if (isValidFile(files.image2)) uploadData.append('image2', files.image2);
-          return fetch('../controllers/TeachingReportController.php?action=upload_images', {
-            method: 'POST',
-            body: uploadData
-          })
-          .then(res => res.json())
-          .then(result => ({
-            room,
-            image1: result.image1 ? 'uploads/' + result.image1 : '',
-            image2: result.image2 ? 'uploads/' + result.image2 : ''
-          }));
-        });
-
-        Promise.all(uploadPromises).then(results => {
-          // คืนค่าเป็น {room: {image1, image2}, ...}
-          const imagesMap = {};
-          results.forEach(r => {
-            imagesMap[r.room] = { image1: r.image1, image2: r.image2 };
-          });
-          resolve(imagesMap);
-        }).catch(reject);
-      });
-    };
-
-    uploadImages().then(imagesMap => {
-      // 7. ส่งข้อมูลไป controller
-      let url = '../controllers/TeachingReportController.php?action=create';
-      let method = 'POST';
-      let body = {
-        rows: rows.map(row => {
-          let roomKey = row.class_room;
-          if (!imagesMap[roomKey] && imagesMap['ห้อง ' + roomKey]) {
-            roomKey = 'ห้อง ' + roomKey;
-          }
-          return {
-            ...row,
-            image1: imagesMap[roomKey]?.image1 || null,
-            image2: imagesMap[roomKey]?.image2 || null
-          };
-        }),
-        attendance_logs: attendanceLogs
-      };
-      if (editMode && editReportId) {
-        url = '../controllers/TeachingReportController.php?action=update';
-        body.id = editReportId;
-      }
-      fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.success) {
-          Swal.fire('สำเร็จ', editMode ? 'แก้ไขรายงานเรียบร้อยแล้ว' : 'บันทึกรายงานการสอนเรียบร้อยแล้ว', 'success');
-          modalReport.classList.add('hidden');
-          formReport.reset();
-          loadReports();
-        } else {
-          Swal.fire('ผิดพลาด', editMode ? 'ไม่สามารถแก้ไขรายงานได้' : 'ไม่สามารถบันทึกรายงานได้', 'error');
-        }
-        editMode = false;
-        editReportId = null;
-      })
-      .catch(() => {
-        Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+  let rows = [];
+  checkedRooms.forEach(room => {
+    (checkedPeriods[room] || []).forEach(period => {
+      const classRoom = (room.replace('ห้อง ', '') + '').trim();
+      rows.push({
+        report_date: reportDate,
+        subject_id: subjectId,
+        class_room: classRoom,
+        period_start: period.period_start.trim(),
+        period_end: period.period_end.trim(),
+        plan_number: formData.get('plan_number'),
+        plan_topic: formData.get('plan_topic'),
+        activity: formData.get('activity'),
+        absent_students: '',
+        reflection_k: formData.get('reflection_k'),
+        reflection_p: formData.get('reflection_p'),
+        reflection_a: formData.get('reflection_a'),
+        problems: formData.get('problems'),
+        suggestions: formData.get('suggestions'),
+        image1: null,
+        image2: null,
+        teacher_id: <?php echo json_encode($_SESSION['username']); ?>,
+        created_at: null
       });
     });
   });
+
+  let attendanceLogs = [];
+  Object.keys(attendance).forEach(stuId => {
+    let status = attendance[stuId];
+    const map = {
+      present: 'มาเรียน',
+      late: 'มาสาย',
+      sick: 'ลาป่วย',
+      personal: 'ลากิจ',
+      activity: 'เข้าร่วมกิจกรรม',
+      absent: 'ขาดเรียน'
+    };
+    attendanceLogs.push({ student_id: stuId, status: map[status] || status });
+  });
+
+  const uploadImages = () => {
+    return new Promise((resolve, reject) => {
+      const imagesByRoom = {};
+      checkedRooms.forEach(room => {
+        imagesByRoom[room] = {
+          image1: formData.get(`image1_${room}`),
+          image2: formData.get(`image2_${room}`)
+        };
+      });
+
+      const uploadPromises = checkedRooms.map(room => {
+        const files = imagesByRoom[room];
+        const isValid = file => file && file instanceof File && file.size > 0;
+        if (!isValid(files.image1) && !isValid(files.image2)) {
+          return Promise.resolve({ room, image1: '', image2: '' });
+        }
+        const uploadData = new FormData();
+        if (isValid(files.image1)) uploadData.append('image1', files.image1);
+        if (isValid(files.image2)) uploadData.append('image2', files.image2);
+
+        return fetch('../controllers/TeachingReportController.php?action=upload_images', {
+          method: 'POST',
+          body: uploadData
+        })
+        .then(res => res.json())
+        .then(result => ({
+          room,
+          image1: result.image1 ? 'uploads/' + result.image1 : '',
+          image2: result.image2 ? 'uploads/' + result.image2 : ''
+        }));
+      });
+
+      Promise.all(uploadPromises)
+        .then(results => {
+          const imagesMap = {};
+          results.forEach(r => imagesMap[r.room] = { image1: r.image1, image2: r.image2 });
+          resolve(imagesMap);
+        })
+        .catch(reject);
+    });
+  };
+
+  uploadImages().then(imagesMap => {
+    let url = '../controllers/TeachingReportController.php?action=create';
+    let method = 'POST';
+    let body = {
+      rows: rows.map(row => {
+        let roomKey = row.class_room;
+        if (!imagesMap[roomKey] && imagesMap['ห้อง ' + roomKey]) {
+          roomKey = 'ห้อง ' + roomKey;
+        }
+        return {
+          ...row,
+          image1: imagesMap[roomKey]?.image1 || null,
+          image2: imagesMap[roomKey]?.image2 || null
+        };
+      }),
+      attendance_logs: attendanceLogs
+    };
+    if (editMode && editReportId) {
+      url = '../controllers/TeachingReportController.php?action=update';
+      body.id = editReportId;
+    }
+
+    fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    .then(res => res.json())
+    .then(result => {
+      Swal.close(); // ✅ ปิด loading
+      if (result.success) {
+        Swal.fire('สำเร็จ', editMode ? 'แก้ไขรายงานเรียบร้อยแล้ว' : 'บันทึกรายงานเรียบร้อยแล้ว', 'success');
+        modalReport.classList.add('hidden');
+        formReport.reset();
+        loadReports();
+      } else {
+        Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกรายงานได้', 'error');
+      }
+      editMode = false;
+      editReportId = null;
+    })
+    .catch(() => {
+      Swal.close(); // ✅ ปิด loading
+      Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+    });
+  });
+});
+
 });
 </script>
 <?php require_once('script.php');?>
