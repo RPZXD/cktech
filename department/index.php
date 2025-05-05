@@ -35,15 +35,18 @@ require_once('header.php');
                             ยินดีต้อนรับ <span class="font-semibold text-blue-700">หัวหน้ากลุ่มสาระ <?=$department?></span>
                         </p>
                         <div class="flex flex-col gap-4 w-full">
-                            <a href="weekly_report.php" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg shadow flex items-center justify-center gap-2 text-lg font-semibold transition">
-                                📅 สรุปรายงานการสอนรายสัปดาห์
-                            </a>
-                            <a href="report.php" class="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg shadow flex items-center justify-center gap-2 text-lg font-semibold transition">
-                                📑 ตรวจสอบรายงานการสอนรายวัน
-                            </a>
-                            <a href="stat.php" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg shadow flex items-center justify-center gap-2 text-lg font-semibold transition">
-                                📊 สถิติและวิเคราะห์ข้อมูล
-                            </a>
+                            <div class="w-full bg-blue-50 border-l-4 border-blue-400 rounded p-4 text-left mb-2">
+                                <div class="font-bold text-blue-700 text-lg flex items-center gap-2 mb-1">📅 สรุปรายงานการสอนรายสัปดาห์</div>
+                                <div class="text-gray-700">ดูภาพรวมการส่งรายงานการสอนของครูในกลุ่มสาระของคุณในแต่ละสัปดาห์ พร้อมสถิติและกราฟประกอบ</div>
+                            </div>
+                            <div class="w-full bg-green-50 border-l-4 border-green-400 rounded p-4 text-left mb-2">
+                                <div class="font-bold text-green-700 text-lg flex items-center gap-2 mb-1">📑 ตรวจสอบรายงานการสอนรายวัน</div>
+                                <div class="text-gray-700">ตรวจสอบและเข้าดูรายละเอียดรายงานการสอนของครูแต่ละคนในกลุ่มสาระของคุณแบบรายวัน ทั้งในรูปแบบตารางและปฏิทิน</div>
+                            </div>
+                            <div class="w-full bg-indigo-50 border-l-4 border-indigo-400 rounded p-4 text-left">
+                                <div class="font-bold text-indigo-700 text-lg flex items-center gap-2 mb-1">📊 สถิติและวิเคราะห์ข้อมูล</div>
+                                <div class="text-gray-700">ดูสถิติการส่งรายงาน ขาดเรียน ลาป่วย ลากิจ และกิจกรรมต่าง ๆ ของครูในกลุ่มสาระ พร้อมสรุปรายเดือนและกราฟวิเคราะห์</div>
+                            </div>
                         </div>
                     </div>
                 </div>
