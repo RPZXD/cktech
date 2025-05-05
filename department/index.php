@@ -30,16 +30,20 @@ require_once('header.php');
                 <div class="max-w-2xl w-full">
                     <div class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center text-center border border-blue-100">
                         <div class="text-5xl mb-4">👩‍🏫📊</div>
-                        <h2 class="text-2xl font-bold text-blue-700 mb-2">ระบบสำหรับหัวหน้ากลุ่มสาระ</h2>
+                        <h2 class="text-2xl font-bold text-blue-700 mb-2">ระบบหัวหน้ากลุ่มสาระ</h2>
                         <p class="text-gray-700 mb-4">
-                            หน้านี้สำหรับหัวหน้ากลุ่มสาระ เพื่อดูภาพรวมการสอน ตรวจสอบรายงาน และวิเคราะห์ข้อมูลการสอนของครูในกลุ่มสาระ
+                            ยินดีต้อนรับ <span class="font-semibold text-blue-700">หัวหน้ากลุ่มสาระ <?=$department?></span>
                         </p>
-                        <ul class="text-left text-gray-600 space-y-2 mb-4">
-                            <li>📑 <span class="font-medium">ตรวจสอบรายงานการสอน</span> ของครูในกลุ่มสาระ</li>
-                            <li>📊 <span class="font-medium">ดูสถิติและวิเคราะห์ข้อมูล</span> การสอน</li>
-                        </ul>
-                        <div class="flex flex-wrap gap-3 justify-center">
-                            <span class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">ยินดีต้อนรับ หัวหน้ากลุ่มสาระ<?=$department?></span>
+                        <div class="flex flex-col gap-4 w-full">
+                            <a href="weekly_report.php" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg shadow flex items-center justify-center gap-2 text-lg font-semibold transition">
+                                📅 สรุปรายงานการสอนรายสัปดาห์
+                            </a>
+                            <a href="report.php" class="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg shadow flex items-center justify-center gap-2 text-lg font-semibold transition">
+                                📑 ตรวจสอบรายงานการสอนรายวัน
+                            </a>
+                            <a href="stat.php" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg shadow flex items-center justify-center gap-2 text-lg font-semibold transition">
+                                📊 สถิติและวิเคราะห์ข้อมูล
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -17,6 +17,32 @@ try {
             $reports = $reportModel->getAllByTeacher($teacher_id);
             echo json_encode($reports);
             break;
+        case 'listByTeachers':
+            // รับ teacher_ids (comma-separated) และช่วงวันที่
+            $teacher_ids = isset($_GET['teacher_ids']) ? explode(',', $_GET['teacher_ids']) : [];
+            $week_start = $_GET['week_start'] ?? '';
+            $week_end = $_GET['week_end'] ?? '';
+            if (empty($teacher_ids) || !$week_start || !$week_end) {
+                echo json_encode([]);
+                exit;
+            }
+            // ดึงรายงานของครูในช่วงสัปดาห์นี้
+            require_once __DIR__ . '/../models/TeachingReport.php';
+            $reportModel = new TeachingReport();
+            $pdo = $reportModel->pdo; // ใช้ property ที่มีอยู่แล้ว
+            $in = implode(',', array_fill(0, count($teacher_ids), '?'));
+            $sql = "SELECT r.*, s.name AS subject_name, s.level
+                    FROM teaching_reports r
+                    LEFT JOIN subjects s ON r.subject_id = s.id
+                    WHERE r.teacher_id IN ($in)
+                    AND r.report_date BETWEEN ? AND ?
+                    ORDER BY r.teacher_id, r.report_date";
+            $stmt = $pdo->prepare($sql);
+            $params = array_merge($teacher_ids, [$week_start, $week_end]);
+            $stmt->execute($params);
+            $reports = $stmt->fetchAll();
+            echo json_encode($reports);
+            break;
         case 'detail':
             $id = $_GET['id'] ?? 0;
             $report = $reportModel->getById($id);

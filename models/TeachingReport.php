@@ -5,7 +5,7 @@ use PDO;
 
 class TeachingReport
 {
-    private $pdo;
+    public $pdo; // <-- เปลี่ยนจาก private เป็น public
     protected $dbUsers;
 
     public function __construct()
