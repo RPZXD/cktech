@@ -77,23 +77,47 @@ input:checked + .toggle-slider:before {
                             <button id="btnAddTeacher" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-semibold transition flex items-center gap-2">➕ เพิ่มผู้ใช้ใหม่</button>
                         </div>
                         <div class="overflow-x-auto w-full">
-                        <table id="teacherTable" class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-blue-100">
-                            <tr>
-                                <th class="px-4 py-2 text-center font-semibold">🆔 รหัสครู</th>
-                                <th class="px-4 py-2 text-center font-semibold">👩‍🏫 ชื่อครู</th>
-                                <th class="px-4 py-2 text-center font-semibold">🏢 กลุ่มสาระ</th>
-                                <th class="px-4 py-2 text-center font-semibold">🛡️ บทบาท</th>
-                                <th class="px-4 py-2 text-center font-semibold">✅ สถานะ</th>
-                                <th class="px-4 py-2 text-center font-semibold">⚙️ จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-100">
-                            <!-- JS will fill -->
-                        </tbody>
-                    </table>
-                    </div>
-                    <div class="mt-4 text-sm text-gray-500">* สามารถเพิ่ม/แก้ไข/ลบผู้ใช้ได้ในอนาคต</div>
+                            <!-- Filter controls -->
+                            <div class="flex flex-wrap gap-4 mb-4 items-center">
+                                <select id="filter-major" class="border border-blue-200 rounded px-2 py-1">
+                                    <option value="">-- กลุ่มสาระทั้งหมด --</option>
+                                </select>
+                                <select id="filter-role" class="border border-blue-200 rounded px-2 py-1">
+                                    <option value="">-- บทบาททั้งหมด --</option>
+                                    <option value="T">👩‍🏫 ครู</option>
+                                    <option value="HOD">👨‍💼 หัวหน้ากลุ่มสาระ</option>
+                                    <option value="VP">👔 รองผู้บริหาร</option>
+                                    <option value="OF">📋 เจ้าหน้าที่</option>
+                                    <option value="DIR">🏫 ผู้อำนวยการ</option>
+                                    <option value="ADM">🛡️ ผู้ดูแลระบบ</option>
+                                </select>
+                                <select id="filter-status" class="border border-blue-200 rounded px-2 py-1">
+                                    <option value="">-- สถานะทั้งหมด --</option>
+                                    <option value="1">🟢 ปกติ</option>
+                                    <option value="2">🚚 ย้าย</option>
+                                    <option value="3">🎉 เกษียณ</option>
+                                    <option value="4">🏠 ลาออก</option>
+                                    <option value="9">⚰️ เสียชีวิต</option>
+                                </select>
+                                <button id="filter-clear" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-gray-700">ล้างตัวกรอง</button>
+                            </div>
+                            <table id="teacherTable" class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-blue-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-center font-semibold">🆔 รหัสครู</th>
+                                    <th class="px-4 py-2 text-center font-semibold">👩‍🏫 ชื่อครู</th>
+                                    <th class="px-4 py-2 text-center font-semibold">🏢 กลุ่มสาระ</th>
+                                    <th class="px-4 py-2 text-center font-semibold">🛡️ บทบาท</th>
+                                    <th class="px-4 py-2 text-center font-semibold">✅ สถานะ</th>
+                                    <th class="px-4 py-2 text-center font-semibold">⚙️ จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                <!-- JS will fill -->
+                            </tbody>
+                        </table>
+                        </div>
+                        <div class="mt-4 text-sm text-gray-500">* สามารถเพิ่ม/แก้ไข/ลบผู้ใช้ได้ในอนาคต</div>
                     </div>
                 </div>
             </div>
@@ -114,24 +138,85 @@ function renderStatusSwitch(teacher) {
         9: { text: '⚰️ เสียชีวิต', color: 'text-red-600' }
     };
     const current = statusMap[teacher.Teach_status] || { text: 'ไม่ทราบ', color: 'text-gray-400' };
-    const checked = teacher.Teach_status == 1 ? 'checked' : '';
     return `
-        <label class="inline-flex items-center cursor-pointer">
-            <input type="checkbox" class="toggle-status" data-id="${teacher.Teach_id}" ${checked}>
-            <span class="ml-2 ${current.color} font-semibold">
+        <div class="relative inline-block text-left">
+            <button type="button" class="status-dropdown-btn ${current.color} font-semibold flex items-center gap-1" data-id="${teacher.Teach_id}">
                 ${current.text}
-            </span>
-        </label>
+                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div class="status-dropdown-menu absolute z-10 mt-1 hidden bg-white border border-gray-200 rounded shadow-lg min-w-[120px]" data-id="${teacher.Teach_id}">
+                <div class="py-1">
+                    <button class="status-option block w-full text-left px-4 py-2 text-green-600 hover:bg-gray-100" data-status="1">🟢 ปกติ</button>
+                    <button class="status-option block w-full text-left px-4 py-2 text-blue-500 hover:bg-gray-100" data-status="2">🚚 ย้าย</button>
+                    <button class="status-option block w-full text-left px-4 py-2 text-yellow-600 hover:bg-gray-100" data-status="3">🎉 เกษียณ</button>
+                    <button class="status-option block w-full text-left px-4 py-2 text-gray-500 hover:bg-gray-100" data-status="4">🏠 ลาออก</button>
+                    <button class="status-option block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100" data-status="9">⚰️ เสียชีวิต</button>
+                </div>
+            </div>
+        </div>
     `;
 }
-function renderRole(role) {
-    if (role === 'ADM') return '🛡️ ผู้ดูแลระบบ';
-    if (role === 'HOD') return '👨‍💼 หัวหน้ากลุ่มสาระ';
-    if (role === 'VP') return '👔 รองผู้บริหาร';
-    if (role === 'OF') return '📋 เจ้าหน้าที่';
-    if (role === 'DIR') return '🏫 ผู้อำนวยการ';
-    if (role === 'T') return '👩‍🏫 ครู';
-    return role;
+function renderDepartmentDropdown(teacher) {
+    let options = '';
+    if (!window._departments) return teacher.Teach_major;
+    window._departments.forEach(dep => {
+        options += `<button class="dep-option block w-full text-left px-4 py-2 hover:bg-gray-100" data-value="${dep.name}">${dep.name}</button>`;
+    });
+    return `
+        <div class="relative inline-block text-left">
+            <button type="button" class="dep-dropdown-btn font-semibold flex items-center gap-1" data-id="${teacher.Teach_id}">
+                ${teacher.Teach_major || '--'}
+                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div class="dep-dropdown-menu absolute z-10 mt-1 hidden bg-white border border-gray-200 rounded shadow-lg min-w-[120px]" data-id="${teacher.Teach_id}">
+                <div class="py-1">${options}</div>
+            </div>
+        </div>
+    `;
+}
+function renderRoleDropdown(teacher) {
+    const roles = [
+        { val: 'T', label: '👩‍🏫 ครู' },
+        { val: 'HOD', label: '👨‍💼 หัวหน้ากลุ่มสาระ' },
+        { val: 'VP', label: '👔 รองผู้บริหาร' },
+        { val: 'OF', label: '📋 เจ้าหน้าที่' },
+        { val: 'DIR', label: '🏫 ผู้อำนวยการ' },
+        { val: 'ADM', label: '🛡️ ผู้ดูแลระบบ' }
+    ];
+    let options = '';
+    roles.forEach(r => {
+        options += `<button class="role-option block w-full text-left px-4 py-2 hover:bg-gray-100" data-value="${r.val}">${r.label}</button>`;
+    });
+    let current = roles.find(r => r.val === teacher.role_ckteach);
+    return `
+        <div class="relative inline-block text-left">
+            <button type="button" class="role-dropdown-btn font-semibold flex items-center gap-1" data-id="${teacher.Teach_id}">
+                ${current ? current.label : teacher.role_ckteach}
+                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div class="role-dropdown-menu absolute z-10 mt-1 hidden bg-white border border-gray-200 rounded shadow-lg min-w-[120px]" data-id="${teacher.Teach_id}">
+                <div class="py-1">${options}</div>
+            </div>
+        </div>
+    `;
+}
+function getStatusOptions(selected) {
+    const statusList = [
+        { val: 1, label: '🟢 ปกติ' },
+        { val: 2, label: '🚚 ย้าย' },
+        { val: 3, label: '🎉 เกษียณ' },
+        { val: 4, label: '🏠 ลาออก' },
+        { val: 9, label: '⚰️ เสียชีวิต' }
+    ];
+    return statusList.map(s => `<option value="${s.val}" ${parseInt(selected) === s.val ? 'selected' : ''}>${s.label}</option>`).join('');
+}
+function getDepartmentOptions(selected) {
+    let html = '<option value="">-- เลือกกลุ่มสาระ --</option>';
+    if (!window._departments) return html;
+    window._departments.forEach(dep => {
+        html += `<option value="${dep.name}" ${selected === dep.name ? 'selected' : ''}>${dep.name}</option>`;
+    });
+    return html;
 }
 function getRoleOptions(selected) {
     const roles = [
@@ -144,35 +229,28 @@ function getRoleOptions(selected) {
     ];
     return roles.map(r => `<option value="${r.val}" ${selected === r.val ? 'selected' : ''}>${r.label}</option>`).join('');
 }
-function getStatusOptions(selected) {
-    return `
-        <option value="1" ${selected == 1 ? 'selected' : ''}>🟢 ปกติ</option>
-        <option value="2" ${selected == 2 ? 'selected' : ''}>🚚 ย้าย</option>
-        <option value="3" ${selected == 3 ? 'selected' : ''}>🎉 เกษียณ</option>
-        <option value="4" ${selected == 4 ? 'selected' : ''}>🏠 ลาออก</option>
-        <option value="9" ${selected == 9 ? 'selected' : ''}>⚰️ เสียชีวิต</option>
-    `;
-}
-function getDepartmentOptions(selected) {
-    let html = '<option value="">-- เลือกกลุ่มสาระ --</option>';
-    if (!window._departments) return html;
-    window._departments.forEach(dep => {
-        html += `<option value="${dep.name}" ${selected === dep.name ? 'selected' : ''}>${dep.name}</option>`;
-    });
-    return html;
-}
 function reloadTable() {
     $.getJSON('../controllers/TeacherController.php?action=list', function(data) {
+        // Apply filter
+        const major = $('#filter-major').val();
+        const role = $('#filter-role').val();
+        const status = $('#filter-status').val();
         let tbody = '';
-        data.forEach(function(teacher) {
-            tbody += `<tr>
+        let filtered = data.filter(function(teacher) {
+            let ok = true;
+            if (major && teacher.Teach_major !== major) ok = false;
+            if (role && teacher.role_ckteach !== role) ok = false;
+            if (status && String(teacher.Teach_status) !== String(status)) ok = false;
+            return ok;
+        });
+        filtered.forEach(function(teacher) {
+            tbody += `<tr data-id="${teacher.Teach_id}">
                 <td class="px-4 py-2 text-center">${teacher.Teach_id}</td>
-                <td class="px-4 py-2 text-left">${teacher.Teach_name}</td>
-                <td class="px-4 py-2 text-center">${teacher.Teach_major}</td>
-                <td class="px-4 py-2 text-center">${renderRole(teacher.role_ckteach)}</td>
+                <td class="px-4 py-2 text-left editable" data-field="Teach_name">${teacher.Teach_name}</td>
+                <td class="px-4 py-2 text-center editable" data-field="Teach_major" data-type="dropdown">${renderDepartmentDropdown(teacher)}</td>
+                <td class="px-4 py-2 text-center editable" data-field="role_ckteach" data-type="dropdown">${renderRoleDropdown(teacher)}</td>
                 <td class="px-4 py-2 text-center">${renderStatusSwitch(teacher)}</td>
                 <td class="px-4 py-2 text-center flex gap-2 justify-center">
-                    <button class="btn-edit bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded flex items-center gap-1" data-id="${teacher.Teach_id}">✏️ แก้ไข</button>
                     <button class="btn-delete bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded flex items-center gap-1" data-id="${teacher.Teach_id}">🗑️ ลบ</button>
                 </td>
             </tr>`;
@@ -249,14 +327,28 @@ function showTeacherModal(type, teacher = {}) {
                     type: 'POST',
                     data: result.value,
                     success: function(res) {
-                        Swal.fire('สำเร็จ', 'แก้ไขข้อมูลเรียบร้อยแล้ว', 'success');
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'แก้ไขข้อมูลเรียบร้อยแล้ว',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
                         if ($.fn.DataTable.isDataTable('#teacherTable')) {
                             $('#teacherTable').DataTable().destroy();
                         }
                         reloadTable();
                     },
                     error: function() {
-                        Swal.fire('ผิดพลาด', 'ไม่สามารถแก้ไขข้อมูลได้', 'error');
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'error',
+                            title: 'ไม่สามารถแก้ไขข้อมูลได้',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
                     }
                 });
             } else {
@@ -265,14 +357,28 @@ function showTeacherModal(type, teacher = {}) {
                     type: 'POST',
                     data: result.value,
                     success: function(res) {
-                        Swal.fire('สำเร็จ', 'เพิ่มผู้ใช้ใหม่เรียบร้อยแล้ว', 'success');
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'เพิ่มผู้ใช้ใหม่เรียบร้อยแล้ว',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
                         if ($.fn.DataTable.isDataTable('#teacherTable')) {
                             $('#teacherTable').DataTable().destroy();
                         }
                         reloadTable();
                     },
                     error: function() {
-                        Swal.fire('ผิดพลาด', 'ไม่สามารถเพิ่มผู้ใช้ได้', 'error');
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'error',
+                            title: 'ไม่สามารถเพิ่มผู้ใช้ได้',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
                     }
                 });
             }
@@ -282,6 +388,12 @@ function showTeacherModal(type, teacher = {}) {
 $(document).ready(function() {
     $.getJSON('../controllers/DepartmentController.php?action=list', function(departments) {
         window._departments = departments;
+        // Fill filter-major
+        let html = '<option value="">-- กลุ่มสาระทั้งหมด --</option>';
+        departments.forEach(dep => {
+            html += `<option value="${dep.name}">${dep.name}</option>`;
+        });
+        $('#filter-major').html(html);
         reloadTable();
     });
 
@@ -289,11 +401,171 @@ $(document).ready(function() {
         showTeacherModal('create');
     });
 
-    $('#teacherTable').on('click', '.btn-edit', function() {
-        const id = $(this).data('id');
-        $.getJSON('../controllers/TeacherController.php?action=get&id=' + encodeURIComponent(id), function(teacher) {
-            showTeacherModal('edit', teacher);
+    // Filter events
+    $('#filter-major, #filter-role, #filter-status').on('change', function() {
+        reloadTable();
+    });
+    $('#filter-clear').on('click', function() {
+        $('#filter-major').val('');
+        $('#filter-role').val('');
+        $('#filter-status').val('');
+        reloadTable();
+    });
+
+    $('#teacherTable').on('click', 'td.editable:not([data-type])', function() {
+        if ($(this).find('input').length > 0) return;
+        const td = $(this);
+        const oldVal = td.text();
+        const field = td.data('field');
+        const tr = td.closest('tr');
+        const id = tr.data('id');
+        td.html(`<input type="text" class="inline-edit-input w-full border border-blue-300 rounded px-1" value="${oldVal}" />`);
+        td.find('input').focus().select();
+
+        td.find('input').on('blur keydown', function(e) {
+            if (e.type === 'blur' || (e.type === 'keydown' && e.key === 'Enter')) {
+                const newVal = $(this).val().trim();
+                if (newVal !== oldVal && newVal !== '') {
+                    // ดึงค่าปัจจุบันจาก attributes data-* ของ tr
+                    const Teach_id = id;
+                    // ดึงค่ากลุ่มสาระจาก dropdown ปุ่ม
+                    let Teach_major = tr.find('td[data-field="Teach_major"] .dep-dropdown-btn').length
+                        ? tr.find('td[data-field="Teach_major"] .dep-dropdown-btn').contents().filter(function() {
+                            return this.nodeType === 3;
+                        }).text().trim()
+                        : '';
+                    // ดึงค่าบทบาทจาก dropdown ปุ่ม
+                    let role_ckteach = tr.find('td[data-field="role_ckteach"] .role-dropdown-btn').length
+                        ? tr.find('td[data-field="role_ckteach"] .role-dropdown-btn').contents().filter(function() {
+                            return this.nodeType === 3;
+                        }).text().trim()
+                        : '';
+                    // ดึงค่าสถานะจากปุ่ม
+                    let Teach_status = tr.find('.status-dropdown-btn').length
+                        ? (() => {
+                            const btn = tr.find('.status-dropdown-btn');
+                            const statusText = btn.contents().filter(function() {
+                                return this.nodeType === 3;
+                            }).text().trim();
+                            const statusMap = {
+                                '🟢 ปกติ': 1,
+                                '🚚 ย้าย': 2,
+                                '🎉 เกษียณ': 3,
+                                '🏠 ลาออก': 4,
+                                '⚰️ เสียชีวิต': 9
+                            };
+                            for (const [k, v] of Object.entries(statusMap)) {
+                                if (statusText.startsWith(k)) return v;
+                            }
+                            return 1;
+                        })()
+                        : 1;
+                    // แปลง label เป็น code สำหรับ role_ckteach
+                    const roleMap = {
+                        '🛡️ ผู้ดูแลระบบ': 'ADM',
+                        '👨‍💼 หัวหน้ากลุ่มสาระ': 'HOD',
+                        '👔 รองผู้บริหาร': 'VP',
+                        '📋 เจ้าหน้าที่': 'OF',
+                        '🏫 ผู้อำนวยการ': 'DIR',
+                        '👩‍🏫 ครู': 'T'
+                    };
+                    if (roleMap[role_ckteach]) role_ckteach = roleMap[role_ckteach];
+
+                    $.ajax({
+                        url: '../controllers/TeacherController.php?action=update',
+                        type: 'POST',
+                        data: {
+                            Teach_id: Teach_id,
+                            Teach_name: newVal,
+                            Teach_major: Teach_major,
+                            role_ckteach: role_ckteach,
+                            Teach_status: Teach_status
+                        },
+                        success: function(res) {
+                            td.text(newVal);
+                            Swal.fire({toast:true,position:'top-end',icon:'success',title:'บันทึกแล้ว',showConfirmButton:false,timer:1200});
+                            reloadTable();
+                        },
+                        error: function() {
+                            td.text(oldVal);
+                            Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+                        }
+                    });
+                } else {
+                    td.text(oldVal);
+                }
+            }
         });
+    });
+
+    $('#teacherTable').on('click', '.dep-dropdown-btn', function(e) {
+        e.stopPropagation();
+        const id = $(this).data('id');
+        $('.dep-dropdown-menu').not(`[data-id="${id}"]`).addClass('hidden');
+        $(`.dep-dropdown-menu[data-id="${id}"]`).toggleClass('hidden');
+    });
+    $('#teacherTable').on('click', '.dep-option', function(e) {
+        e.stopPropagation();
+        const menu = $(this).closest('.dep-dropdown-menu');
+        const id = menu.data('id');
+        const newVal = $(this).data('value');
+        $.getJSON('../controllers/TeacherController.php?action=get&id=' + encodeURIComponent(id), function(teacher) {
+            if (!teacher) return;
+            $.ajax({
+                url: '../controllers/TeacherController.php?action=update',
+                type: 'POST',
+                data: {
+                    Teach_id: id,
+                    Teach_name: teacher.Teach_name,
+                    Teach_major: newVal,
+                    role_ckteach: teacher.role_ckteach,
+                    Teach_status: teacher.Teach_status
+                },
+                success: function(res) {
+                    Swal.fire({toast:true,position:'top-end',icon:'success',title:'บันทึกแล้ว',showConfirmButton:false,timer:1200});
+                    reloadTable();
+                },
+                error: function() {
+                    Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+                }
+            });
+        });
+        $('.dep-dropdown-menu').addClass('hidden');
+    });
+
+    $('#teacherTable').on('click', '.role-dropdown-btn', function(e) {
+        e.stopPropagation();
+        const id = $(this).data('id');
+        $('.role-dropdown-menu').not(`[data-id="${id}"]`).addClass('hidden');
+        $(`.role-dropdown-menu[data-id="${id}"]`).toggleClass('hidden');
+    });
+    $('#teacherTable').on('click', '.role-option', function(e) {
+        e.stopPropagation();
+        const menu = $(this).closest('.role-dropdown-menu');
+        const id = menu.data('id');
+        const newVal = $(this).data('value');
+        $.getJSON('../controllers/TeacherController.php?action=get&id=' + encodeURIComponent(id), function(teacher) {
+            if (!teacher) return;
+            $.ajax({
+                url: '../controllers/TeacherController.php?action=update',
+                type: 'POST',
+                data: {
+                    Teach_id: id,
+                    Teach_name: teacher.Teach_name,
+                    Teach_major: teacher.Teach_major,
+                    role_ckteach: newVal,
+                    Teach_status: teacher.Teach_status
+                },
+                success: function(res) {
+                    Swal.fire({toast:true,position:'top-end',icon:'success',title:'บันทึกแล้ว',showConfirmButton:false,timer:1200});
+                    reloadTable();
+                },
+                error: function() {
+                    Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+                }
+            });
+        });
+        $('.role-dropdown-menu').addClass('hidden');
     });
 
     $('#teacherTable').on('click', '.btn-delete', function() {
@@ -318,23 +590,52 @@ $(document).ready(function() {
                         let res = {};
                         try { res = typeof response === 'object' ? response : JSON.parse(response); } catch {}
                         if (res.success) {
-                            Swal.fire('สำเร็จ', 'ลบผู้ใช้เรียบร้อยแล้ว', 'success');
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: 'ลบผู้ใช้เรียบร้อยแล้ว',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
                             reloadTable();
                         } else {
-                            Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการลบผู้ใช้', 'error');
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาดในการลบผู้ใช้',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
                         }
                     },
                     error: function() {
-                        Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการลบผู้ใช้', 'error');
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาดในการลบผู้ใช้',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
                     }
                 });
             }
         });
     });
 
-    $('#teacherTable').on('change', '.toggle-status', function() {
+    $('#teacherTable').on('click', '.status-dropdown-btn', function(e) {
+        e.stopPropagation();
         const id = $(this).data('id');
-        const newStatus = $(this).is(':checked') ? '1' : '4';
+        $('.status-dropdown-menu').not(`[data-id="${id}"]`).addClass('hidden');
+        $(`.status-dropdown-menu[data-id="${id}"]`).toggleClass('hidden');
+    });
+
+    $('#teacherTable').on('click', '.status-option', function(e) {
+        e.stopPropagation();
+        const id = $(this).closest('.status-dropdown-menu').data('id');
+        const newStatus = $(this).data('status');
         $.getJSON('../controllers/TeacherController.php?action=get&id=' + encodeURIComponent(id), function(teacher) {
             if (!teacher) return;
             $.ajax({
@@ -348,28 +649,23 @@ $(document).ready(function() {
                     Teach_status: newStatus
                 },
                 success: function(res) {
-                    const statusMap = {
-                        1: { text: '🟢 ปกติ', color: 'text-green-600' },
-                        2: { text: '🚚 ย้าย', color: 'text-blue-500' },
-                        3: { text: '🎉 เกษียณ', color: 'text-yellow-600' },
-                        4: { text: '🏠 ลาออก', color: 'text-gray-500' },
-                        9: { text: '⚰️ เสียชีวิต', color: 'text-red-600' }
-                    };
-                    const current = statusMap[newStatus] || { text: 'ไม่ทราบ', color: 'text-gray-400' };
-                    const label = $(document).find(`.toggle-status[data-id="${id}"]`).next('span');
-                    label.removeClass('text-green-600 text-blue-500 text-yellow-600 text-gray-500 text-red-600 text-gray-400');
-                    label.addClass(current.color).text(current.text);
+                    reloadTable();
                 },
                 error: function() {
                     Swal.fire('ผิดพลาด', 'ไม่สามารถอัปเดตสถานะได้', 'error');
-                    $(document).find(`.toggle-status[data-id="${id}"]`).prop('checked', !$(this).is(':checked'));
                 }
             });
         });
+        $('.status-dropdown-menu').addClass('hidden');
+    });
+
+    $(document).on('click', function() {
+        $('.status-dropdown-menu').addClass('hidden');
+        $('.dep-dropdown-menu').addClass('hidden');
+        $('.role-dropdown-menu').addClass('hidden');
     });
 });
 </script>
 <?php require_once('script.php'); ?>
 </body>
 </html>
-``` 
