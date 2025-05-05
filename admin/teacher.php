@@ -251,6 +251,7 @@ function reloadTable() {
                 <td class="px-4 py-2 text-center editable" data-field="role_ckteach" data-type="dropdown">${renderRoleDropdown(teacher)}</td>
                 <td class="px-4 py-2 text-center">${renderStatusSwitch(teacher)}</td>
                 <td class="px-4 py-2 text-center flex gap-2 justify-center">
+                    <button class="btn-resetpwd bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded flex items-center gap-1" data-id="${teacher.Teach_id}">🔑 รีเซ็ตรหัสผ่าน</button>
                     <button class="btn-delete bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded flex items-center gap-1" data-id="${teacher.Teach_id}">🗑️ ลบ</button>
                 </td>
             </tr>`;
@@ -616,6 +617,61 @@ $(document).ready(function() {
                             position: 'top-end',
                             icon: 'error',
                             title: 'เกิดข้อผิดพลาดในการลบผู้ใช้',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    $('#teacherTable').on('click', '.btn-resetpwd', function() {
+        const id = $(this).data('id');
+        Swal.fire({
+            title: 'รีเซ็ตรหัสผ่าน?',
+            text: 'คุณต้องการรีเซ็ตรหัสผ่านของผู้ใช้นี้หรือไม่? (รหัสผ่านจะถูกตั้งค่าใหม่เป็นค่าเริ่มต้น)',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f59e42',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'รีเซ็ต',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '../controllers/TeacherController.php?action=resetpwd',
+                    type: 'POST',
+                    data: { Teach_id: id },
+                    success: function(response) {
+                        let res = {};
+                        try { res = typeof response === 'object' ? response : JSON.parse(response); } catch {}
+                        if (res.success) {
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: 'รีเซ็ตรหัสผ่านเรียบร้อยแล้ว',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        } else {
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน',
                             showConfirmButton: false,
                             timer: 1500
                         });

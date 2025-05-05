@@ -48,6 +48,16 @@ try {
                 echo json_encode(['error' => 'Not found or already deleted']);
             }
             break;
+        case 'resetpwd':
+            $id = $_POST['Teach_id'];
+            $result = $teacherModel->resetPassword($id);
+            if ($result) {
+                echo json_encode(['success' => true]);
+            } else {
+                http_response_code(400);
+                echo json_encode(['error' => 'Reset password failed']);
+            }
+            break;
         default:
             http_response_code(400);
             echo json_encode(['error' => 'Invalid action']);

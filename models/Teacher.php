@@ -47,4 +47,17 @@ class Teacher
         // ตรวจสอบว่ามีแถวถูกลบหรือไม่
         return $stmt->rowCount() > 0;
     }
+
+    public function resetPassword($id)
+    {
+        // สมมติว่าตาราง teacher มีฟิลด์ password (hash) และต้องการรีเซ็ตเป็น Teach_id (plain หรือ hash แล้วแต่ระบบ)
+        // ตัวอย่างนี้จะรีเซ็ตเป็น Teach_id (ควรเปลี่ยนเป็น hash จริงใน production)
+        $teacher = $this->getById($id);
+        if (!$teacher) return false;
+        $newPassword = '';
+        // ถ้าใช้ hash: $newPassword = password_hash($teacher['Teach_id'], PASSWORD_DEFAULT);
+        $sql = "UPDATE teacher SET password = :password WHERE Teach_id = :id";
+        $this->db->query($sql, ['password' => $newPassword, 'id' => $id]);
+        return true;
+    }
 }
