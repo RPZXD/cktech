@@ -179,7 +179,7 @@ require_once('header.php');
                                                 $cellContent[] = '<span class="inline-block '.$cell['colorClass'].' rounded px-2 py-1 shadow-sm animate-pulse mb-1 border" style="border-width:1.5px">'
                                                     . '<div class="font-bold">'.htmlspecialchars($display['code']).'</div>'
                                                     . '<div>'.htmlspecialchars($display['name']).'</div>'
-                                                    . ($levelRoom ? '<div class="text-xs text-indigo-600">'.$levelRoom.'</div>' : '')
+                                                    . ($levelRoom ? '<div class="text-xs text-indigo-600">('.$levelRoom.')</div>' : '')
                                                     . '</span>';
                                             }
                                         }
