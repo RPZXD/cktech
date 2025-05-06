@@ -123,9 +123,24 @@ require_once('header.php');
                     <thead>
                         <tr class="bg-gradient-to-r from-blue-200 to-blue-400">
                             <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day w-32">📅 วัน</th>
-                            <?php for ($p = 1; $p <= $maxPeriod; $p++): ?>
+                            <?php
+                                $periodTimes = [
+                                    1 => '08:30–09:25',
+                                    2 => '09:25–10:20',
+                                    3 => '10:20–11:15',
+                                    4 => '11:15–12:10',
+                                    5 => '12:10–13:05',
+                                    6 => '13:05–14:00',
+                                    7 => '14:00–14:55',
+                                    8 => '14:55–15:50'
+                                ];
+                                for ($p = 1; $p <= $maxPeriod; $p++): 
+                            ?>
                                 <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day">
-                                    <span class="inline-block bg-blue-100 rounded-full px-2 py-1 shadow text-base">⏰ คาบ <?= $p ?></span>
+                                    <span class="inline-block bg-blue-100 rounded-full px-2 py-1 shadow text-base">
+                                        ⏰ คาบ <?= $p ?><br>
+                                        <span class="text-xs text-gray-600"><?= $periodTimes[$p] ?? '' ?></span>
+                                    </span>
                                 </th>
                             <?php endfor; ?>
                         </tr>
