@@ -177,7 +177,6 @@ require_once('header.php');
                                                 $cellContent[] = '<span class="inline-block '.$cell['colorClass'].' rounded px-2 py-1 shadow-sm animate-pulse mb-1 border" style="border-width:1.5px">'
                                                     . '📚 ' . $cell['display']
                                                     . $roomHtml
-                                                    . '<br><span class="text-xs text-gray-400">คาบ ' . $p . ' ' . (isset($periodTimes[$p]) ? '(' . $periodTimes[$p] . ')' : '') . '</span>'
                                                     . '</span>';
                                             }
                                         }
