@@ -104,7 +104,7 @@ require_once('header.php');
 
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper bg-gray-50 min-h-screen p-4">
-        <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <div class="max-w-8xl mx-auto bg-white rounded-xl shadow-lg p-6">
             <h1 class="text-3xl font-extrabold text-blue-700 mb-4 flex items-center gap-2">
                 🗓️ ตารางสอนของครู
             </h1>
