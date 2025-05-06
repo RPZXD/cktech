@@ -35,6 +35,7 @@ foreach ($rows as $row) {
 
 // รายชื่อวัน
 $days = ['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์'];
+$maxPeriod = 8; // กำหนดคาบสูงสุดเป็น 8 เสมอ
 
 // หา class_room ทั้งหมด
 $classRooms = [];
@@ -44,11 +45,6 @@ foreach ($rows as $row) {
 $classRooms = array_keys($classRooms);
 sort($classRooms);
 
-// หา period สูงสุด
-$maxPeriod = 1;
-foreach ($rows as $row) {
-    $maxPeriod = max($maxPeriod, $row['period_end']);
-}
 require_once('header.php');
 ?>
 <style>
@@ -77,7 +73,7 @@ require_once('header.php');
 
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper bg-gray-50 min-h-screen p-4">
-        <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6">
             <h1 class="text-3xl font-extrabold text-blue-700 mb-4 flex items-center gap-2">
                 🗓️ ตารางสอนของครู
             </h1>
@@ -92,22 +88,12 @@ require_once('header.php');
                 <table class="min-w-full border border-gray-300 mb-4 rounded-lg overflow-hidden">
                     <thead>
                         <tr class="bg-gradient-to-r from-blue-200 to-blue-400">
-                            <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day">📅 วัน</th>
-                            <?php foreach ($classRooms as $classRoom): ?>
+                            <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day w-32">📅 วัน</th>
+                            <?php for ($p = 1; $p <= $maxPeriod; $p++): ?>
                                 <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day">
-                                    <span class="inline-block bg-yellow-100 rounded-full px-2 py-1 shadow text-base">🏫 <?= htmlspecialchars($classRoom) ?></span>
+                                    <span class="inline-block bg-blue-100 rounded-full px-2 py-1 shadow text-base">⏰ คาบ <?= $p ?></span>
                                 </th>
-                            <?php endforeach; ?>
-                        </tr>
-                        <tr class="bg-blue-50">
-                            <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day"></th>
-                            <?php foreach ($classRooms as $classRoom): ?>
-                                <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day">
-                                    <?php for ($p = 1; $p <= $maxPeriod; $p++): ?>
-                                        <span class="inline-block bg-blue-100 rounded-full px-2 py-1 shadow text-xs mx-1">⏰ คาบ <?= $p ?></span>
-                                    <?php endfor; ?>
-                                </th>
-                            <?php endforeach; ?>
+                            <?php endfor; ?>
                         </tr>
                     </thead>
                     <tbody>
@@ -122,26 +108,29 @@ require_once('header.php');
                                         echo isset($emojis[$day]) ? '<span class="ml-1">'.$emojis[$day].'</span>' : '';
                                     ?>
                                 </td>
-                                <?php foreach ($classRooms as $classRoom): ?>
-                                    <td class="border px-2 py-2 text-center timetable-cell bg-white">
-                                        <div class="flex flex-col gap-1">
-                                            <?php for ($p = 1; $p <= $maxPeriod; $p++): ?>
-                                                <?php
-                                                    $cell = isset($timetable[$day][$p][$classRoom]) ? $timetable[$day][$p][$classRoom] : '';
-                                                ?>
-                                                <div class="mb-1 <?= $cell ? '' : 'empty text-gray-300 bg-gray-50' ?>">
-                                                    <?php if ($cell): ?>
-                                                        <span class="inline-block bg-green-100 text-green-800 rounded px-2 py-1 shadow-sm animate-pulse">
-                                                            📚 <?= htmlspecialchars($cell) ?> <span class="text-xs text-gray-500">(คาบ <?= $p ?>)</span>
-                                                        </span>
-                                                    <?php else: ?>
-                                                        <span>-</span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            <?php endfor; ?>
-                                        </div>
+                                <?php for ($p = 1; $p <= $maxPeriod; $p++): ?>
+                                    <?php
+                                        // รวมทุกห้องในแต่ละคาบ
+                                        $cellContent = [];
+                                        foreach ($classRooms as $classRoom) {
+                                            if (isset($timetable[$day][$p][$classRoom])) {
+                                                $cellContent[] = '<span class="inline-block bg-green-100 text-green-800 rounded px-2 py-1 shadow-sm animate-pulse mb-1">'
+                                                    . '📚 ' . htmlspecialchars($timetable[$day][$p][$classRoom])
+                                                    . ' <span class="text-xs text-gray-500">[' . htmlspecialchars($classRoom) . ']</span>'
+                                                    . '</span>';
+                                            }
+                                        }
+                                    ?>
+                                    <td class="border px-2 py-2 text-center text-sm timetable-cell <?= $cellContent ? '' : 'empty text-gray-300 bg-gray-50' ?>">
+                                        <?php
+                                            if ($cellContent) {
+                                                echo implode('<br>', $cellContent);
+                                            } else {
+                                                echo '<span>-</span>';
+                                            }
+                                        ?>
                                     </td>
-                                <?php endforeach; ?>
+                                <?php endfor; ?>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
