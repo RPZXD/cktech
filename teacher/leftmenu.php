@@ -17,6 +17,8 @@ function createNavItem($href, $iconClass, $text) {
 
     echo createNavItem('subject.php', 'bi-book', 'จัดการรายวิชา');
 
+    echo createNavItem('timetable.php', 'bi-table', 'ตารางสอน');
+
     echo createNavItem('../logout.php', 'bi-box-arrow-right', 'ออกจากระบบ');
 
 ?>
