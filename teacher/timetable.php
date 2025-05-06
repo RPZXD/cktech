@@ -16,7 +16,7 @@ $pdo = $db->getPDO();
 
 // ดึงข้อมูลตารางสอนของครู
 $stmt = $pdo->prepare("
-    SELECT s.name AS subject_name, s.code, s.level, sc.class_room, sc.day_of_week, sc.period_start, sc.period_end
+    SELECT s.name AS subject_name, s.code, s.level, sc.class_room, sc.day_of_week, sc.period_start, sc.period_end, s.subject_type
     FROM subjects s
     JOIN subject_classes sc ON s.id = sc.subject_id
     WHERE s.created_by = ?
@@ -25,18 +25,37 @@ $stmt = $pdo->prepare("
 $stmt->execute([$teacherId]);
 $rows = $stmt->fetchAll();
 
+// กำหนดสีแต่ละกลุ่มวิชา
+$subjectTypeColors = [
+    'พื้นฐาน' => 'bg-green-100 text-green-800 border-green-300',
+    'เพิ่มเติม' => 'bg-blue-100 text-blue-800 border-blue-300',
+    'กิจกรรมพัฒนาผู้เรียน' => 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    'อื่นๆ' => 'bg-gray-100 text-gray-800 border-gray-300'
+];
+
+// ดึงข้อมูล subject_type ของแต่ละวิชา
+$subjectTypeMap = [];
+foreach ($rows as $row) {
+    $subjectTypeMap[$row['code']] = $row['subject_type'] ?? 'อื่นๆ';
+}
+
 // สร้าง array ตารางสอน [day][period][class_room] = subject
 $timetable = [];
 foreach ($rows as $row) {
     for ($p = $row['period_start']; $p <= $row['period_end']; $p++) {
-        // ดึงระดับชั้นของวิชานี้
         $levelText = '';
         if (isset($row['level'])) {
             $levelText = 'ม.' . intval($row['level']);
         }
-        $timetable[$row['day_of_week']][$p][$row['class_room']] =
-            $row['subject_name'] . " (" . $row['code'] . ")"
-            . ($levelText ? " <span class=\"text-xs text-indigo-600\">[$levelText]</span>" : "");
+        $type = $row['subject_type'] ?? 'อื่นๆ';
+        $colorClass = $subjectTypeColors[$type] ?? $subjectTypeColors['อื่นๆ'];
+        $timetable[$row['day_of_week']][$p][$row['class_room']] = [
+            'display' => $row['subject_name'] . " (" . $row['code'] . ")" . ($levelText ? " <span class=\"text-xs text-indigo-600\">[$levelText]</span>" : ""),
+            'type' => $type,
+            'colorClass' => $colorClass,
+            'code' => $row['code'],
+            'subject_name' => $row['subject_name']
+        ];
     }
 }
 
@@ -121,8 +140,9 @@ require_once('header.php');
                                         $cellContent = [];
                                         foreach ($classRooms as $classRoom) {
                                             if (isset($timetable[$day][$p][$classRoom])) {
-                                                $cellContent[] = '<span class="inline-block bg-green-100 text-green-800 rounded px-2 py-1 shadow-sm animate-pulse mb-1">'
-                                                    . '📚 ' . $timetable[$day][$p][$classRoom]
+                                                $cell = $timetable[$day][$p][$classRoom];
+                                                $cellContent[] = '<span class="inline-block '.$cell['colorClass'].' rounded px-2 py-1 shadow-sm animate-pulse mb-1 border" style="border-width:1.5px">'
+                                                    . '📚 ' . $cell['display']
                                                     . ' <span class="text-xs text-gray-500">[' . htmlspecialchars($classRoom) . ']</span>'
                                                     . '</span>';
                                             }
@@ -142,6 +162,33 @@ require_once('header.php');
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
+                <!-- Legend/คำอธิบายสี -->
+                <div class="mt-8">
+                    <div class="font-bold text-lg mb-2 flex items-center gap-2">📝 คำอธิบายสีแต่ละกลุ่มวิชา</div>
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <?php foreach ($subjectTypeColors as $type => $colorClass): ?>
+                            <span class="inline-block px-3 py-1 rounded border <?= $colorClass ?> font-semibold"><?= $type ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="font-bold text-lg mb-2 flex items-center gap-2">📚 รายชื่อวิชาในตาราง</div>
+                    <ul class="list-disc pl-6">
+                        <?php
+                        // แสดงรายชื่อวิชาไม่ซ้ำ พร้อมกลุ่มวิชา
+                        $shown = [];
+                        foreach ($rows as $row) {
+                            $code = $row['code'];
+                            if (!isset($shown[$code])) {
+                                $type = $row['subject_type'] ?? 'อื่นๆ';
+                                $colorClass = $subjectTypeColors[$type] ?? $subjectTypeColors['อื่นๆ'];
+                                echo '<li class="mb-1"><span class="inline-block px-2 py-0.5 rounded border '.$colorClass.'">' .
+                                    htmlspecialchars($row['subject_name']) . ' (' . htmlspecialchars($code) . ')' .
+                                    '</span> <span class="text-xs text-gray-500">[' . $type . ']</span></li>';
+                                $shown[$code] = true;
+                            }
+                        }
+                        ?>
+                    </ul>
                 </div>
             <?php endif; ?>
         </div>
