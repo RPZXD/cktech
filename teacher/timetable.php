@@ -16,7 +16,7 @@ $pdo = $db->getPDO();
 
 // ดึงข้อมูลตารางสอนของครู
 $stmt = $pdo->prepare("
-    SELECT s.name AS subject_name, s.code, sc.class_room, sc.day_of_week, sc.period_start, sc.period_end
+    SELECT s.name AS subject_name, s.code, sc.class_room, sc.day_of_week, sc.period_start, sc.period_end, sc.level
     FROM subjects s
     JOIN subject_classes sc ON s.id = sc.subject_id
     WHERE s.created_by = ?
@@ -29,7 +29,14 @@ $rows = $stmt->fetchAll();
 $timetable = [];
 foreach ($rows as $row) {
     for ($p = $row['period_start']; $p <= $row['period_end']; $p++) {
-        $timetable[$row['day_of_week']][$p][$row['class_room']] = $row['subject_name'] . " (" . $row['code'] . ")";
+        // ดึงระดับชั้นของวิชานี้
+        $levelText = '';
+        if (isset($row['level'])) {
+            $levelText = 'ม.' . intval($row['level']);
+        }
+        $timetable[$row['day_of_week']][$p][$row['class_room']] =
+            $row['subject_name'] . " (" . $row['code'] . ")"
+            . ($levelText ? " <span class=\"text-xs text-indigo-600\">[$levelText]</span>" : "");
     }
 }
 
@@ -73,7 +80,7 @@ require_once('header.php');
 
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper bg-gray-50 min-h-screen p-4">
-        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6">
             <h1 class="text-3xl font-extrabold text-blue-700 mb-4 flex items-center gap-2">
                 🗓️ ตารางสอนของครู
             </h1>
@@ -115,7 +122,7 @@ require_once('header.php');
                                         foreach ($classRooms as $classRoom) {
                                             if (isset($timetable[$day][$p][$classRoom])) {
                                                 $cellContent[] = '<span class="inline-block bg-green-100 text-green-800 rounded px-2 py-1 shadow-sm animate-pulse mb-1">'
-                                                    . '📚 ' . htmlspecialchars($timetable[$day][$p][$classRoom])
+                                                    . '📚 ' . $timetable[$day][$p][$classRoom]
                                                     . ' <span class="text-xs text-gray-500">[' . htmlspecialchars($classRoom) . ']</span>'
                                                     . '</span>';
                                             }
