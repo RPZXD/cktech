@@ -145,6 +145,16 @@ require_once('header.php');
                                 <?php for ($p = 1; $p <= $maxPeriod; $p++): ?>
                                     <?php
                                         $cellContent = [];
+                                        $periodTimes = [
+                                            1 => '08:30–09:25',
+                                            2 => '09:25–10:20',
+                                            3 => '10:20–11:15',
+                                            4 => '11:15–12:10',
+                                            5 => '12:10–13:05',
+                                            6 => '13:05–14:00',
+                                            7 => '14:00–14:55',
+                                            8 => '14:55–15:50'
+                                        ];
                                         foreach ($classRooms as $classRoom) {
                                             if (isset($timetable[$day][$p][$classRoom])) {
                                                 $cell = $timetable[$day][$p][$classRoom];
@@ -152,6 +162,7 @@ require_once('header.php');
                                                 $cellContent[] = '<span class="inline-block '.$cell['colorClass'].' rounded px-2 py-1 shadow-sm animate-pulse mb-1 border" style="border-width:1.5px">'
                                                     . '📚 ' . $cell['display']
                                                     . $roomHtml
+                                                    . '<br><span class="text-xs text-gray-400">คาบ ' . $p . ' ' . (isset($periodTimes[$p]) ? '(' . $periodTimes[$p] . ')' : '') . '</span>'
                                                     . '</span>';
                                             }
                                         }
