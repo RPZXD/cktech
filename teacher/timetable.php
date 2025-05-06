@@ -174,8 +174,7 @@ require_once('header.php');
                                             if (isset($timetable[$day][$p][$classRoom])) {
                                                 $cell = $timetable[$day][$p][$classRoom];
                                                 $roomHtml = ($cell['showRoom'] ?? false) ? ' <span class="text-xs text-gray-500">[' . htmlspecialchars($classRoom) . ']</span>' : '';
-                                                $cellContent[] = '<span class="inline-block '.$cell['colorClass'].' rounded px-2 py-1 shadow-sm animate-pulse mb-1 border" style="border-width:1.5px">'
-                                                    . '<br>'
+                                                $cellContent[] = '<br><span class="inline-block '.$cell['colorClass'].' rounded px-2 py-1 shadow-sm animate-pulse mb-1 border" style="border-width:1.5px">'
                                                     . '📚 ' . $cell['display']
                                                     . $roomHtml
                                                     . '</span>';
