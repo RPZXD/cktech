@@ -176,6 +176,7 @@ require_once('header.php');
                                                 $roomHtml = ($cell['showRoom'] ?? false) ? ' <span class="text-xs text-gray-500">[' . htmlspecialchars($classRoom) . ']</span>' : '';
                                                 $cellContent[] = '<span class="inline-block '.$cell['colorClass'].' rounded px-2 py-1 shadow-sm animate-pulse mb-1 border" style="border-width:1.5px">'
                                                     . '📚 ' . $cell['display']
+                                                    . '<br>'
                                                     . $roomHtml
                                                     . '</span>';
                                             }
