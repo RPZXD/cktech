@@ -77,7 +77,7 @@ require_once('header.php');
 
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper bg-gray-50 min-h-screen p-4">
-        <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
             <h1 class="text-3xl font-extrabold text-blue-700 mb-4 flex items-center gap-2">
                 🗓️ ตารางสอนของครู
             </h1>
@@ -88,54 +88,65 @@ require_once('header.php');
             <?php if (empty($rows)): ?>
                 <div class="text-gray-500 text-center py-10 text-xl">😢 ไม่พบข้อมูลตารางสอน</div>
             <?php else: ?>
-                <?php foreach ($classRooms as $classRoom): ?>
-                    <div class="mb-10">
-                        <div class="overflow-x-auto rounded-lg shadow">
-                        <table class="min-w-full border border-gray-300 mb-4 rounded-lg overflow-hidden">
-                            <thead>
-                                <tr class="bg-gradient-to-r from-blue-200 to-blue-400">
-                                    <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day">📅 วัน</th>
+                <div class="overflow-x-auto rounded-lg shadow">
+                <table class="min-w-full border border-gray-300 mb-4 rounded-lg overflow-hidden">
+                    <thead>
+                        <tr class="bg-gradient-to-r from-blue-200 to-blue-400">
+                            <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day">📅 วัน</th>
+                            <?php foreach ($classRooms as $classRoom): ?>
+                                <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day">
+                                    <span class="inline-block bg-yellow-100 rounded-full px-2 py-1 shadow text-base">🏫 <?= htmlspecialchars($classRoom) ?></span>
+                                </th>
+                            <?php endforeach; ?>
+                        </tr>
+                        <tr class="bg-blue-50">
+                            <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day"></th>
+                            <?php foreach ($classRooms as $classRoom): ?>
+                                <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day">
                                     <?php for ($p = 1; $p <= $maxPeriod; $p++): ?>
-                                        <th class="border px-2 py-2 text-center font-bold text-blue-900 timetable-day">
-                                            <span class="inline-block bg-blue-100 rounded-full px-2 py-1 shadow text-base">⏰ คาบ <?= $p ?></span>
-                                        </th>
+                                        <span class="inline-block bg-blue-100 rounded-full px-2 py-1 shadow text-xs mx-1">⏰ คาบ <?= $p ?></span>
                                     <?php endfor; ?>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($days as $day): ?>
-                                    <tr class="hover:bg-blue-50 transition">
-                                        <td class="border px-2 py-2 text-center font-semibold bg-blue-50 timetable-day">
-                                            <?= $day ?>
-                                            <?php
-                                                // อิโมจิวัน
-                                                $emojis = [
-                                                    'จันทร์'=>'🌞','อังคาร'=>'🔥','พุธ'=>'🌳','พฤหัสบดี'=>'⚡','ศุกร์'=>'💧'
-                                                ];
-                                                echo isset($emojis[$day]) ? '<span class="ml-1">'.$emojis[$day].'</span>' : '';
-                                            ?>
-                                        </td>
-                                        <?php for ($p = 1; $p <= $maxPeriod; $p++): ?>
-                                            <?php
-                                                $cell = isset($timetable[$day][$p][$classRoom]) ? $timetable[$day][$p][$classRoom] : '';
-                                            ?>
-                                            <td class="border px-2 py-2 text-center text-sm timetable-cell <?= $cell ? '' : 'empty text-gray-300 bg-gray-50' ?>">
-                                                <?php if ($cell): ?>
-                                                    <span class="inline-block bg-green-100 text-green-800 rounded px-2 py-1 shadow-sm animate-pulse">
-                                                        📚 <?= htmlspecialchars($cell) ?>
-                                                    </span>
-                                                <?php else: ?>
-                                                    <span>-</span>
-                                                <?php endif; ?>
-                                            </td>
-                                        <?php endfor; ?>
-                                    </tr>
+                                </th>
+                            <?php endforeach; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($days as $day): ?>
+                            <tr class="hover:bg-blue-50 transition">
+                                <td class="border px-2 py-2 text-center font-semibold bg-blue-50 timetable-day">
+                                    <?= $day ?>
+                                    <?php
+                                        $emojis = [
+                                            'จันทร์'=>'🌞','อังคาร'=>'🔥','พุธ'=>'🌳','พฤหัสบดี'=>'⚡','ศุกร์'=>'💧'
+                                        ];
+                                        echo isset($emojis[$day]) ? '<span class="ml-1">'.$emojis[$day].'</span>' : '';
+                                    ?>
+                                </td>
+                                <?php foreach ($classRooms as $classRoom): ?>
+                                    <td class="border px-2 py-2 text-center timetable-cell bg-white">
+                                        <div class="flex flex-col gap-1">
+                                            <?php for ($p = 1; $p <= $maxPeriod; $p++): ?>
+                                                <?php
+                                                    $cell = isset($timetable[$day][$p][$classRoom]) ? $timetable[$day][$p][$classRoom] : '';
+                                                ?>
+                                                <div class="mb-1 <?= $cell ? '' : 'empty text-gray-300 bg-gray-50' ?>">
+                                                    <?php if ($cell): ?>
+                                                        <span class="inline-block bg-green-100 text-green-800 rounded px-2 py-1 shadow-sm animate-pulse">
+                                                            📚 <?= htmlspecialchars($cell) ?> <span class="text-xs text-gray-500">(คาบ <?= $p ?>)</span>
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span>-</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endfor; ?>
+                                        </div>
+                                    </td>
                                 <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                </div>
             <?php endif; ?>
         </div>
     </div>
