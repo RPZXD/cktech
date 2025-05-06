@@ -111,6 +111,9 @@ require_once('header.php');
             <div class="mb-6 text-lg text-gray-700 flex items-center gap-2">
                 <span class="inline-block rounded-full bg-blue-100 px-3 py-1 text-blue-700 font-semibold shadow-sm">👨‍🏫 <?= htmlspecialchars($_SESSION['user']['Teach_name'] ?? '') ?></span>
                 <span class="inline-block rounded-full bg-yellow-100 px-3 py-1 text-yellow-700 font-semibold shadow-sm"> <?= htmlspecialchars($_SESSION['user']['Teach_major'] ?? '') ?></span>
+                <button onclick="printTimetable()" class="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 print:hidden">
+                    🖨️ พิมพ์ตารางสอน
+                </button>
             </div>
             <?php if (empty($rows)): ?>
                 <div class="text-gray-500 text-center py-10 text-xl">😢 ไม่พบข้อมูลตารางสอน</div>
@@ -218,7 +221,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// ฟังก์ชันพิมพ์ตารางสอน
+function printTimetable() {
+    window.print();
+}
 </script>
+<style>
+@media print {
+    .print\:hidden { display: none !important; }
+    body, html {
+        background: #fff !important;
+    }
+    .content-wrapper, .max-w-8xl, .max-w-6xl, .max-w-5xl, .max-w-4xl {
+        box-shadow: none !important;
+        background: #fff !important;
+    }
+    .shadow, .shadow-lg, .rounded, .rounded-xl, .rounded-lg, .overflow-x-auto {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+    .timetable-cell {
+        background: #fff !important;
+        color: #000 !important;
+        font-weight: normal !important;
+        box-shadow: none !important;
+    }
+    .timetable-day {
+        background: #f0f9ff !important;
+    }
+    .timetable-room {
+        background: #fef9c3 !important;
+    }
+}
+</style>
 <?php require_once('script.php'); ?>
 </body>
 </html>
