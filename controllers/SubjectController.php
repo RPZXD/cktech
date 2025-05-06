@@ -3,7 +3,6 @@ session_start();
 
 header('Content-Type: application/json');
 
-
 require_once __DIR__ . '/../classes/DatabaseTeachingReport.php';
 require_once __DIR__ . '/../classes/DatabaseUsers.php';
 require_once __DIR__ . '/../models/Subject.php';
@@ -25,10 +24,8 @@ $action = $_GET['action'] ?? $_POST['action'] ?? 'list';
 switch ($action) {
     case 'list':
         // รับ teacherId จาก GET ถ้ามี
-        $teacher_id = isset($_GET['teacherId']) ? $_GET['teacherId'] : ($_SESSION['user_id'] ?? 0);
-        error_log("DEBUG: SubjectController teacher_id = " . print_r($teacher_id, true));
+        $teacher_id = isset($_GET['teacherId']) ? $_GET['teacherId'] : ($_SESSION['user']['Teach_id'] ?? 0);
         $subjects = $subjectModel->getAllByTeacherWithUsername($teacher_id);
-        error_log("DEBUG: SubjectController subjects = " . print_r($subjects, true));
 
         // ดึงคาบสอนแต่ละวิชา
         foreach ($subjects as &$subject) {
@@ -56,7 +53,8 @@ switch ($action) {
         break;
     case 'create':
         $data = json_decode(file_get_contents('php://input'), true);
-        $teacher_id = $_SESSION['username'] ?? 0; // ใช้ username เป็น teacher_id
+        // ใช้ Teach_id เหมือนกับ list
+        $teacher_id = $_SESSION['user']['Teach_id'] ?? 0;
         // 1. เพิ่ม subject พร้อม class_rooms
         $result = $subjectModel->create([
             'name' => $data['name'],
@@ -65,12 +63,12 @@ switch ($action) {
             'subject_type' => $data['subject_type'],
             'status' => $data['status'],
             'created_by' => $teacher_id,
-            'class_rooms' => $data['class_rooms'] ?? [] // เพิ่มตรงนี้
+            'class_rooms' => $data['class_rooms'] ?? []
         ]);
-        if ($result) {
-            echo json_encode(['success' => true]);
+        if (is_array($result) && !$result['success']) {
+            echo json_encode(['success' => false, 'error' => $result['error'] ?? '']);
         } else {
-            echo json_encode(['success' => false]);
+            echo json_encode(['success' => true]);
         }
         break;
     case 'update':

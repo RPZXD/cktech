@@ -26,12 +26,10 @@ class Subject
 
     public function getAllByTeacherWithUsername($teacher_id)
     {
-
         // ดึงข้อมูลรายวิชาทั้งหมดที่สร้างโดยครูคนนี้
         $stmt = $this->pdo->prepare("SELECT * FROM subjects WHERE created_by = ?");
         $stmt->execute([$teacher_id]);
         $subjects = $stmt->fetchAll();
-
 
         // ดึงชื่อครูจากฐานข้อมูล phichaia_student.teacher สำหรับแต่ละ subject
         $pdoUsers = $this->dbUsers->getPDO();
@@ -53,9 +51,6 @@ class Subject
         try {
             $this->pdo->beginTransaction();
 
-            // Debug: log input data
-            error_log('DEBUG SubjectModel::create input: ' . print_r($data, true));
-
             $stmt = $this->pdo->prepare("INSERT INTO subjects (name, code, level, subject_type, status, created_by) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $data['name'],
@@ -68,14 +63,10 @@ class Subject
 
             $subjectId = $this->pdo->lastInsertId();
 
-            // Debug: log subjectId
-            error_log('DEBUG SubjectModel::create subjectId: ' . $subjectId);
-
             // บันทึก subject_classes แยกแต่ละแถว
             if (!empty($data['class_rooms'])) {
                 $stmtClasses = $this->pdo->prepare("INSERT INTO subject_classes (subject_id, class_room, period_start, period_end, day_of_week) VALUES (?, ?, ?, ?, ?)");
                 foreach ($data['class_rooms'] as $row) {
-                    error_log('DEBUG SubjectModel::create class_row: ' . print_r($row, true));
                     $stmtClasses->execute([
                         $subjectId,
                         $row['class_room'],
@@ -87,13 +78,12 @@ class Subject
             }
 
             $this->pdo->commit();
-            return true;
+            return ['success' => true];
         } catch (\PDOException $e) {
-            error_log('ERROR SubjectModel::create: ' . $e->getMessage());
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
-            return false;
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 

@@ -179,8 +179,10 @@ input:checked + .toggle-slider:before {
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
 <script>
-const teacherId = <?php echo isset($_SESSION['username']) ? json_encode($_SESSION['username']) : 'null'; ?>;
+const teacherId = <?php echo isset($_SESSION['user']['Teach_id']) ? 
+json_encode($_SESSION['user']['Teach_id']) : 'null'; ?>;
 
+// console.log('Teacher ID:', teacherId); // Log the teacher ID
 const days = [
   { key: 'จันทร์', label: 'จันทร์' },
   { key: 'อังคาร', label: 'อังคาร' },
