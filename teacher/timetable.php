@@ -43,18 +43,23 @@ foreach ($rows as $row) {
 $timetable = [];
 foreach ($rows as $row) {
     for ($p = $row['period_start']; $p <= $row['period_end']; $p++) {
-        $levelText = '';
-        if (isset($row['level'])) {
-            $levelText = 'ม.' . intval($row['level']);
-        }
         $type = $row['subject_type'] ?? 'อื่นๆ';
         $colorClass = $subjectTypeColors[$type] ?? $subjectTypeColors['อื่นๆ'];
+        // เงื่อนไข: ถ้า subject_type ว่าง ไม่ต้องแสดง level กับ room
+        if (empty($row['subject_type'])) {
+            $display = $row['subject_name'] . " (" . $row['code'] . ")";
+        } else {
+            $levelText = isset($row['level']) ? 'ม.' . intval($row['level']) : '';
+            $display = $row['subject_name'] . " (" . $row['code'] . ")" .
+                ($levelText ? " <span class=\"text-xs text-indigo-600\">[$levelText]</span>" : "");
+        }
         $timetable[$row['day_of_week']][$p][$row['class_room']] = [
-            'display' => $row['subject_name'] . " (" . $row['code'] . ")" . ($levelText ? " <span class=\"text-xs text-indigo-600\">[$levelText]</span>" : ""),
+            'display' => $display,
             'type' => $type,
             'colorClass' => $colorClass,
             'code' => $row['code'],
-            'subject_name' => $row['subject_name']
+            'subject_name' => $row['subject_name'],
+            'showRoom' => !empty($row['subject_type'])
         ];
     }
 }
@@ -136,14 +141,14 @@ require_once('header.php');
                                 </td>
                                 <?php for ($p = 1; $p <= $maxPeriod; $p++): ?>
                                     <?php
-                                        // รวมทุกห้องในแต่ละคาบ
                                         $cellContent = [];
                                         foreach ($classRooms as $classRoom) {
                                             if (isset($timetable[$day][$p][$classRoom])) {
                                                 $cell = $timetable[$day][$p][$classRoom];
+                                                $roomHtml = ($cell['showRoom'] ?? false) ? ' <span class="text-xs text-gray-500">[' . htmlspecialchars($classRoom) . ']</span>' : '';
                                                 $cellContent[] = '<span class="inline-block '.$cell['colorClass'].' rounded px-2 py-1 shadow-sm animate-pulse mb-1 border" style="border-width:1.5px">'
                                                     . '📚 ' . $cell['display']
-                                                    . ' <span class="text-xs text-gray-500">[' . htmlspecialchars($classRoom) . ']</span>'
+                                                    . $roomHtml
                                                     . '</span>';
                                             }
                                         }
