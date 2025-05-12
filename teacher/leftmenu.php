@@ -19,6 +19,27 @@ function createNavItem($href, $iconClass, $text) {
 
     echo createNavItem('timetable.php', 'bi-table', 'ตารางสอน');
 
+    // เมนู "กำลังพัฒนา" พร้อมเมนูย่อย "วิเคราะห์ผู้เรียน"
+    echo '
+    <li class="nav-item has-treeview">
+        <a href="#" class="nav-link">
+            <i class="bi bi-tools"></i>
+            <p>
+                กำลังพัฒนา
+                <i class="right bi bi-chevron-down"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview ml-3">
+            <li class="nav-item">
+                <a href="student_link.php" class="nav-link">
+                    <i class="bi bi-person-lines-fill"></i>
+                    <p>วิเคราะห์ผู้เรียน</p>
+                </a>
+            </li>
+        </ul>
+    </li>
+    ';
+
     echo createNavItem('../logout.php', 'bi-box-arrow-right', 'ออกจากระบบ');
 
 ?>
