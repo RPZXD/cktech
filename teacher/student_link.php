@@ -19,7 +19,7 @@ $stmt = $pdo->prepare("SELECT id, name, code, level FROM subjects WHERE created_
 $stmt->execute([$teacherId]);
 $subjects = $stmt->fetchAll();
 
-$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]/cktech/student/analyze.php";
+$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]/student/analyze.php";
 
 require_once('header.php');
 ?>
