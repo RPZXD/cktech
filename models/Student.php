@@ -51,7 +51,7 @@ class Student
         $sql = "SELECT Stu_id, Stu_major, Stu_room, CONCAT(Stu_pre,Stu_name, ' ', Stu_sur) AS fullname 
                 FROM student 
                 WHERE (" . implode(' OR ', $where) . ") AND Stu_status = '1'
-                ORDER BY Stu_major, Stu_room, Stu_id, Stu_no ASC";
+                ORDER BY Stu_major, Stu_room, Stu_no ASC";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
