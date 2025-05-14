@@ -67,7 +67,7 @@ class TeachingReport
             foreach ($logs as $log) {
                 $stuId = $log['student_id'];
                 // ดึงชื่อจริงและเลขที่ (Stu_no) จากฐาน student
-                $stmtStu = $pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_id = ? ORder by Stu_no");
+                $stmtStu = $pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_id = ? ORder by Stu_no ASC");
                 $stmtStu->execute([$stuId]);
                 $stu = $stmtStu->fetch();
                 $stu_no = $stu && isset($stu['Stu_no']) ? (int)$stu['Stu_no'] : 0;
