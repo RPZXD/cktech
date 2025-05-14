@@ -272,11 +272,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mb-3 flex gap-2">
                     <div class="w-1/2">
                         <label class="block font-medium mb-1"><span class="emoji-label">📊</span>เกรดเฉลี่ย (ระดับชั้นเดิม) <span class="text-red-500">*</span></label>
-                        <input type="number" name="gpa" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" min="0" max="4" value="<?= htmlspecialchars($_POST['gpa'] ?? '') ?>">
+                        <input type="number" step="0.01" name="gpa" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" min="0" max="4" value="<?= htmlspecialchars($_POST['gpa'] ?? '') ?>">
                     </div>
                     <div class="w-1/2">
                         <label class="block font-medium mb-1"><span class="emoji-label">💻</span>ผลการเรียนวิชาคอมพิวเตอร์ในภาคเรียนที่ผ่านมา <span class="text-red-500">*</span></label>
-                        <input type="number" name="last_com_grade" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" min="0" max="4" value="<?= htmlspecialchars($_POST['last_com_grade'] ?? '') ?>">
+                        <input type="number" step="0.01" name="last_com_grade" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" min="0" max="4" value="<?= htmlspecialchars($_POST['last_com_grade'] ?? '') ?>">
                     </div>
                 </div>
                 <div class="mb-3">
