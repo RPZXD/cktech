@@ -135,17 +135,21 @@ class TeachingReport
             foreach ($rows as $row) {
                 // ตรวจสอบข้อมูลจำเป็น
                 if (
-                    empty($row['report_date']) ||
-                    empty($row['subject_id']) ||
-                    empty($row['class_room']) ||
-                    empty($row['period_start']) ||
-                    empty($row['period_end']) ||
-                    empty($row['teacher_id'])
+                    !isset($row['report_date']) || $row['report_date'] === '' ||
+                    !isset($row['subject_id']) || $row['subject_id'] === '' ||
+                    !isset($row['class_room']) || $row['class_room'] === '' ||
+                    !isset($row['period_start']) || $row['period_start'] === '' ||
+                    !isset($row['period_end']) || $row['period_end'] === '' ||
+                    !isset($row['teacher_id']) || $row['teacher_id'] === ''
                 ) {
                     $invalidRows[] = $row;
                     continue;
                 }
-                // ถ้าไม่ได้อัปโหลดรูป ให้ใส่ NULL แทน string ว่าง
+                // ตรวจสอบว่า period_start/period_end เป็นตัวเลข
+                if (!is_numeric($row['period_start']) || !is_numeric($row['period_end'])) {
+                    $invalidRows[] = $row;
+                    continue;
+                }
                 $img1 = !empty($row['image1']) ? $row['image1'] : null;
                 $img2 = !empty($row['image2']) ? $row['image2'] : null;
 
@@ -158,14 +162,14 @@ class TeachingReport
                     $row['class_room'],
                     $row['period_start'],
                     $row['period_end'],
-                    $row['plan_number'],
-                    $row['plan_topic'],
-                    $row['activity'],
-                    $row['reflection_k'],
-                    $row['reflection_p'],
-                    $row['reflection_a'],
-                    $row['problems'],
-                    $row['suggestions'],
+                    $row['plan_number'] ?? null,
+                    $row['plan_topic'] ?? null,
+                    $row['activity'] ?? null,
+                    $row['reflection_k'] ?? null,
+                    $row['reflection_p'] ?? null,
+                    $row['reflection_a'] ?? null,
+                    $row['problems'] ?? null,
+                    $row['suggestions'] ?? null,
                     $row['teacher_id'],
                     $img1,
                     $img2
@@ -193,13 +197,14 @@ class TeachingReport
                 foreach ($attendanceLogs as $log) {
                     // ตรวจสอบ student_id, status และ whitelist
                     if (
-                        empty($log['student_id']) ||
-                        empty($log['status']) ||
+                        !isset($log['student_id']) || $log['student_id'] === '' ||
+                        !isset($log['status']) || $log['status'] === '' ||
                         !in_array($log['status'], $allowedStatuses, true)
                     ) continue;
+                    // ตรวจสอบว่า student_id เป็นตัวเลข
+                    if (!is_numeric($log['student_id'])) continue;
                     if ($hasClassRoom) {
-                        // กรณี attendanceLogs มี class_room ให้ map ตามห้อง
-                        if (!isset($log['class_room'])) continue;
+                        if (!isset($log['class_room']) || $log['class_room'] === '') continue;
                         $logClassRoom = trim($log['class_room']);
                         if (!isset($classRoomToReportId[$logClassRoom])) continue;
                         $reportId = $classRoomToReportId[$logClassRoom];
@@ -210,7 +215,6 @@ class TeachingReport
                             $log['status']
                         ]);
                     } else {
-                        // กรณี attendanceLogs ไม่มี class_room ให้ map ทุก log ไปยัง report_id แรกเท่านั้น (หรือทุกห้อง)
                         foreach ($classRoomToReportId as $reportId) {
                             $stmt = $this->pdo->prepare("INSERT INTO teaching_attendance_logs (report_id, student_id, status) VALUES (?, ?, ?)");
                             $stmt->execute([
@@ -230,7 +234,7 @@ class TeachingReport
             }
             return [
                 'success' => false,
-                'error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล'
+                'error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage()
             ];
         } catch (\Exception $e) {
             if ($this->pdo->inTransaction()) {
@@ -238,7 +242,7 @@ class TeachingReport
             }
             return [
                 'success' => false,
-                'error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล'
+                'error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage()
             ];
         }
     }
