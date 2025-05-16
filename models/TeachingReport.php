@@ -127,10 +127,11 @@ class TeachingReport
             $this->pdo->beginTransaction();
             $reportIds = [];
             $invalidRows = [];
-            // กำหนด whitelist ของ status ที่อนุญาต (ตาม enum ในฐานข้อมูล)
             $allowedStatuses = [
-                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน'
+                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน', 'มาสาย', 'เข้าร่วมกิจกรรม'
             ];
+            // เก็บ mapping class_room => report_id
+            $classRoomToReportId = [];
             foreach ($rows as $row) {
                 // ตรวจสอบข้อมูลจำเป็น
                 if (
@@ -169,18 +170,26 @@ class TeachingReport
                     $img1,
                     $img2
                 ]);
-                $reportIds[] = $this->pdo->lastInsertId();
+                $reportId = $this->pdo->lastInsertId();
+                $reportIds[] = $reportId;
+                $classRoomToReportId[trim($row['class_room'])] = $reportId;
             }
             if (empty($reportIds)) {
-                // ปิด debug: ไม่แสดงรายละเอียดข้อมูล invalidRows
                 $this->pdo->rollBack();
                 return [
                     'success' => false,
                     'error' => 'ไม่มีข้อมูลแถวที่ถูกต้องสำหรับบันทึก'
                 ];
             }
-            // บันทึก attendance logs (เช็คชื่อ)
-            if (!empty($attendanceLogs) && !empty($reportIds)) {
+            // ตรวจสอบว่ามี class_room ใน attendanceLogs หรือไม่ ถ้าไม่มีให้ map ทุก log ไปยังทุกห้อง (กรณีเก่า)
+            $hasClassRoom = false;
+            foreach ($attendanceLogs as $log) {
+                if (isset($log['class_room'])) {
+                    $hasClassRoom = true;
+                    break;
+                }
+            }
+            if (!empty($attendanceLogs) && !empty($classRoomToReportId)) {
                 foreach ($attendanceLogs as $log) {
                     // ตรวจสอบ student_id, status และ whitelist
                     if (
@@ -188,13 +197,28 @@ class TeachingReport
                         empty($log['status']) ||
                         !in_array($log['status'], $allowedStatuses, true)
                     ) continue;
-                    foreach ($reportIds as $reportId) {
+                    if ($hasClassRoom) {
+                        // กรณี attendanceLogs มี class_room ให้ map ตามห้อง
+                        if (!isset($log['class_room'])) continue;
+                        $logClassRoom = trim($log['class_room']);
+                        if (!isset($classRoomToReportId[$logClassRoom])) continue;
+                        $reportId = $classRoomToReportId[$logClassRoom];
                         $stmt = $this->pdo->prepare("INSERT INTO teaching_attendance_logs (report_id, student_id, status) VALUES (?, ?, ?)");
                         $stmt->execute([
                             $reportId,
                             $log['student_id'],
                             $log['status']
                         ]);
+                    } else {
+                        // กรณี attendanceLogs ไม่มี class_room ให้ map ทุก log ไปยัง report_id แรกเท่านั้น (หรือทุกห้อง)
+                        foreach ($classRoomToReportId as $reportId) {
+                            $stmt = $this->pdo->prepare("INSERT INTO teaching_attendance_logs (report_id, student_id, status) VALUES (?, ?, ?)");
+                            $stmt->execute([
+                                $reportId,
+                                $log['student_id'],
+                                $log['status']
+                            ]);
+                        }
                     }
                 }
             }
@@ -204,7 +228,6 @@ class TeachingReport
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
-            // ปิด debug: ไม่แสดงรายละเอียด exception
             return [
                 'success' => false,
                 'error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล'
@@ -213,7 +236,6 @@ class TeachingReport
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
-            // ปิด debug: ไม่แสดงรายละเอียด exception
             return [
                 'success' => false,
                 'error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูล'

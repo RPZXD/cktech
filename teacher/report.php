@@ -561,12 +561,13 @@ document.addEventListener('DOMContentLoaded', function() {
             html += attendanceStatus.map(st =>
                 `<button type="button"
                 class="attendance-btn px-3 py-1 rounded ${st.color} text-white font-semibold flex items-center gap-1 opacity-80 hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:ring-${st.color.replace('bg-', '')}"
-                data-stu="${student.Stu_id}" data-status="${st.value}" title="${st.label}">
+                data-stu="${student.Stu_id}" data-status="${st.value}" data-room="${room}" title="${st.label}">
                 <span>${st.emoji}</span> <span>${st.label}</span>
                 </button>`
             ).join('');
 
-            html += `<input type="hidden" name="attendance[${student.Stu_id}]" value="present">
+            // เปลี่ยน name ให้มีห้องด้วย
+            html += `<input type="hidden" name="attendance[${room}][${student.Stu_id}]" value="present">
                     </div>
                 </td>
                 </tr>`;
@@ -581,6 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
         area.querySelectorAll('.attendance-btn').forEach(btn => {
             const stuId = btn.getAttribute('data-stu');
             const status = btn.getAttribute('data-status');
+            const room = btn.getAttribute('data-room');
 
             if (status === 'present') {
             btn.classList.add('ring-2', 'ring-green-600', 'opacity-100');
@@ -610,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function() {
             else if (status === 'activity') ringColor = 'ring-purple-600';
 
             btn.classList.add('ring-2', ringColor, 'opacity-100');
-            parent.querySelector(`input[name="attendance[${stuId}]"]`).value = status;
+            parent.querySelector(`input[name="attendance[${room}][${stuId}]"]`).value = status;
             });
         });
         });
@@ -742,9 +744,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // ดึงข้อมูลการเช็คชื่อแบบแยกห้อง
   let attendanceLogs = [];
-  Object.keys(attendance).forEach(stuId => {
-    let status = attendance[stuId];
+  document.querySelectorAll('input[name^="attendance["]').forEach(input => {
+    // name="attendance[room][stuId]"
+    const match = input.name.match(/^attendance\[(.+?)\]\[(.+?)\]$/);
+    if (!match) return;
+    const room = match[1];
+    const stuId = match[2];
+    let status = input.value;
     const map = {
       present: 'มาเรียน',
       late: 'มาสาย',
@@ -753,7 +761,7 @@ document.addEventListener('DOMContentLoaded', function() {
       activity: 'เข้าร่วมกิจกรรม',
       absent: 'ขาดเรียน'
     };
-    attendanceLogs.push({ student_id: stuId, status: map[status] || status });
+    attendanceLogs.push({ student_id: stuId, status: map[status] || status, class_room: room });
   });
 
   const uploadImages = () => {
