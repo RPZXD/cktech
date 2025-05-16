@@ -6,7 +6,7 @@ class User
 {
     // เพิ่ม mapping สำหรับ role ที่อนุญาต
     private static $allowedUserRoles = [
-        'ครู' => ['T', 'ADM', 'VP', 'OF', 'DIR'],
+        'ครู' => ['T', 'ADM', 'VP', 'OF', 'DIR','HOD'],
         'เจ้าหน้าที่' => ['ADM', 'OF'],
         'หัวหน้ากลุ่มสาระ' => ['HOD', 'ADM'],
         'ผู้บริหาร' => ['VP', 'DIR', 'ADM'],
