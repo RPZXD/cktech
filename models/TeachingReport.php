@@ -127,9 +127,9 @@ class TeachingReport
             $this->pdo->beginTransaction();
             $reportIds = [];
             $invalidRows = [];
-            // เพิ่ม 'มาสาย', 'เข้าร่วมกิจกรรม' ใน allowedStatuses ให้ตรงกับ ENUM ในฐานข้อมูล
+            // ปรับ allowedStatuses ให้ตรงกับ ENUM ในฐานข้อมูล
             $allowedStatuses = [
-                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน', 'มาสาย', 'เข้าร่วมกิจกรรม'
+                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน'
             ];
             // เก็บ mapping class_room => report_id
             $classRoomToReportId = [];
@@ -202,9 +202,7 @@ class TeachingReport
                         !isset($log['status']) || $log['status'] === '' ||
                         !in_array($log['status'], $allowedStatuses, true)
                     ) continue;
-                    // ตรวจสอบว่า student_id เป็นตัวเลข
                     if (!is_numeric($log['student_id'])) continue;
-                    // ตัดช่องว่างรอบ status เพื่อป้องกัน Data truncated
                     $log['status'] = trim($log['status']);
                     if ($hasClassRoom) {
                         if (!isset($log['class_room']) || $log['class_room'] === '') continue;
