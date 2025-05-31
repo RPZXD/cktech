@@ -101,6 +101,9 @@ require_once('header.php');
                 <button id="printReportBtn" class="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 print:hidden">
                     🖨️ พิมพ์รายงานผล
                 </button>
+                <button id="excelReportBtn" class="ml-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 print:hidden">
+                    📊 ส่งออก Excel
+                </button>
             </div>
             <div id="reportContent" class="mt-4">
                 <div class="text-gray-400 text-center">กรุณาเลือกวิชาเพื่อดูรายงาน</div>
@@ -121,6 +124,9 @@ require_once('header.php');
                 <button id="printAllBtn" class="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 print:hidden">
                     🖨️ พิมพ์ข้อมูลทั้งหมด
                 </button>
+                <button id="excelAllBtn" class="ml-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 print:hidden">
+                    📊 ส่งออก Excel
+                </button>
             </div>
             <div id="allContent" class="mt-4">
                 <div class="text-gray-400 text-center">กรุณาเลือกวิชาเพื่อดูข้อมูล</div>
@@ -136,6 +142,7 @@ require_once('header.php');
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -205,6 +212,42 @@ document.addEventListener('DOMContentLoaded', function() {
             let totalStudents = res.data.length;
             let totalRooms = Object.keys(roomSet).length;
 
+            // การวิเคราะห์เพิ่มเติม
+            let weightArr = [], heightArr = [];
+            let diseaseCount = {}, activityCount = {}, skillCount = {};
+            let liveWithCount = {};
+            
+            res.data.forEach(row => {
+                // น้ำหนัก ส่วนสูง
+                if (!isNaN(parseFloat(row.weight))) weightArr.push(parseFloat(row.weight));
+                if (!isNaN(parseFloat(row.height))) heightArr.push(parseFloat(row.height));
+                
+                // โรคประจำตัว
+                let disease = (row.disease || '').trim();
+                if (disease && disease !== '-' && disease !== 'ไม่มี') {
+                    diseaseCount[disease] = (diseaseCount[disease] || 0) + 1;
+                }
+                
+                // กิจกรรมที่ชอบ
+                (row.favorite_activity || '').split(',').forEach(act => {
+                    act = act.trim();
+                    if (act) activityCount[act] = (activityCount[act] || 0) + 1;
+                });
+                
+                // ความสามารถพิเศษ
+                (row.special_skill || '').split(',').forEach(skill => {
+                    skill = skill.trim();
+                    if (skill) skillCount[skill] = (skillCount[skill] || 0) + 1;
+                });
+                
+                // อาศัยกับ
+                let liveWith = (row.live_with || '').trim();
+                if (liveWith) liveWithCount[liveWith] = (liveWithCount[liveWith] || 0) + 1;
+            });
+            
+            let weightAvg = weightArr.length ? (weightArr.reduce((a,b)=>a+b,0)/weightArr.length).toFixed(1) : '-';
+            let heightAvg = heightArr.length ? (heightArr.reduce((a,b)=>a+b,0)/heightArr.length).toFixed(1) : '-';
+
             $('#reportContent').html(`
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="flex flex-col h-full">
@@ -212,15 +255,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="flex-1 flex items-center justify-center min-h-[220px]">
                             ${genderCanvas}
                         </div>
+                        <div class="mt-2 text-sm text-gray-600">
+                            <div>ชาย: ${male} คน (${((male/totalStudents)*100).toFixed(1)}%)</div>
+                            <div>หญิง: ${female} คน (${((female/totalStudents)*100).toFixed(1)}%)</div>
+                            ${other > 0 ? `<div>อื่นๆ: ${other} คน (${((other/totalStudents)*100).toFixed(1)}%)</div>` : ''}
+                        </div>
                     </div>
                     <div class="flex flex-col h-full">
                         <div class="font-bold mb-2">วิชาที่นักเรียนชอบ (Top 5)</div>
                         <div class="flex-1 flex items-center justify-center min-h-[220px]">
                             ${likeSubjectsCanvas}
                         </div>
+                        <div class="mt-2 text-sm text-gray-600">
+                            ${likeLabels.map((label, i) => `<div>${i+1}. ${label}: ${likeData[i]} คน</div>`).join('')}
+                        </div>
                     </div>
                 </div>
-                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-blue-50 rounded p-4 text-center">
                         <div class="font-bold text-blue-700">เกรดเฉลี่ย (GPA)</div>
                         <div class="text-3xl font-extrabold text-blue-600">${gpaAvg}</div>
@@ -229,8 +281,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="font-bold text-green-700">ผลการเรียนวิชาคอมพิวเตอร์</div>
                         <div class="text-3xl font-extrabold text-green-600">${comAvg}</div>
                     </div>
-                </div>
-                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="bg-yellow-50 rounded p-4 text-center">
                         <div class="font-bold text-yellow-700">จำนวนนักเรียนทั้งหมด</div>
                         <div class="text-3xl font-extrabold text-yellow-600">${totalStudents}</div>
@@ -238,6 +288,51 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="bg-purple-50 rounded p-4 text-center">
                         <div class="font-bold text-purple-700">จำนวนห้องเรียน</div>
                         <div class="text-3xl font-extrabold text-purple-600">${totalRooms}</div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-orange-50 rounded p-4">
+                        <div class="font-bold text-orange-700 mb-2">ข้อมูลทางกาย</div>
+                        <div class="text-sm">
+                            <div>น้ำหนักเฉลี่ย: <span class="font-semibold">${weightAvg} กก.</span></div>
+                            <div>ส่วนสูงเฉลี่ย: <span class="font-semibold">${heightAvg} ซม.</span></div>
+                        </div>
+                    </div>
+                    <div class="bg-pink-50 rounded p-4">
+                        <div class="font-bold text-pink-700 mb-2">การอยู่อาศัย</div>
+                        <div class="text-sm">
+                            ${Object.entries(liveWithCount).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([key, val]) => 
+                                `<div>${key}: ${val} คน (${((val/totalStudents)*100).toFixed(1)}%)</div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-50 rounded p-4">
+                        <div class="font-bold text-gray-700 mb-2">โรคประจำตัว (Top 5)</div>
+                        <div class="text-sm">
+                            ${Object.entries(diseaseCount).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([key, val]) => 
+                                `<div>• ${key}: ${val} คน</div>`
+                            ).join('') || '<div class="text-gray-500">ไม่มีข้อมูล</div>'}
+                        </div>
+                    </div>
+                    <div class="bg-cyan-50 rounded p-4">
+                        <div class="font-bold text-cyan-700 mb-2">กิจกรรมที่ชอบ (Top 5)</div>
+                        <div class="text-sm">
+                            ${Object.entries(activityCount).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([key, val]) => 
+                                `<div>• ${key}: ${val} คน</div>`
+                            ).join('') || '<div class="text-gray-500">ไม่มีข้อมูล</div>'}
+                        </div>
+                    </div>
+                    <div class="bg-indigo-50 rounded p-4">
+                        <div class="font-bold text-indigo-700 mb-2">ความสามารถพิเศษ (Top 5)</div>
+                        <div class="text-sm">
+                            ${Object.entries(skillCount).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([key, val]) => 
+                                `<div>• ${key}: ${val} คน</div>`
+                            ).join('') || '<div class="text-gray-500">ไม่มีข้อมูล</div>'}
+                        </div>
                     </div>
                 </div>
             `);
@@ -358,6 +453,112 @@ document.addEventListener('DOMContentLoaded', function() {
         const tab = document.getElementById('allContent');
         printSection(tab);
     });
+
+    // Excel export buttons
+    $('#excelReportBtn').on('click', function() {
+        const subjectId = $('#reportSubject').val();
+        if (!subjectId) {
+            alert('กรุณาเลือกวิชาก่อน');
+            return;
+        }
+        exportReportToExcel(subjectId);
+    });
+    
+    $('#excelAllBtn').on('click', function() {
+        const subjectId = $('#allSubject').val();
+        if (!subjectId) {
+            alert('กรุณาเลือกวิชาก่อน');
+            return;
+        }
+        exportAllToExcel(subjectId);
+    });
+
+    function exportReportToExcel(subjectId) {
+        $.getJSON('../controllers/StudentAnalyzeController.php?subject_id=' + subjectId, function(res) {
+            if (!res.success || !res.data.length) {
+                alert('ไม่พบข้อมูลนักเรียน');
+                return;
+            }
+            
+            // สร้างข้อมูลสถิติ
+            let male = 0, female = 0, other = 0;
+            let likeSubjects = {}, gpaArr = [], comArr = [];
+            res.data.forEach(row => {
+                if (row.prefix.startsWith('ด.ช.') || row.prefix.startsWith('นาย')) male++;
+                else if (row.prefix.startsWith('ด.ญ.') || row.prefix.startsWith('นางสาว') || row.prefix.startsWith('น.ส.') || row.prefix.startsWith('นาง')) female++;
+                else other++;
+                
+                (row.like_subjects || '').split(',').forEach(s => {
+                    s = s.trim();
+                    if (s) likeSubjects[s] = (likeSubjects[s]||0)+1;
+                });
+                if (!isNaN(parseFloat(row.gpa))) gpaArr.push(parseFloat(row.gpa));
+                if (!isNaN(parseFloat(row.last_com_grade))) comArr.push(parseFloat(row.last_com_grade));
+            });
+            
+            let gpaAvg = gpaArr.length ? (gpaArr.reduce((a,b)=>a+b,0)/gpaArr.length).toFixed(2) : 0;
+            let comAvg = comArr.length ? (comArr.reduce((a,b)=>a+b,0)/comArr.length).toFixed(2) : 0;
+            
+            // สร้าง worksheet สถิติ
+            const statsData = [
+                ['รายงานสถิตินักเรียน'],
+                [''],
+                ['ข้อมูลทั่วไป'],
+                ['จำนวนนักเรียนทั้งหมด', res.data.length],
+                ['นักเรียนชาย', male],
+                ['นักเรียนหญิง', female],
+                ['เกรดเฉลี่ย (GPA)', gpaAvg],
+                ['เกรดคอมพิวเตอร์เฉลี่ย', comAvg],
+                [''],
+                ['วิชาที่นักเรียนชอบ (Top 5)'],
+                ...Object.entries(likeSubjects).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([subj, count]) => [subj, count])
+            ];
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(statsData);
+            XLSX.utils.book_append_sheet(wb, ws, 'สถิติ');
+            
+            // บันทึกไฟล์
+            const subjectName = $('#reportSubject option:selected').text().split('(')[0].trim();
+            XLSX.writeFile(wb, `รายงานสถิติ_${subjectName}_${new Date().toLocaleDateString('th-TH')}.xlsx`);
+        });
+    }
+    
+    function exportAllToExcel(subjectId) {
+        $.getJSON('../controllers/StudentAnalyzeController.php?subject_id=' + subjectId, function(res) {
+            if (!res.success || !res.data.length) {
+                alert('ไม่พบข้อมูลนักเรียน');
+                return;
+            }
+            
+            // สร้างข้อมูลสำหรับ Excel
+            const headers = [
+                'เลขที่', 'คำนำหน้า', 'ชื่อ', 'นามสกุล', 'ห้อง', 'เบอร์โทร', 'น้ำหนัก', 'ส่วนสูง',
+                'โรคประจำตัว', 'ชื่อผู้ปกครอง', 'อาศัยกับ', 'ที่อยู่', 'เบอร์ผู้ปกครอง', 
+                'กิจกรรมที่ชอบ', 'ความสามารถพิเศษ', 'เกรดเฉลี่ย', 'เกรดคอมพิวเตอร์', 
+                'วิชาที่ชอบ', 'วิชาที่ไม่ชอบ'
+            ];
+            
+            const data = [headers];
+            res.data.forEach(row => {
+                data.push([
+                    row.student_no, row.prefix, row.student_firstname, row.student_lastname,
+                    row.student_level_room, row.student_phone, row.weight, row.height,
+                    row.disease, row.parent_name, row.live_with, row.address, row.parent_phone,
+                    row.favorite_activity, row.special_skill, row.gpa, row.last_com_grade,
+                    row.like_subjects, row.dislike_subjects
+                ]);
+            });
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, 'ข้อมูลนักเรียน');
+            
+            // บันทึกไฟล์
+            const subjectName = $('#allSubject option:selected').text().split('(')[0].trim();
+            XLSX.writeFile(wb, `ข้อมูลนักเรียน_${subjectName}_${new Date().toLocaleDateString('th-TH')}.xlsx`);
+        });
+    }
 
     function printSection(section) {
         const printWindow = window.open('', '', 'width=900,height=700');
