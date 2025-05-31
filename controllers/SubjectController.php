@@ -25,13 +25,24 @@ switch ($action) {
     case 'list':
         // รับ teacherId จาก GET ถ้ามี
         $teacher_id = isset($_GET['teacherId']) ? $_GET['teacherId'] : ($_SESSION['user']['Teach_id'] ?? 0);
-        $subjects = $subjectModel->getAllByTeacherWithUsername($teacher_id);
+
+        // ถ้ามี filter เฉพาะเปิดสอน ให้ใช้ status=เปิดสอน, ถ้าไม่มี filter ให้ดึงทุกสถานะ
+        $onlyOpen = isset($_GET['onlyOpen']) && $_GET['onlyOpen'] == '1';
+
+        if ($onlyOpen) {
+            $stmt = $pdo->prepare("SELECT * FROM subjects WHERE created_by = ? AND status = 'เปิดสอน'");
+            $stmt->execute([$teacher_id]);
+        } else {
+            $stmt = $pdo->prepare("SELECT * FROM subjects WHERE created_by = ?");
+            $stmt->execute([$teacher_id]);
+        }
+        $subjects = $stmt->fetchAll();
 
         // ดึงคาบสอนแต่ละวิชา
         foreach ($subjects as &$subject) {
-            $stmt = $pdo->prepare("SELECT class_room, day_of_week, period_start, period_end FROM subject_classes WHERE subject_id = ?");
-            $stmt->execute([$subject['id']]);
-            $subject['class_periods'] = $stmt->fetchAll();
+            $stmt2 = $pdo->prepare("SELECT class_room, day_of_week, period_start, period_end FROM subject_classes WHERE subject_id = ? ");
+            $stmt2->execute([$subject['id']]);
+            $subject['class_periods'] = $stmt2->fetchAll();
         }
 
         echo json_encode($subjects);

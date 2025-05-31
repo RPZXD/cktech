@@ -371,7 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
   let subjectClassRooms = {}; // {subject_id: [{class_room, period_start, period_end, day_of_week}, ...]}
 
   function loadSubjectsForReport() {
-    fetch('../controllers/SubjectController.php?action=list&teacherId=' + encodeURIComponent(<?php echo json_encode($_SESSION['username']); ?>))
+    // เรียกเฉพาะวิชาที่เปิดสอนสำหรับ dropdown
+    fetch('../controllers/SubjectController.php?action=list&teacherId=' + encodeURIComponent(<?php echo json_encode($_SESSION['user']['Teach_id']); ?>) + '&onlyOpen=1')
       .then(res => res.json())
       .then(data => {
         const select = document.getElementById('subjectSelect');
