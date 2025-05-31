@@ -212,11 +212,14 @@ document.addEventListener('DOMContentLoaded', function() {
             let totalStudents = res.data.length;
             let totalRooms = Object.keys(roomSet).length;
 
+            // ย้ายตรงนี้ขึ้นมา
+            let likeLabels = Object.keys(likeSubjects).sort((a,b)=>likeSubjects[b]-likeSubjects[a]).slice(0,5);
+            let likeData = likeLabels.map(l=>likeSubjects[l]);
+
             // การวิเคราะห์เพิ่มเติม
             let weightArr = [], heightArr = [];
             let diseaseCount = {}, activityCount = {}, skillCount = {};
             let liveWithCount = {};
-            
             res.data.forEach(row => {
                 // น้ำหนัก ส่วนสูง
                 if (!isNaN(parseFloat(row.weight))) weightArr.push(parseFloat(row.weight));
@@ -350,8 +353,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 options: {responsive: true, plugins: {legend: {position: 'bottom'}}}
             });
             // Chart วิชาที่ชอบ
-            let likeLabels = Object.keys(likeSubjects).sort((a,b)=>likeSubjects[b]-likeSubjects[a]).slice(0,5);
-            let likeData = likeLabels.map(l=>likeSubjects[l]);
             new Chart(document.getElementById('likeSubjectsChart'), {
                 type: 'bar',
                 data: {
