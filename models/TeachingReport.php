@@ -295,4 +295,22 @@ class TeachingReport
             return false;
         }
     }
+        // ดึง attendance log ของรายงานนี้ (รองรับ schema ที่ไม่มี class_room)
+    public function getAttendanceLogByReportId($reportId)
+    {
+        // ตรวจสอบว่าคอลัมน์ class_room มีอยู่ใน teaching_attendance_logs หรือไม่
+        $hasClassRoom = false;
+        $stmtCol = $this->pdo->query("SHOW COLUMNS FROM teaching_attendance_logs LIKE 'class_room'");
+        if ($stmtCol && $stmtCol->fetch()) {
+            $hasClassRoom = true;
+        }
+
+        if ($hasClassRoom) {
+            $stmt = $this->pdo->prepare("SELECT student_id, status, class_room, comment FROM teaching_attendance_logs WHERE report_id=?");
+        } else {
+            $stmt = $this->pdo->prepare("SELECT student_id, status, comment FROM teaching_attendance_logs WHERE report_id=?");
+        }
+        $stmt->execute([$reportId]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 }

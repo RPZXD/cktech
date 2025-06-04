@@ -48,6 +48,16 @@ try {
             $report = $reportModel->getById($id);
             echo json_encode($report);
             break;
+        case 'attendance_log':
+            $id = $_GET['id'] ?? 0;
+            if (!$id) {
+                echo json_encode([]);
+                exit;
+            }
+            // ดึงข้อมูล attendance log ของรายงานนี้จาก model
+            $logs = $reportModel->getAttendanceLogByReportId($id);
+            echo json_encode($logs);
+            break;
         case 'upload_images':
             $result = ['image1' => '', 'image2' => ''];
             foreach (['image1', 'image2'] as $imgKey) {

@@ -334,12 +334,92 @@ document.addEventListener('DOMContentLoaded', function() {
                     cb.checked = (cb.value.replace('ห้อง ', '') === report.class_room);
                   });
                   // trigger change เพื่อโหลดคาบ
-                  classRoomSelectArea.dispatchEvent(new Event('change'));
+                  document.querySelectorAll('.report-class-room-checkbox').forEach(cb => {
+                    if (cb.checked) {
+                      cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                  });
                   setTimeout(() => {
                     // คาบ
-                    document.querySelectorAll(`input[name="periods[${report.class_room}][]"]`).forEach(cb => {
-                      if (cb.value.startsWith(report.period_start + '|')) cb.checked = true;
+                    document.querySelectorAll(`input[name^="periods["]`).forEach(cb => {
+                      const [start, end] = cb.value.split('|');
+                      if (start === String(report.period_start) && end === String(report.period_end)) {
+                        cb.checked = true;
+                      }
                     });
+                    // ====== Restore attendance status after student table is rendered ======
+                    // ดึง class (level) จาก option ที่เลือกใน subjectSelect
+                    const selectedOption = subjectSelect.options[subjectSelect.selectedIndex];
+                    const classValue = selectedOption ? (selectedOption.getAttribute('data-class') || '') : '';
+                    const checkedRooms = Array.from(classRoomSelectArea.querySelectorAll('.report-class-room-checkbox:checked')).map(cb => cb.value);
+                    const classRoomArr = checkedRooms.map(room => ({
+                      class: classValue,
+                      room: room.replace('ห้อง ', '')
+                    }));
+                    // เรียก student table ใหม่ (จะ render studentAttendanceArea)
+                    loadStudentsForAttendance(report.subject_id, classRoomArr);
+
+                    // รอ studentAttendanceArea ถูก render แล้วค่อย restore attendance
+                    setTimeout(() => {
+                      fetch('../controllers/TeachingReportController.php?action=attendance_log&id=' + encodeURIComponent(reportId))
+                        .then(res => res.json())
+                        .then(attendanceLogs => {
+                          if (!Array.isArray(attendanceLogs)) return;
+                          const statusMap = {
+                            'มาเรียน': 'present',
+                            'ขาดเรียน': 'absent',
+                            'มาสาย': 'late',
+                            'ลาป่วย': 'sick',
+                            'ลากิจ': 'personal',
+                            'เข้าร่วมกิจกรรม': 'activity'
+                          };
+                          attendanceLogs.forEach(log => {
+                            const stuId = log.student_id;
+                            // รองรับกรณีไม่มี class_room ใน log
+                            let room = log.class_room;
+                            if (!room) {
+                              // หา room จาก input ที่มี student_id นี้
+                              const input = formReport.querySelector(`input[name^="attendance["][name$="[${stuId}]"]`);
+                              if (input) {
+                                const match = input.name.match(/^attendance\[(.+?)\]\[\d+\]$/);
+                                if (match) room = match[1];
+                              }
+                            }
+                            const status = statusMap[log.status] || 'present';
+                            // Set hidden input value
+                            const input = room ? formReport.querySelector(`input[name="attendance[${room}][${stuId}]"]`) : null;
+                            if (input) input.value = status;
+                            // Highlight the correct button
+                            const btn = room ? formReport.querySelector(`.attendance-btn[data-stu="${stuId}"][data-room="${room}"][data-status="${status}"]`) : null;
+                            if (btn) {
+                              // Remove highlight from all buttons for this student/room
+                              const parent = btn.parentNode;
+                              parent.querySelectorAll('.attendance-btn').forEach(b => {
+                                b.classList.remove(
+                                  'ring-2',
+                                  'ring-green-600',
+                                  'ring-red-600',
+                                  'ring-yellow-500',
+                                  'ring-blue-600',
+                                  'ring-indigo-600',
+                                  'ring-purple-600',
+                                  'opacity-100'
+                                );
+                              });
+                              // Add highlight to the correct button
+                              let ringColor = '';
+                              if (status === 'present') ringColor = 'ring-green-600';
+                              else if (status === 'absent') ringColor = 'ring-red-600';
+                              else if (status === 'late') ringColor = 'ring-yellow-500';
+                              else if (status === 'sick') ringColor = 'ring-blue-600';
+                              else if (status === 'personal') ringColor = 'ring-indigo-600';
+                              else if (status === 'activity') ringColor = 'ring-purple-600';
+                              btn.classList.add('ring-2', ringColor, 'opacity-100');
+                            }
+                          });
+                        });
+                    }, 350); // รอ studentAttendanceArea render เสร็จ (ปรับเวลาได้)
+                    // ====== End restore attendance ======
                   }, 200);
                 }, 200);
                 formReport.plan_number.value = report.plan_number || '';
@@ -351,6 +431,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 formReport.problems.value = report.problems || '';
                 formReport.suggestions.value = report.suggestions || '';
                 // หมายเหตุ: ไม่เติมรูปภาพเดิม
+                // เก็บค่าฟอร์มล่าสุด
+                lastFormData = {};
+                Array.from(formReport.elements).forEach(el => {
+                  if (el.name) lastFormData[el.name] = el.value;
+                });
               });
           });
         });
@@ -661,29 +746,46 @@ document.addEventListener('DOMContentLoaded', function() {
   // เพิ่มตัวแปร modal mode
   let editMode = false;
   let editReportId = null;
+  let lastFormData = null; // เก็บค่าฟอร์มล่าสุด
 
   btnAddReport.addEventListener('click', () => {
     editMode = false;
     editReportId = null;
     document.getElementById('modalReportTitle').innerHTML = '➕ เพิ่มรายงานการสอน';
     modalReport.classList.remove('hidden');
-    formReport.reset();
+    // ถ้ามี lastFormData ให้เติมค่ากลับ
+    if (lastFormData) {
+      for (const [key, value] of Object.entries(lastFormData)) {
+        if (formReport.elements[key]) formReport.elements[key].value = value;
+      }
+    }
   });
 
   btnCloseReport.addEventListener('click', () => {
     modalReport.classList.add('hidden');
     formReport.reset();
+    lastFormData = null;
   });
   btnCancelReport.addEventListener('click', () => {
     modalReport.classList.add('hidden');
     formReport.reset();
+    lastFormData = null;
   });
 
-  modalReport.addEventListener('click', (e) => {
-    if (e.target === modalReport) {
-      modalReport.classList.add('hidden');
-      formReport.reset();
-    }
+  // ปิด modal เฉพาะปุ่ม ไม่ปิดเมื่อคลิกพื้นหลัง
+  // modalReport.addEventListener('click', (e) => {
+  //   if (e.target === modalReport) {
+  //     modalReport.classList.add('hidden');
+  //     formReport.reset();
+  //   }
+  // });
+
+  // เก็บค่าฟอร์มล่าสุดทุกครั้งที่เปลี่ยน
+  formReport.addEventListener('input', function() {
+    lastFormData = {};
+    Array.from(formReport.elements).forEach(el => {
+      if (el.name) lastFormData[el.name] = el.value;
+    });
   });
 
   formReport.addEventListener('submit', function(e) {
@@ -836,11 +938,13 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(res => res.json())
     .then(result => {
+      // หลังบันทึกเสร็จ
       Swal.close(); // ✅ ปิด loading
       if (result.success) {
         Swal.fire('สำเร็จ', editMode ? 'แก้ไขรายงานเรียบร้อยแล้ว' : 'บันทึกรายงานเรียบร้อยแล้ว', 'success');
         modalReport.classList.add('hidden');
         formReport.reset();
+        lastFormData = null;
         loadReports();
       } else {
         Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกรายงานได้', 'error');
