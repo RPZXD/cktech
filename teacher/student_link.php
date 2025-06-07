@@ -201,27 +201,54 @@ document.addEventListener('DOMContentLoaded', function() {
             let likeSubjects = {};
             let gpaArr = [], comArr = [];
             let roomSet = {};
+            
+            // เพิ่มตัวแปรสำหรับจัดกลุ่มเกรด
+            let gpaExcellent = 0, gpaAverage = 0, gpaWeak = 0;
+            let comExcellent = 0, comAverage = 0, comWeak = 0;
+            
             res.data.forEach(row => {
                 // เพศจากคำนำหน้า
                 if (row.prefix.startsWith('ด.ช.') || row.prefix.startsWith('นาย')) male++;
                 else if (row.prefix.startsWith('ด.ญ.') || row.prefix.startsWith('นางสาว') || row.prefix.startsWith('น.ส.') || row.prefix.startsWith('นาง')) female++;
                 else other++;
+                
                 // วิชาที่ชอบ
                 (row.like_subjects || '').split(',').forEach(s => {
                     s = s.trim();
                     if (s) likeSubjects[s] = (likeSubjects[s]||0)+1;
                 });
-                // เกรดเฉลี่ย
-                if (!isNaN(parseFloat(row.gpa))) gpaArr.push(parseFloat(row.gpa));
-                // เกรดคอม
-                if (!isNaN(parseFloat(row.last_com_grade))) comArr.push(parseFloat(row.last_com_grade));
+                
+                // เกรดเฉลี่ย และจัดกลุ่ม
+                if (!isNaN(parseFloat(row.gpa))) {
+                    const gpa = parseFloat(row.gpa);
+                    gpaArr.push(gpa);
+                    if (gpa >= 3.0) gpaExcellent++;
+                    else if (gpa >= 2.0) gpaAverage++;
+                    else gpaWeak++;
+                }
+                
+                // เกรดคอม และจัดกลุ่ม
+                if (!isNaN(parseFloat(row.last_com_grade))) {
+                    const com = parseFloat(row.last_com_grade);
+                    comArr.push(com);
+                    if (com >= 3.0) comExcellent++;
+                    else if (com >= 2.0) comAverage++;
+                    else comWeak++;
+                }
+                
                 // ห้องเรียน
                 if (row.student_level_room) roomSet[row.student_level_room] = true;
             });
+            
             // กราฟเพศ
             let genderCanvas = '<canvas id="genderChart" height="60"></canvas>';
             // กราฟวิชาที่ชอบ
             let likeSubjectsCanvas = '<canvas id="likeSubjectsChart" height="120"></canvas>';
+            // กราฟ GPA
+            let gpaCanvas = '<canvas id="gpaChart" height="120"></canvas>';
+            // กราฟเกรดคอม
+            let comCanvas = '<canvas id="comChart" height="120"></canvas>';
+            
             // กราฟเกรดเฉลี่ย
             let gpaAvg = gpaArr.length ? (gpaArr.reduce((a,b)=>a+b,0)/gpaArr.length).toFixed(2) : '-';
             let comAvg = comArr.length ? (comArr.reduce((a,b)=>a+b,0)/comArr.length).toFixed(2) : '-';
@@ -293,6 +320,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
 
+                <!-- แถวใหม่สำหรับกราฟเกรด -->
+                <div class="mt-8 grid grid-cols-2 gap-8">
+                    <!-- Chart 3: การแจกแจงเกรดเฉลี่ย (GPA) -->
+                    <div class="flex flex-col h-full">
+                        <div class="font-bold mb-2">การแจกแจงเกรดเฉลี่ย (GPA)</div>
+                        <div class="flex-1 flex items-center justify-center h-[220px]">
+                            ${gpaCanvas}
+                        </div>
+                        <div class="mt-2 text-sm text-gray-600">
+                            <div class="text-green-600">เก่ง (3.00+): ${gpaExcellent} คน (${gpaArr.length ? ((gpaExcellent/gpaArr.length)*100).toFixed(1) : 0}%)</div>
+                            <div class="text-yellow-600">กลาง (2.00-2.99): ${gpaAverage} คน (${gpaArr.length ? ((gpaAverage/gpaArr.length)*100).toFixed(1) : 0}%)</div>
+                            <div class="text-red-600">อ่อน (0.00-1.99): ${gpaWeak} คน (${gpaArr.length ? ((gpaWeak/gpaArr.length)*100).toFixed(1) : 0}%)</div>
+                        </div>
+                    </div>
+                    <!-- Chart 4: การแจกแจงเกรดวิชา${teacherMajor || ''} -->
+                    <div class="flex flex-col h-full">
+                        <div class="font-bold mb-2">การแจกแจงเกรดวิชา${teacherMajor || ''}</div>
+                        <div class="flex-1 flex items-center justify-center h-[220px]">
+                            ${comCanvas}
+                        </div>
+                        <div class="mt-2 text-sm text-gray-600">
+                            <div class="text-green-600">เก่ง (3.00+): ${comExcellent} คน (${comArr.length ? ((comExcellent/comArr.length)*100).toFixed(1) : 0}%)</div>
+                            <div class="text-yellow-600">กลาง (2.00-2.99): ${comAverage} คน (${comArr.length ? ((comAverage/comArr.length)*100).toFixed(1) : 0}%)</div>
+                            <div class="text-red-600">อ่อน (0.00-1.99): ${comWeak} คน (${comArr.length ? ((comWeak/comArr.length)*100).toFixed(1) : 0}%)</div>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-blue-50 rounded p-4 text-center">
@@ -300,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="text-3xl font-extrabold text-blue-600">${gpaAvg}</div>
                     </div>
                     <div class="bg-green-50 rounded p-4 text-center">
-                        <div class="font-bold text-green-700">ผลการเรียนวิชา${teacherMajor || ''}</div>
+                        <div class="font-bold text-green-700">เกรดเฉลี่ย${teacherMajor || ''}</div>
                         <div class="text-3xl font-extrabold text-green-600">${comAvg}</div>
                     </div>
                     <div class="bg-yellow-50 rounded p-4 text-center">
@@ -372,6 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 options: {responsive: true, plugins: {legend: {position: 'bottom'}}}
             });
+            
             // Chart วิชาที่ชอบ
             new Chart(document.getElementById('likeSubjectsChart'), {
                 type: 'bar',
@@ -384,6 +439,56 @@ document.addEventListener('DOMContentLoaded', function() {
                     }]
                 },
                 options: {responsive: true, plugins: {legend: {display: false}}}
+            });
+            
+            // Chart GPA
+            new Chart(document.getElementById('gpaChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['เก่ง (3.00+)', 'กลาง (2.00-2.99)', 'อ่อน (0.00-1.99)'],
+                    datasets: [{
+                        label: 'จำนวนนักเรียน',
+                        data: [gpaExcellent, gpaAverage, gpaWeak],
+                        backgroundColor: ['#22c55e', '#eab308', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    plugins: {legend: {display: false}},
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Chart เกรดคอม
+            new Chart(document.getElementById('comChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['เก่ง (3.00+)', 'กลาง (2.00-2.99)', 'อ่อน (0.00-1.99)'],
+                    datasets: [{
+                        label: 'จำนวนนักเรียน',
+                        data: [comExcellent, comAverage, comWeak],
+                        backgroundColor: ['#22c55e', '#eab308', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    plugins: {legend: {display: false}},
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
             });
         });
     });
