@@ -160,6 +160,7 @@ require_once('header.php');
 document.addEventListener('DOMContentLoaded', function() {
     // เพิ่มตัวแปร teacher major
     const teacherMajor = <?= json_encode($teacherMajor) ?>;
+    const teacherName = <?= json_encode($_SESSION['user']['Teach_name'] ?? '') ?>;
     
     // Tab switch
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -267,10 +268,11 @@ document.addEventListener('DOMContentLoaded', function() {
             let heightAvg = heightArr.length ? (heightArr.reduce((a,b)=>a+b,0)/heightArr.length).toFixed(1) : '-';
             
             $('#reportContent').html(`
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="grid grid-cols-2 gap-8">
+                    <!-- Chart 1: สัดส่วนเพศ -->
                     <div class="flex flex-col h-full">
                         <div class="font-bold mb-2">สัดส่วนเพศ</div>
-                        <div class="flex-1 flex items-center justify-center min-h-[220px]">
+                        <div class="flex-1 flex items-center justify-center h-[220px]">
                             ${genderCanvas}
                         </div>
                         <div class="mt-2 text-sm text-gray-600">
@@ -279,9 +281,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${other > 0 ? `<div>อื่นๆ: ${other} คน (${((other/totalStudents)*100).toFixed(1)}%)</div>` : ''}
                         </div>
                     </div>
+                    <!-- Chart 2: วิชาที่นักเรียนชอบ (Top 5) -->
                     <div class="flex flex-col h-full">
                         <div class="font-bold mb-2">วิชาที่นักเรียนชอบ (Top 5)</div>
-                        <div class="flex-1 flex items-center justify-center min-h-[220px]">
+                        <div class="flex-1 flex items-center justify-center h-[220px]">
                             ${likeSubjectsCanvas}
                         </div>
                         <div class="mt-2 text-sm text-gray-600">
@@ -289,6 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </div>
+
                 
                 <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-blue-50 rounded p-4 text-center">
@@ -462,12 +466,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Print buttons
     $('#printReportBtn').on('click', function() {
+        const subjectId = $('#reportSubject').val();
+        if (!subjectId) {
+            alert('กรุณาเลือกวิชาก่อน');
+            return;
+        }
+        const subjectOption = $('#reportSubject option:selected');
+        const subjectText = subjectOption.text();
+        const subjectName = subjectText.split('(')[0].trim();
+        const subjectCode = subjectText.match(/\(([^)]+)\)/)?.[1] || '';
+        
+        // หาระดับชั้นจากรายวิชา
+        const subjects = <?= json_encode($subjects) ?>;
+        const selectedSubject = subjects.find(s => s.id == subjectId);
+        const level = selectedSubject ? selectedSubject.level : '';
+        
         const tab = document.getElementById('reportContent');
-        printSection(tab);
+        printReportSection(tab, subjectName, subjectCode, level, 'รายงานสถิติ');
     });
+    
     $('#printAllBtn').on('click', function() {
+        const subjectId = $('#allSubject').val();
+        if (!subjectId) {
+            alert('กรุณาเลือกวิชาก่อน');
+            return;
+        }
+        const subjectOption = $('#allSubject option:selected');
+        const subjectText = subjectOption.text();
+        const subjectName = subjectText.split('(')[0].trim();
+        const subjectCode = subjectText.match(/\(([^)]+)\)/)?.[1] || '';
+        
+        // หาระดับชั้นจากรายวิชา
+        const subjects = <?= json_encode($subjects) ?>;
+        const selectedSubject = subjects.find(s => s.id == subjectId);
+        const level = selectedSubject ? selectedSubject.level : '';
+        
         const tab = document.getElementById('allContent');
-        printSection(tab);
+        printReportSection(tab, subjectName, subjectCode, level, 'ข้อมูลนักเรียนทั้งหมด');
     });
 
     // Excel export buttons
@@ -576,7 +611,289 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function printReportSection(section, subjectName, subjectCode, level, reportType) {
+        // แปลง charts เป็นรูปภาพก่อนพิมพ์
+        const charts = section.querySelectorAll('canvas');
+        const chartImages = [];
+        
+        // แปลง canvas เป็น image
+        charts.forEach((canvas, index) => {
+            if (canvas && canvas.getContext) {
+                const dataURL = canvas.toDataURL('image/png');
+                chartImages.push({
+                    id: canvas.id,
+                    dataURL: dataURL,
+                    width: canvas.offsetWidth,
+                    height: canvas.offsetHeight
+                });
+            }
+        });
+        
+        // Clone section และแทนที่ canvas ด้วย img
+        const clonedSection = section.cloneNode(true);
+        const clonedCharts = clonedSection.querySelectorAll('canvas');
+        
+        clonedCharts.forEach((canvas, index) => {
+            if (chartImages[index]) {
+                const img = document.createElement('img');
+                img.src = chartImages[index].dataURL;
+                img.style.width = '100%';
+                img.style.height = 'auto';
+                img.style.maxWidth = '300px';
+                img.style.maxHeight = '200px';
+                canvas.parentNode.replaceChild(img, canvas);
+            }
+        });
+        
+        const printWindow = window.open('', '', 'width=900,height=700');
+        const headerHTML = `
+            <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
+                    <img src="../assets/images/logo.png" alt="โลโก้โรงเรียน" style="width: 60px; height: 60px;" onerror="this.style.display='none'">
+                    <div>
+                        <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #1e40af;">โรงเรียนพิชัย</h1>
+                        <p style="font-size: 14px; margin: 3px 0; color: #374151;">แบบวิเคราะห์ผู้เรียนรายบุคคล</p>
+                    </div>
+                </div>
+                <div style="text-align: left; max-width: 500px; margin: 0 auto;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+                        <div><strong>วิชา:</strong> ${subjectName}</div>
+                        <div><strong>รหัสวิชา:</strong> ${subjectCode}</div>
+                        <div><strong>ระดับชั้น:</strong> มัธยมศึกษาปีที่ ${level}</div>
+                        <div><strong>ครูผู้สอน:</strong> ${teacherName}</div>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 12px;">
+                        <strong>กลุ่มสาระการเรียนรู้:</strong> ${teacherMajor || 'ไม่ระบุ'}
+                    </div>
+                    <div style="margin-top: 8px; text-align: center;">
+                        <strong style="font-size: 14px; color: #1e40af;">${reportType}</strong>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>พิมพ์รายงาน - ${reportType}</title>
+                <style>
+                    body { 
+                        font-family: 'Sarabun', sans-serif; 
+                        margin: 15px;
+                        line-height: 1.3;
+                        font-size: 12px;
+                    }
+                    @page { 
+                        margin: 1cm; 
+                        size: A4;
+                    }
+                    @media print {
+                        .no-print, button { 
+                            display: none !important; 
+                        }
+                        .page-break {
+                            page-break-before: always;
+                        }
+                        .avoid-break {
+                            page-break-inside: avoid;
+                        }
+                    }
+                    table { 
+                        border-collapse: collapse; 
+                        width: 100%; 
+                        font-size: 10px;
+                    }
+                    th, td { 
+                        border: 1px solid #333; 
+                        padding: 3px 4px; 
+                        text-align: left;
+                    }
+                    th { 
+                        background-color: #f3f4f6; 
+                        font-weight: bold;
+                        text-align: center;
+                    }
+                    .text-center { 
+                        text-align: center; 
+                    }
+                    img {
+                        max-width: 100%;
+                        height: auto;
+                        display: block;
+                        margin: 0 auto;
+                    }
+                    
+                    /* Grid Layout for Charts */
+                    .grid {
+                        display: grid;
+                    }
+                    .grid-cols-1 {
+                        grid-template-columns: 1fr;
+                    }
+                    .grid-cols-2 {
+                        grid-template-columns: 1fr 1fr;
+                    }
+                    .grid-cols-3 {
+                        grid-template-columns: 1fr 1fr 1fr;
+                    }
+                    .grid-cols-4 {
+                        grid-template-columns: 1fr 1fr 1fr 1fr;
+                    }
+                    .gap-4 {
+                        gap: 10px;
+                    }
+                    .gap-6 {
+                        gap: 15px;
+                    }
+                    .gap-8 {
+                        gap: 20px;
+                    }
+                    
+                    /* Chart specific styles */
+                    .chart-container {
+                        page-break-inside: avoid;
+                        margin-bottom: 15px;
+                        text-align: center;
+                    }
+                    .chart-row {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 20px;
+                        margin-bottom: 15px;
+                        page-break-inside: avoid;
+                    }
+                    .chart-item {
+                        text-align: center;
+                    }
+                    .chart-item h3 {
+                        font-size: 14px;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                    }
+                    .chart-item img {
+                        max-width: 100%;
+                        max-height: 180px;
+                        width: auto;
+                        height: auto;
+                    }
+                    .chart-details {
+                        font-size: 11px;
+                        margin-top: 8px;
+                        text-align: left;
+                    }
+                    
+                    /* Stats Grid */
+                    .stats-grid {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 10px;
+                        margin: 15px 0;
+                    }
+                    .stats-card {
+                        border: 1px solid #d1d5db;
+                        border-radius: 6px;
+                        padding: 10px;
+                        text-align: center;
+                    }
+                    .stats-title {
+                        font-size: 11px;
+                        font-weight: bold;
+                        margin-bottom: 5px;
+                    }
+                    .stats-value {
+                        font-size: 18px;
+                        font-weight: bold;
+                    }
+                    
+                    /* Other sections */
+                    .info-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 15px;
+                        margin: 15px 0;
+                    }
+                    .info-card {
+                        border: 1px solid #d1d5db;
+                        border-radius: 6px;
+                        padding: 10px;
+                    }
+                    .info-title {
+                        font-size: 12px;
+                        font-weight: bold;
+                        margin-bottom: 8px;
+                    }
+                    .info-content {
+                        font-size: 11px;
+                    }
+                    
+                    .bottom-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr 1fr;
+                        gap: 10px;
+                        margin: 15px 0;
+                    }
+                    
+                    /* Responsive adjustments */
+                    .rounded { border-radius: 4px; }
+                    .p-4 { padding: 10px; }
+                    .mb-2 { margin-bottom: 8px; }
+                    .mt-8 { margin-top: 15px; }
+                    .text-sm { font-size: 11px; }
+                    .font-bold { font-weight: 700; }
+                    .font-semibold { font-weight: 600; }
+                    
+                    /* Background colors */
+                    .bg-blue-50 { background-color: #eff6ff; }
+                    .bg-green-50 { background-color: #f0fdf4; }
+                    .bg-yellow-50 { background-color: #fefce8; }
+                    .bg-purple-50 { background-color: #faf5ff; }
+                    .bg-orange-50 { background-color: #fff7ed; }
+                    .bg-pink-50 { background-color: #fdf2f8; }
+                    .bg-gray-50 { background-color: #f9fafb; }
+                    .bg-cyan-50 { background-color: #ecfeff; }
+                    .bg-indigo-50 { background-color: #eef2ff; }
+                    
+                    /* Text colors */
+                    .text-blue-700 { color: #1d4ed8; }
+                    .text-green-700 { color: #15803d; }
+                    .text-yellow-700 { color: #a16207; }
+                    .text-purple-700 { color: #7c3aed; }
+                    .text-orange-700 { color: #c2410c; }
+                    .text-pink-700 { color: #be185d; }
+                    .text-gray-700 { color: #374151; }
+                    .text-cyan-700 { color: #0e7490; }
+                    .text-indigo-700 { color: #4338ca; }
+                    .text-blue-600 { color: #2563eb; }
+                    .text-green-600 { color: #16a34a; }
+                    .text-yellow-600 { color: #ca8a04; }
+                    .text-purple-600 { color: #9333ea; }
+                    
+                    .text-3xl { font-size: 18px; line-height: 1.2; }
+                    .font-extrabold { font-weight: 800; }
+                </style>
+            </head>
+            <body>
+                ${headerHTML}
+                <div style="margin-top: 15px;">
+                    ${clonedSection.innerHTML}
+                </div>
+                <div style="margin-top: 20px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ddd; padding-top: 8px;">
+                    <p>รายงานนี้สร้างโดยระบบจัดการข้อมูลนักเรียน โรงเรียนพิชญาธิการ</p>
+                </div>
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        
+        // รอให้โหลดเสร็จแล้วพิมพ์
+        setTimeout(() => {
+            printWindow.print();
+        }, 1000);
+    }
+
     function printSection(section) {
+        // ใช้ฟังก์ชันเดิมสำหรับกรณีที่ไม่ได้กำหนดข้อมูลวิชา
         const printWindow = window.open('', '', 'width=900,height=700');
         printWindow.document.write('<html><head><title>พิมพ์รายงาน</title>');
         printWindow.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">');
@@ -587,6 +904,8 @@ document.addEventListener('DOMContentLoaded', function() {
         printWindow.document.close();
         setTimeout(() => printWindow.print(), 400);
     }
+
+    // ...existing code...
 });
 </script>
 <?php require_once('script.php'); ?>
