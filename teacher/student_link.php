@@ -313,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 
-                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="mt-8 grid grid-cols-2 gap-8">
                     <div class="bg-orange-50 rounded p-4">
                         <div class="font-bold text-orange-700 mb-2">ข้อมูลทางกาย</div>
                         <div class="text-sm">
@@ -330,8 +330,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </div>
-                
-                <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                <div class="mt-8 grid grid-cols-3 gap-6">
                     <div class="bg-gray-50 rounded p-4">
                         <div class="font-bold text-gray-700 mb-2">โรคประจำตัว (Top 5)</div>
                         <div class="text-sm">
@@ -357,6 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </div>
+
             `);
 
             // Chart เพศ
