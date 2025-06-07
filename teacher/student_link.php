@@ -9,10 +9,22 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['rol
 $config = json_decode(file_get_contents('../config.json'), true);
 $global = $config['global'];
 require_once('../classes/DatabaseTeachingReport.php');
+require_once('../classes/DatabaseUsers.php');
 $teacherId = $_SESSION['user']['Teach_id'];
 
 $db = new \App\DatabaseTeachingReport();
+$dbUser = new \App\DatabaseUsers();
 $pdo = $db->getPDO();
+$pdoUser = $dbUser->getPDO();
+
+// ดึงข้อมูลกลุ่มสาระของครู
+$teacherMajor = '';
+$stmtTeacher = $pdoUser->prepare("SELECT Teach_major FROM teacher WHERE Teach_id = ?");
+$stmtTeacher->execute([$teacherId]);
+$teacher = $stmtTeacher->fetch();
+if ($teacher) {
+    $teacherMajor = $teacher['Teach_major'];
+}
 
 // ดึงรายวิชาของครู
 $stmt = $pdo->prepare("SELECT id, name, code, level FROM subjects WHERE created_by = ? ORDER BY code");
@@ -146,6 +158,9 @@ require_once('header.php');
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // เพิ่มตัวแปร teacher major
+    const teacherMajor = <?= json_encode($teacherMajor) ?>;
+    
     // Tab switch
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -250,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let weightAvg = weightArr.length ? (weightArr.reduce((a,b)=>a+b,0)/weightArr.length).toFixed(1) : '-';
             let heightAvg = heightArr.length ? (heightArr.reduce((a,b)=>a+b,0)/heightArr.length).toFixed(1) : '-';
-
+            
             $('#reportContent').html(`
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="flex flex-col h-full">
@@ -281,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="text-3xl font-extrabold text-blue-600">${gpaAvg}</div>
                     </div>
                     <div class="bg-green-50 rounded p-4 text-center">
-                        <div class="font-bold text-green-700">ผลการเรียนวิชาคอมพิวเตอร์</div>
+                        <div class="font-bold text-green-700">ผลการเรียนวิชา${teacherMajor || ''}</div>
                         <div class="text-3xl font-extrabold text-green-600">${comAvg}</div>
                     </div>
                     <div class="bg-yellow-50 rounded p-4 text-center">
@@ -509,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ['นักเรียนชาย', male],
                 ['นักเรียนหญิง', female],
                 ['เกรดเฉลี่ย (GPA)', gpaAvg],
-                ['เกรดคอมพิวเตอร์เฉลี่ย', comAvg],
+                [`เกรด${teacherMajor || 'คอมพิวเตอร์'}เฉลี่ย`, comAvg],
                 [''],
                 ['วิชาที่นักเรียนชอบ (Top 5)'],
                 ...Object.entries(likeSubjects).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([subj, count]) => [subj, count])
@@ -536,7 +551,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const headers = [
                 'เลขที่', 'คำนำหน้า', 'ชื่อ', 'นามสกุล', 'ห้อง', 'เบอร์โทร', 'น้ำหนัก', 'ส่วนสูง',
                 'โรคประจำตัว', 'ชื่อผู้ปกครอง', 'อาศัยกับ', 'ที่อยู่', 'เบอร์ผู้ปกครอง', 
-                'กิจกรรมที่ชอบ', 'ความสามารถพิเศษ', 'เกรดเฉลี่ย', 'เกรดคอมพิวเตอร์', 
+                'กิจกรรมที่ชอบ', 'ความสามารถพิเศษ', 'เกรดเฉลี่ย', `เกรด${teacherMajor || 'คอมพิวเตอร์'}`, 
                 'วิชาที่ชอบ', 'วิชาที่ไม่ชอบ'
             ];
             
