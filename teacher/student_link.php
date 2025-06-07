@@ -984,7 +984,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${clonedSection.innerHTML}
                 </div>
                 <div style="margin-top: 20px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ddd; padding-top: 8px;">
-                    <p>รายงานนี้สร้างโดยระบบจัดการข้อมูลนักเรียน โรงเรียนพิชญาธิการ</p>
+                    <p>รายงานนี้สร้างโดยระบบรายงานการสอน โรงเรียนพิชัย</p>
                 </div>
             </body>
             </html>
