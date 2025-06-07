@@ -5,27 +5,28 @@ $subjectId = isset($_GET['subject_id']) ? intval($_GET['subject_id']) : 0;
 require_once('../classes/DatabaseTeachingReport.php');
 require_once('../classes/DatabaseUsers.php');
 $db = new \App\DatabaseTeachingReport();
-$pdo = $db->getPDO();
 $dbUsers = new \App\DatabaseUsers();
+$pdo = $db->getPDO();
 $pdoUsers = $dbUsers->getPDO();
 
-// ดึงข้อมูลวิชาและกลุ่มสาระจากครูผู้สร้าง
+// ดึงข้อมูลวิชา
 $subject = null;
 $teacherMajor = '';
 if ($subjectId) {
-    $stmt = $pdo->prepare("SELECT name, code, level, create_by FROM subjects WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT name, code, level, created_by FROM subjects WHERE id = ?");
     $stmt->execute([$subjectId]);
     $subject = $stmt->fetch();
     
-    // ดึงกลุ่มสาระจากครูผู้สร้าง
-    if ($subject && $subject['create_by']) {
+    // ดึงข้อมูลกลุ่มสาระของครูผู้สอน
+    if ($subject && $subject['created_by']) {
         $stmtTeacher = $pdoUsers->prepare("SELECT Teach_major FROM teacher WHERE Teach_id = ?");
-        $stmtTeacher->execute([$subject['create_by']]);
+        $stmtTeacher->execute([$subject['created_by']]);
         $teacher = $stmtTeacher->fetch();
-        $teacherMajor = $teacher ? $teacher['Teach_major'] : 'ไม่ระบุ';
+        if ($teacher) {
+            $teacherMajor = $teacher['Teach_major'];
+        }
     }
 }
-
 // POST: รับข้อมูลฟอร์ม
 $success = false;
 $error = '';
@@ -287,7 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="number" step="0.01" name="gpa" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" min="0" max="4" value="<?= htmlspecialchars($_POST['gpa'] ?? '') ?>">
                     </div>
                     <div class="w-1/2">
-                        <label class="block font-medium mb-1"><span class="emoji-label">💻</span>ผลการเรียน<?= htmlspecialchars($teacherMajor) ?>ในภาคเรียนที่ผ่านมา <span class="text-red-500">*</span></label>
+                        <label class="block font-medium mb-1"><span class="emoji-label">💻</span>ผลการเรียนวิชา<?= htmlspecialchars($teacherMajor)?>ในภาคเรียนที่ผ่านมา <span class="text-red-500">*</span></label>
                         <input type="number" step="0.01" name="last_com_grade" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" min="0" max="4" value="<?= htmlspecialchars($_POST['last_com_grade'] ?? '') ?>">
                     </div>
                 </div>
