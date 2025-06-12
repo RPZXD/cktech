@@ -240,7 +240,7 @@ require_once('header.php');
 
     <section class="content animate-slideInRight">
       <div class="container-fluid flex justify-center">
-        <div class="w-full max-w-6xl">
+        <div class="w-full max-w-8xl">
           <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 card-hover">
             <div class="mb-6 flex items-center justify-between">
               <div>
@@ -264,7 +264,8 @@ require_once('header.php');
                     <th class="py-4 px-4 text-center font-semibold">🏫 ชั้น</th>
                     <th class="py-4 px-4 text-center font-semibold">🔢 ครั้งที่</th>
                     <th class="py-4 px-4 text-center font-semibold">📅 ภาคเรียน/ปีการศึกษา</th>
-                    <th class="py-4 px-4 text-center font-semibold">📊 คะแนน</th>
+                    <th class="py-4 px-4 text-center font-semibold">📊 คะแนนครู</th>
+                    <th class="py-4 px-4 text-center font-semibold">📊 คะแนนหัวหน้า</th>
                     <th class="py-4 px-4 text-center font-semibold">🏆 ระดับคุณภาพ</th>
                     <th class="py-4 px-4 text-center font-semibold">🔍 จัดการ</th>
                   </tr>
@@ -1067,72 +1068,22 @@ require_once('header.php');
               </div>
             </div>
 
-            <!-- ตอนที่ 3: ผู้นิเทศบันทึกเพิ่มเติม -->
-            <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border-l-4 border-purple-500 card-hover">
-              <h3 class="text-xl font-bold text-purple-700 mb-4 flex items-center gap-2">
-                📝 ตอนที่ 3 ผู้นิเทศบันทึกเพิ่มเติมการนิเทศการจัดการเรียนรู้
-              </h3>
-              
-              <div class="space-y-6">
-                <div class="space-y-2">
-                  <label class="block font-semibold text-gray-700">1. สิ่งที่พบจากการสังเกตการจัดการเรียนรู้ในชั้นเรียนของผู้รับการนิเทศ</label>
-                  <textarea name="observation_notes" rows="4" 
-                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-all duration-300 bg-white/80"></textarea>
-                </div>
-                
-                <div class="space-y-2">
-                  <label class="block font-semibold text-gray-700">2. การสะท้อนความคิดจากการจัดการเรียนรู้ในชั้นเรียนของผู้รับการนิเทศ</label>
-                  <textarea name="reflection_notes" rows="4" 
-                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-all duration-300 bg-white/80"></textarea>
-                </div>
-                
-                <div class="space-y-2">
-                  <label class="block font-semibold text-gray-700">3. ความประทับใจหรือจุดเด่นในการจัดการเรียนรู้ครั้งนี้</label>
-                  <textarea name="strengths" rows="4" 
-                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-all duration-300 bg-white/80"></textarea>
-                </div>
-                
-                <div class="space-y-2">
-                  <label class="block font-semibold text-gray-700">4. สิ่งที่ควรปรับปรุงหรือพัฒนา</label>
-                  <textarea name="improvements" rows="4" 
-                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-all duration-300 bg-white/80"></textarea>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div class="space-y-2">
-                    <label class="block font-semibold text-gray-700">ผู้รับการนิเทศ</label>
-                    <input type="text" name="supervisee_signature" value="<?=htmlspecialchars($teacher_name)?>" placeholder="ชื่อผู้รับการนิเทศ" 
-                      class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-all duration-300 bg-white/80" />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="block font-semibold text-gray-700">ผู้นิเทศ</label>
-                    <input type="text" name="supervisor_signature" placeholder="ชื่อผู้นิเทศ" 
-                      class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-all duration-300 bg-white/80" />
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <!-- ตอนที่ 4: อัพโหลดเอกสาร -->
+
+            <!-- อัปโหลดเอกสาร -->
             <div class="bg-gradient-to-r from-orange-50 to-red-50 p-6 rounded-2xl border-l-4 border-orange-500 card-hover">
               <h3 class="text-xl font-bold text-orange-700 mb-4 flex items-center gap-2">
-                📁 ตอนที่ 4 อัพโหลดเอกสารที่เกี่ยวข้อง
+                📁 อัปโหลดเอกสารที่เกี่ยวข้อง
               </h3>
               
               <div class="space-y-6">
                 <div class="space-y-3">
-                  <label class="block font-semibold text-gray-700">แผนการจัดการเรียนรู้</label>
-                  <input type="file" name="lesson_plan" accept=".pdf,.doc,.docx" 
+                  <label class="block font-semibold text-gray-700">แผนการจัดการเรียนรู้ + ใบความรู้ / ใบงาน / ใบกิจกรรม <span class="text-red-500">** อัปโหลดเป็นไฟล์ PDF เท่านั้น **</span></label>
+                  <input type="file" name="lesson_plan" accept=".pdf" 
                     class="w-full border-2 border-dashed border-gray-300 rounded-xl px-4 py-6 focus:outline-none focus:border-orange-500 transition-all duration-300 bg-white/80 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
                   <div id="lessonPlanPreview" class="mt-3"></div>
                 </div>
                 
-                <div class="space-y-3">
-                  <label class="block font-semibold text-gray-700">ใบความรู้ / ใบงาน / ใบกิจกรรม</label>
-                  <input type="file" name="worksheets" accept=".pdf,.doc,.docx,.jpg,.png" multiple 
-                    class="w-full border-2 border-dashed border-gray-300 rounded-xl px-4 py-6 focus:outline-none focus:border-orange-500 transition-all duration-300 bg-white/80 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
-                  <div id="worksheetsPreview" class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-                </div>
                 
                 <div class="space-y-3">
                   <label class="block font-semibold text-gray-700">ภาพถ่ายที่เห็นทั้งผู้นิเทศและผู้รับการนิเทศ</label>
@@ -1196,7 +1147,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // File preview handlers
   const fileInputs = {
     'lesson_plan': 'lessonPlanPreview',
-    'worksheets': 'worksheetsPreview', 
     'supervisor_photos': 'supervisorPhotosPreview',
     'classroom_photos': 'classroomPhotosPreview'
   };
@@ -1278,6 +1228,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const qualityBadge = getQualityBadge(supervision.quality_level);
     const formattedDate = formatDate(supervision.supervision_date);
     
+    // Check if department evaluation is complete
+    const isDeptEvaluated = supervision.dept_score && supervision.dept_score > 0;
+    const deptScoreDisplay = isDeptEvaluated ? 
+      `<span class="score-display text-purple-600">${supervision.dept_score}</span>` : 
+      '<span class="text-gray-400 italic">รอประเมิน</span>';
+    
+    // Create action buttons
+    let actionButtons = `
+      <button onclick="viewSupervision(${supervision.id})" class="btn bg-blue-500 text-white px-3 py-2 rounded-lg text-sm shadow-md hover:bg-blue-600 transition-colors">👁️ ดู</button>
+      <button onclick="editSupervision(${supervision.id})" class="btn bg-yellow-500 text-white px-3 py-2 rounded-lg text-sm shadow-md hover:bg-yellow-600 transition-colors">✏️ แก้ไข</button>
+      <button onclick="deleteSupervision(${supervision.id})" class="btn bg-rose-500 text-white px-3 py-2 rounded-lg text-sm shadow-md hover:bg-rose-600 transition-colors">🗑️ ลบ</button>
+    `;
+    
+    // Add print button if department evaluation is complete
+    if (isDeptEvaluated) {
+      actionButtons += `
+        <button onclick="printSupervision(${supervision.id})" class="btn bg-green-500 text-white px-3 py-2 rounded-lg text-sm shadow-md hover:bg-green-600 transition-colors animate-pulse">🖨️ พิมพ์</button>
+      `;
+    }
+    
     row.innerHTML = `
       <td class="py-4 px-4 text-center border-b border-gray-100">${formattedDate}</td>
       <td class="py-4 px-4 text-center border-b border-gray-100 font-medium">${supervision.teacher_name}</td>
@@ -1289,13 +1259,14 @@ document.addEventListener('DOMContentLoaded', function() {
         <span class="score-display">${supervision.total_score}</span>
       </td>
       <td class="py-4 px-4 text-center border-b border-gray-100">
+        ${deptScoreDisplay}
+      </td>
+      <td class="py-4 px-4 text-center border-b border-gray-100">
         ${qualityBadge}
       </td>
       <td class="py-4 px-4 text-center border-b border-gray-100">
-        <div class="flex gap-2 justify-center">
-          <button onclick="viewSupervision(${supervision.id})" class="btn bg-blue-500 text-white px-3 py-2 rounded-lg text-sm shadow-md">👁️ ดู</button>
-          <button onclick="editSupervision(${supervision.id})" class="btn bg-yellow-500 text-white px-3 py-2 rounded-lg text-sm shadow-md">✏️ แก้ไข</button>
-          <button onclick="deleteSupervision(${supervision.id})" class="btn bg-rose-500 text-white px-3 py-2 rounded-lg text-sm shadow-md">🗑️ ลบ</button>
+        <div class="flex gap-1 justify-center flex-wrap">
+          ${actionButtons}
         </div>
       </td>
     `;
@@ -1395,6 +1366,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function showSupervisionDetails(supervision) {
     const qualityColor = getQualityColor(supervision.quality_level);
+    const isDeptEvaluated = supervision.dept_score && supervision.dept_score > 0;
     
     Swal.fire({
       title: '📋 รายละเอียดการนิเทศ',
@@ -1411,30 +1383,58 @@ document.addEventListener('DOMContentLoaded', function() {
             <p><strong>วันที่นิเทศ:</strong> ${formatDate(supervision.supervision_date)}</p>
           </div>
           
-          <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg">
-            <h4 class="font-bold text-green-700 mb-2">ผลการประเมิน</h4>
-            <div class="text-center">
-              <div class="text-3xl font-bold text-blue-600">${supervision.total_score}</div>
-              <div class="text-lg font-semibold" style="color: ${qualityColor}">${supervision.quality_level}</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg">
+              <h4 class="font-bold text-green-700 mb-2">การประเมินของครู</h4>
+              <div class="text-center">
+                <div class="text-3xl font-bold text-blue-600">${supervision.total_score}</div>
+                <div class="text-lg font-semibold" style="color: ${qualityColor}">${supervision.quality_level}</div>
+              </div>
+            </div>
+            
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg">
+              <h4 class="font-bold text-purple-700 mb-2">การประเมินของหัวหน้ากลุ่มสาระ</h4>
+              <div class="text-center">
+                ${isDeptEvaluated ? `
+                  <div class="text-3xl font-bold text-purple-600">${supervision.dept_score}</div>
+                  <div class="text-lg font-semibold text-purple-600">${supervision.dept_quality_level}</div>
+                ` : `
+                  <div class="text-xl text-gray-400 italic">ยังไม่ได้ประเมิน</div>
+                  <div class="text-sm text-gray-500">รอการประเมินจากหัวหน้ากลุ่มสาระ</div>
+                `}
+              </div>
             </div>
           </div>
           
-          ${supervision.strengths ? `
-          <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg">
-            <h4 class="font-bold text-yellow-700 mb-2">จุดเด่น</h4>
-            <p class="text-sm">${supervision.strengths}</p>
-          </div>
-          ` : ''}
-          
-          ${supervision.improvements ? `
-          <div class="bg-gradient-to-r from-red-50 to-pink-50 p-4 rounded-lg">
-            <h4 class="font-bold text-red-700 mb-2">ข้อเสนอแนะ</h4>
-            <p class="text-sm">${supervision.improvements}</p>
+          ${isDeptEvaluated && (supervision.dept_observation_notes || supervision.dept_reflection_notes || supervision.dept_strengths || supervision.dept_improvements) ? `
+          <div class="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg">
+            <h4 class="font-bold text-orange-700 mb-2">บันทึกจากหัวหน้ากลุ่มสาระ</h4>
+            
+            ${supervision.dept_observation_notes ? `
+            <div class="mb-3">
+              <strong class="text-gray-700">การสังเกต:</strong>
+              <p class="text-sm text-gray-600 mt-1">${supervision.dept_observation_notes}</p>
+            </div>
+            ` : ''}
+            
+            ${supervision.dept_strengths ? `
+            <div class="mb-3">
+              <strong class="text-green-700">จุดเด่น:</strong>
+              <p class="text-sm text-gray-600 mt-1">${supervision.dept_strengths}</p>
+            </div>
+            ` : ''}
+            
+            ${supervision.dept_improvements ? `
+            <div class="mb-3">
+              <strong class="text-red-700">ข้อเสนอแนะ:</strong>
+              <p class="text-sm text-gray-600 mt-1">${supervision.dept_improvements}</p>
+            </div>
+            ` : ''}
           </div>
           ` : ''}
         </div>
       `,
-      width: '600px',
+      width: '800px',
       confirmButtonText: '✅ ปิด',
       confirmButtonColor: '#059669'
     });
@@ -1502,18 +1502,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Scores
     document.getElementById('totalScore').value = supervision.total_score || '';
     document.getElementById('qualityLevel').value = supervision.quality_level || '';
-
-    // Notes
-    document.querySelector('textarea[name="observation_notes"]').value = supervision.observation_notes || '';
-    document.querySelector('textarea[name="reflection_notes"]').value = supervision.reflection_notes || '';
-    document.querySelector('textarea[name="strengths"]').value = supervision.strengths || '';
-    document.querySelector('textarea[name="improvements"]').value = supervision.improvements || '';
-    document.querySelector('input[name="supervisee_signature"]').value = supervision.supervisee_signature || '';
-    document.querySelector('input[name="supervisor_signature"]').value = supervision.supervisor_signature || '';
   }
 
   async function loadExistingFiles(supervision) {
-    const fileTypes = ['lesson_plan', 'worksheets', 'supervisor_photos', 'classroom_photos'];
+    const fileTypes = ['lesson_plan', 'supervisor_photos', 'classroom_photos'];
     
     fileTypes.forEach(fileType => {
       const files = supervision[fileType];
@@ -1789,6 +1781,21 @@ document.addEventListener('DOMContentLoaded', function() {
   formSupervision.addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    // Validate required files for new submissions
+    if (!isEditMode) {
+      const lessonPlanInput = document.querySelector('input[name="lesson_plan"]');
+      
+      if (!lessonPlanInput.files || lessonPlanInput.files.length === 0) {
+        Swal.fire({
+          title: 'ข้อมูลไม่ครับถ้วน',
+          text: 'กรุณาอัพโหลดแผนการจัดการเรียนรู้ (PDF)',
+          icon: 'warning',
+          confirmButtonText: 'ตกลง'
+        });
+        return;
+      }
+    }
+    
     // Show loading with animation
     Swal.fire({
       title: '💾 กำลังบันทึกข้อมูล...',
@@ -1840,14 +1847,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Add floating action button effect
-  btnAddSupervision.addEventListener('mouseenter', function() {
-    this.style.transform = 'translateY(-3px) scale(1.05)';
-  });
+  // Global function for printing supervision report
+  window.printSupervision = async function(id) {
+    try {
+      const response = await fetch(`../controllers/SupervisionController.php?action=detail&id=${id}`);
+      const supervision = await response.json();
+      
+      if (!supervision || !supervision.id) {
+        throw new Error('ไม่พบข้อมูลการนิเทศ');
+      }
 
-  btnAddSupervision.addEventListener('mouseleave', function() {
-    this.style.transform = 'translateY(0) scale(1)';
-  });
+      // Check if department evaluation exists
+      if (!supervision.dept_score || supervision.dept_score <= 0) {
+        Swal.fire('ไม่สามารถพิมพ์ได้', 'หัวหน้ากลุ่มสาระยังไม่ได้ประเมิน', 'warning');
+        return;
+      }
+
+      // Redirect to print page
+      window.open(`print_supervision.php?id=${id}`, '_blank');
+    } catch (error) {
+      console.error('Error loading supervision for print:', error);
+      Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลสำหรับพิมพ์ได้', 'error');
+    }
+  };
 });
 </script>
 

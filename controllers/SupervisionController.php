@@ -25,7 +25,15 @@ try {
     switch ($action) {
         case 'list':
             $teacherId = $_GET['teacher_id'] ?? $_SESSION['username'];
-            $supervisions = $supervision->getAll($teacherId);
+            $subjectGroup = $_GET['subject_group'] ?? null;
+            
+            if ($subjectGroup) {
+                // For department users - get supervisions by subject group
+                $supervisions = $supervision->getBySubjectGroup($subjectGroup);
+            } else {
+                // For teachers - get their own supervisions
+                $supervisions = $supervision->getAll($teacherId);
+            }
             echo json_encode($supervisions);
             break;
 
@@ -104,15 +112,8 @@ try {
                 'total_score' => intval($_POST['total_score'] ?? 0),
                 'quality_level' => $_POST['quality_level'] ?? '',
                 
-                'observation_notes' => $_POST['observation_notes'] ?? '',
-                'reflection_notes' => $_POST['reflection_notes'] ?? '',
-                'strengths' => $_POST['strengths'] ?? '',
-                'improvements' => $_POST['improvements'] ?? '',
-                'supervisee_signature' => $_POST['supervisee_signature'] ?? '',
-                'supervisor_signature' => $_POST['supervisor_signature'] ?? '',
-                
+                // Only files that exist in database
                 'lesson_plan' => $uploadedFiles['lesson_plan'] ?? '',
-                'worksheets' => isset($uploadedFiles['worksheets']) ? implode(',', (array)$uploadedFiles['worksheets']) : '',
                 'supervisor_photos' => isset($uploadedFiles['supervisor_photos']) ? implode(',', (array)$uploadedFiles['supervisor_photos']) : '',
                 'classroom_photos' => isset($uploadedFiles['classroom_photos']) ? implode(',', (array)$uploadedFiles['classroom_photos']) : ''
             ];
@@ -124,6 +125,11 @@ try {
             
             if (empty($data['supervision_date'])) {
                 throw new Exception('วันที่รับการนิเทศเป็นข้อมูลที่จำเป็น');
+            }
+
+            // Validate required PDF file
+            if (empty($data['lesson_plan'])) {
+                throw new Exception('กรุณาอัพโหลดแผนการจัดการเรียนรู้ (PDF)');
             }
 
             // Log the data being sent for debugging
@@ -165,6 +171,8 @@ try {
                 'class_level' => $_POST['class_level'] ?? $existing['class_level'],
                 'supervision_round' => $_POST['supervision_round'] ?? $existing['supervision_round'],
                 'supervision_date' => $_POST['supervision_date'] ?? $existing['supervision_date'],
+                'term' => $existing['term'],
+                'pee' => $existing['pee'],
                 
                 // แบบประเมิน - ใช้ค่าจาก POST หรือค่าเดิม
                 'plan_effective' => isset($_POST['plan_effective']) ? intval($_POST['plan_effective']) : ($existing['plan_effective'] ?? 0),
@@ -199,15 +207,8 @@ try {
                 'total_score' => isset($_POST['total_score']) ? intval($_POST['total_score']) : ($existing['total_score'] ?? 0),
                 'quality_level' => $_POST['quality_level'] ?? $existing['quality_level'],
                 
-                'observation_notes' => $_POST['observation_notes'] ?? $existing['observation_notes'],
-                'reflection_notes' => $_POST['reflection_notes'] ?? $existing['reflection_notes'],
-                'strengths' => $_POST['strengths'] ?? $existing['strengths'],
-                'improvements' => $_POST['improvements'] ?? $existing['improvements'],
-                'supervisee_signature' => $_POST['supervisee_signature'] ?? $existing['supervisee_signature'],
-                'supervisor_signature' => $_POST['supervisor_signature'] ?? $existing['supervisor_signature'],
-                
+                // Updated file handling - only existing fields
                 'lesson_plan' => $uploadedFiles['lesson_plan'] ?? $existing['lesson_plan'],
-                'worksheets' => isset($uploadedFiles['worksheets']) ? implode(',', (array)$uploadedFiles['worksheets']) : $existing['worksheets'],
                 'supervisor_photos' => isset($uploadedFiles['supervisor_photos']) ? implode(',', (array)$uploadedFiles['supervisor_photos']) : $existing['supervisor_photos'],
                 'classroom_photos' => isset($uploadedFiles['classroom_photos']) ? implode(',', (array)$uploadedFiles['classroom_photos']) : $existing['classroom_photos']
             ];
@@ -286,6 +287,68 @@ try {
             
             $fileInfo = $supervision->getFileInfo($supervisionId);
             echo json_encode($fileInfo);
+            break;
+
+        case 'department_evaluate':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Method not allowed');
+            }
+
+            $id = $_POST['id'] ?? '';
+            if (!$id) {
+                throw new Exception('ID is required');
+            }
+
+            $data = [
+                // Planning evaluation (5 items)
+                'dept_plan_effective' => intval($_POST['dept_plan_effective'] ?? 0),
+                'dept_plan_correct' => intval($_POST['dept_plan_correct'] ?? 0),
+                'dept_plan_activities' => intval($_POST['dept_plan_activities'] ?? 0),
+                'dept_plan_media' => intval($_POST['dept_plan_media'] ?? 0),
+                'dept_plan_assessment' => intval($_POST['dept_plan_assessment'] ?? 0),
+                
+                // Teaching evaluation (9 items)
+                'dept_teach_techniques' => intval($_POST['dept_teach_techniques'] ?? 0),
+                'dept_teach_media' => intval($_POST['dept_teach_media'] ?? 0),
+                'dept_teach_assessment' => intval($_POST['dept_teach_assessment'] ?? 0),
+                'dept_teach_explanation' => intval($_POST['dept_teach_explanation'] ?? 0),
+                'dept_teach_control' => intval($_POST['dept_teach_control'] ?? 0),
+                'dept_teach_thinking' => intval($_POST['dept_teach_thinking'] ?? 0),
+                'dept_teach_adaptation' => intval($_POST['dept_teach_adaptation'] ?? 0),
+                'dept_teach_integration' => intval($_POST['dept_teach_integration'] ?? 0),
+                'dept_teach_language' => intval($_POST['dept_teach_language'] ?? 0),
+                
+                // Evaluation assessment (5 items)
+                'dept_eval_variety' => intval($_POST['dept_eval_variety'] ?? 0),
+                'dept_eval_standards' => intval($_POST['dept_eval_standards'] ?? 0),
+                'dept_eval_criteria' => intval($_POST['dept_eval_criteria'] ?? 0),
+                'dept_eval_feedback' => intval($_POST['dept_eval_feedback'] ?? 0),
+                'dept_eval_evidence' => intval($_POST['dept_eval_evidence'] ?? 0),
+                
+                // Environment assessment (6 items)
+                'dept_env_classroom' => intval($_POST['dept_env_classroom'] ?? 0),
+                'dept_env_interaction' => intval($_POST['dept_env_interaction'] ?? 0),
+                'dept_env_safety' => intval($_POST['dept_env_safety'] ?? 0),
+                'dept_env_management' => intval($_POST['dept_env_management'] ?? 0),
+                'dept_env_rules' => intval($_POST['dept_env_rules'] ?? 0),
+                'dept_env_behavior' => intval($_POST['dept_env_behavior'] ?? 0),
+                
+                // Score and quality
+                'dept_score' => intval($_POST['dept_score'] ?? 0),
+                'dept_quality_level' => $_POST['dept_quality_level'] ?? '',
+                'dept_observation_notes' => $_POST['dept_observation_notes'] ?? '',
+                'dept_reflection_notes' => $_POST['dept_reflection_notes'] ?? '',
+                'dept_strengths' => $_POST['dept_strengths'] ?? '',
+                'dept_improvements' => $_POST['dept_improvements'] ?? '',
+                'dept_supervisor_signature' => $_POST['dept_supervisor_signature'] ?? ''
+            ];
+
+            $success = $supervision->updateDepartmentEvaluation($id, $data);
+            if ($success) {
+                echo json_encode(['success' => true, 'message' => 'บันทึกการประเมินของหัวหน้ากลุ่มสาระสำเร็จ']);
+            } else {
+                throw new Exception('Failed to update department evaluation');
+            }
             break;
 
         default:

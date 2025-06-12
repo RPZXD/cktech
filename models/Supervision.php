@@ -27,8 +27,7 @@ class Supervision {
                 teach_thinking, teach_adaptation, teach_integration, teach_language,
                 eval_variety, eval_standards, eval_criteria, eval_feedback, eval_evidence,
                 env_classroom, env_interaction, env_safety, env_management, env_rules, env_behavior,
-                total_score, quality_level, observation_notes, reflection_notes, strengths, improvements,
-                supervisee_signature, supervisor_signature, lesson_plan, worksheets, supervisor_photos, classroom_photos
+                total_score, quality_level, lesson_plan, supervisor_photos, classroom_photos
             ) VALUES (
                 :teacher_id, :teacher_name, :position, :academic_level, :subject_group,
                 :subject_name, :subject_code, :class_level, :supervision_round, :supervision_date,
@@ -38,8 +37,7 @@ class Supervision {
                 :teach_thinking, :teach_adaptation, :teach_integration, :teach_language,
                 :eval_variety, :eval_standards, :eval_criteria, :eval_feedback, :eval_evidence,
                 :env_classroom, :env_interaction, :env_safety, :env_management, :env_rules, :env_behavior,
-                :total_score, :quality_level, :observation_notes, :reflection_notes, :strengths, :improvements,
-                :supervisee_signature, :supervisor_signature, :lesson_plan, :worksheets, :supervisor_photos, :classroom_photos
+                :total_score, :quality_level, :lesson_plan, :supervisor_photos, :classroom_photos
             )";
 
             $stmt = $this->pdo->prepare($sql);
@@ -76,8 +74,28 @@ class Supervision {
             
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
+            $supervisions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Enrich with teacher data if needed
+            if (!$teacherId) {
+                require_once __DIR__ . '/../classes/DatabaseUsers.php';
+                $dbUsers = new \App\DatabaseUsers();
+                $usersPdo = $dbUsers->getPDO();
+                
+                foreach ($supervisions as &$supervision) {
+                    $teacherSql = "SELECT Teach_name, Teach_major FROM teacher WHERE Teach_id = ?";
+                    $teacherStmt = $usersPdo->prepare($teacherSql);
+                    $teacherStmt->execute([$supervision['teacher_id']]);
+                    $teacherData = $teacherStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($teacherData) {
+                        $supervision['teacher_full_name'] = $teacherData['Teach_name'];
+                        $supervision['teacher_subject_group'] = $teacherData['Teach_major'];
+                    }
+                }
+            }
+            
+            return $supervisions;
         } catch (Exception $e) {
             error_log("Error fetching supervisions: " . $e->getMessage());
             return [];
@@ -114,11 +132,7 @@ class Supervision {
                 env_classroom = :env_classroom, env_interaction = :env_interaction, env_safety = :env_safety,
                 env_management = :env_management, env_rules = :env_rules, env_behavior = :env_behavior,
                 total_score = :total_score, quality_level = :quality_level,
-                observation_notes = :observation_notes, reflection_notes = :reflection_notes,
-                strengths = :strengths, improvements = :improvements,
-                supervisee_signature = :supervisee_signature, supervisor_signature = :supervisor_signature,
-                lesson_plan = :lesson_plan, worksheets = :worksheets,
-                supervisor_photos = :supervisor_photos, classroom_photos = :classroom_photos,
+                lesson_plan = :lesson_plan, supervisor_photos = :supervisor_photos, classroom_photos = :classroom_photos,
                 updated_at = CURRENT_TIMESTAMP
                 WHERE id = :id";
 
@@ -166,10 +180,15 @@ class Supervision {
 
         foreach ($files as $fieldName => $fileData) {
             if (is_array($fileData['name'])) {
-                // Multiple files
+                // Multiple files (for photos)
                 $uploadedFiles[$fieldName] = [];
                 for ($i = 0; $i < count($fileData['name']); $i++) {
                     if ($fileData['error'][$i] === UPLOAD_ERR_OK) {
+                        // Validate file type for lesson_plan
+                        if ($fieldName === 'lesson_plan' && $fileData['type'][$i] !== 'application/pdf') {
+                            throw new Exception('แผนการจัดการเรียนรู้ต้องเป็นไฟล์ PDF เท่านั้น');
+                        }
+                        
                         $filename = $this->generateUniqueFilename($fileData['name'][$i]);
                         $targetPath = $uploadDir . $filename;
                         
@@ -182,6 +201,11 @@ class Supervision {
             } else {
                 // Single file
                 if ($fileData['error'] === UPLOAD_ERR_OK) {
+                    // Validate file type for lesson_plan
+                    if ($fieldName === 'lesson_plan' && $fileData['type'] !== 'application/pdf') {
+                        throw new Exception('แผนการจัดการเรียนรู้ต้องเป็นไฟล์ PDF เท่านั้น');
+                    }
+                    
                     $filename = $this->generateUniqueFilename($fileData['name']);
                     $targetPath = $uploadDir . $filename;
                     
@@ -207,7 +231,8 @@ class Supervision {
     private function deleteFiles($supervision) {
         $uploadDir = '../uploads/supervision/';
         
-        $fileFields = ['lesson_plan', 'worksheets', 'supervisor_photos', 'classroom_photos'];
+        // Updated file fields - only existing fields in database
+        $fileFields = ['lesson_plan', 'supervisor_photos', 'classroom_photos'];
         
         foreach ($fileFields as $field) {
             if (!empty($supervision[$field])) {
@@ -287,7 +312,6 @@ class Supervision {
 
             return [
                 'lesson_plan' => $supervision['lesson_plan'],
-                'worksheets' => $supervision['worksheets'],
                 'supervisor_photos' => $supervision['supervisor_photos'],
                 'classroom_photos' => $supervision['classroom_photos']
             ];
@@ -342,16 +366,18 @@ class Supervision {
                 subject_code VARCHAR(50),
                 class_level VARCHAR(50),
                 supervision_round INT DEFAULT 1,
+                term VARCHAR(10),
+                pee VARCHAR(10),
                 supervision_date DATE NOT NULL,
                 
-                -- แบบประเมินด้านที่ 1: การจัดทำแผน
+                -- แบบประเมินด้านที่ 1: การจัดทำแผน (Teacher)
                 plan_effective TINYINT DEFAULT 0,
                 plan_correct TINYINT DEFAULT 0,
                 plan_activities TINYINT DEFAULT 0,
                 plan_media TINYINT DEFAULT 0,
                 plan_assessment TINYINT DEFAULT 0,
                 
-                -- แบบประเมินด้านที่ 2: การจัดการเรียนรู้
+                -- แบบประเมินด้านที่ 2: การจัดการเรียนรู้ (Teacher)
                 teach_techniques TINYINT DEFAULT 0,
                 teach_media TINYINT DEFAULT 0,
                 teach_assessment TINYINT DEFAULT 0,
@@ -362,14 +388,14 @@ class Supervision {
                 teach_integration TINYINT DEFAULT 0,
                 teach_language TINYINT DEFAULT 0,
                 
-                -- แบบประเมินด้านที่ 3: การประเมินผล
+                -- แบบประเมินด้านที่ 3: การประเมินผล (Teacher)
                 eval_variety TINYINT DEFAULT 0,
                 eval_standards TINYINT DEFAULT 0,
                 eval_criteria TINYINT DEFAULT 0,
                 eval_feedback TINYINT DEFAULT 0,
                 eval_evidence TINYINT DEFAULT 0,
                 
-                -- แบบประเมินด้านที่ 4: สภาพแวดล้อม
+                -- แบบประเมินด้านที่ 4: สภาพแวดล้อม (Teacher)
                 env_classroom TINYINT DEFAULT 0,
                 env_interaction TINYINT DEFAULT 0,
                 env_safety TINYINT DEFAULT 0,
@@ -380,15 +406,51 @@ class Supervision {
                 total_score INT DEFAULT 0,
                 quality_level VARCHAR(50),
                 
-                observation_notes TEXT,
-                reflection_notes TEXT,
-                strengths TEXT,
-                improvements TEXT,
-                supervisee_signature VARCHAR(255),
-                supervisor_signature VARCHAR(255),
+                -- Department Head Evaluation Fields
+                -- ด้านที่ 1: การจัดทำแผน (Department Head)
+                dept_plan_effective TINYINT DEFAULT 0,
+                dept_plan_correct TINYINT DEFAULT 0,
+                dept_plan_activities TINYINT DEFAULT 0,
+                dept_plan_media TINYINT DEFAULT 0,
+                dept_plan_assessment TINYINT DEFAULT 0,
                 
+                -- ด้านที่ 2: การจัดการเรียนรู้ (Department Head)
+                dept_teach_techniques TINYINT DEFAULT 0,
+                dept_teach_media TINYINT DEFAULT 0,
+                dept_teach_assessment TINYINT DEFAULT 0,
+                dept_teach_explanation TINYINT DEFAULT 0,
+                dept_teach_control TINYINT DEFAULT 0,
+                dept_teach_thinking TINYINT DEFAULT 0,
+                dept_teach_adaptation TINYINT DEFAULT 0,
+                dept_teach_integration TINYINT DEFAULT 0,
+                dept_teach_language TINYINT DEFAULT 0,
+                
+                -- ด้านที่ 3: การประเมินผล (Department Head)
+                dept_eval_variety TINYINT DEFAULT 0,
+                dept_eval_standards TINYINT DEFAULT 0,
+                dept_eval_criteria TINYINT DEFAULT 0,
+                dept_eval_feedback TINYINT DEFAULT 0,
+                dept_eval_evidence TINYINT DEFAULT 0,
+                
+                -- ด้านที่ 4: สภาพแวดล้อม (Department Head)
+                dept_env_classroom TINYINT DEFAULT 0,
+                dept_env_interaction TINYINT DEFAULT 0,
+                dept_env_safety TINYINT DEFAULT 0,
+                dept_env_management TINYINT DEFAULT 0,
+                dept_env_rules TINYINT DEFAULT 0,
+                dept_env_behavior TINYINT DEFAULT 0,
+                
+                -- Department evaluation summary
+                dept_score INT DEFAULT 0,
+                dept_quality_level VARCHAR(50),
+                dept_observation_notes TEXT,
+                dept_reflection_notes TEXT,
+                dept_strengths TEXT,
+                dept_improvements TEXT,
+                dept_supervisor_signature VARCHAR(255),
+                
+                -- File attachments
                 lesson_plan VARCHAR(500),
-                worksheets VARCHAR(500),
                 supervisor_photos VARCHAR(500),
                 classroom_photos VARCHAR(500),
                 
@@ -397,7 +459,10 @@ class Supervision {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 
                 INDEX idx_teacher_id (teacher_id),
-                INDEX idx_supervision_date (supervision_date)
+                INDEX idx_supervision_date (supervision_date),
+                INDEX idx_subject_group (subject_group),
+                INDEX idx_dept_score (dept_score),
+                INDEX idx_total_score (total_score)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
 
             $this->pdo->exec($sql);
@@ -410,20 +475,78 @@ class Supervision {
 
     private function updateTableStructure() {
         try {
-            // Check if teacher_id column exists, if not add it
-            $checkSql = "SHOW COLUMNS FROM supervisions LIKE 'teacher_id'";
-            $stmt = $this->pdo->query($checkSql);
-            
-            if ($stmt->rowCount() == 0) {
-                $alterSql = "ALTER TABLE supervisions ADD COLUMN teacher_id VARCHAR(50) AFTER classroom_photos";
-                $this->pdo->exec($alterSql);
-                error_log("Added teacher_id column to supervisions table");
+            // Check if all department evaluation columns exist, if not add them
+            $deptColumns = [
+                // Planning evaluation (Department Head)
+                'dept_plan_effective' => 'TINYINT DEFAULT 0 COMMENT "การวางแผนการสอนที่มีประสิทธิภาพ (หัวหน้า)"',
+                'dept_plan_correct' => 'TINYINT DEFAULT 0 COMMENT "แผนการจัดการเรียนรู้ถูกต้อง (หัวหน้า)"',
+                'dept_plan_activities' => 'TINYINT DEFAULT 0 COMMENT "กิจกรรมการเรียนรู้ (หัวหน้า)"',
+                'dept_plan_media' => 'TINYINT DEFAULT 0 COMMENT "การจัดหาสื่อการเรียน (หัวหน้า)"',
+                'dept_plan_assessment' => 'TINYINT DEFAULT 0 COMMENT "การวัดและประเมินผล (หัวหน้า)"',
+                
+                // Teaching evaluation (Department Head)
+                'dept_teach_techniques' => 'TINYINT DEFAULT 0 COMMENT "เทคนิคการสอน (หัวหน้า)"',
+                'dept_teach_media' => 'TINYINT DEFAULT 0 COMMENT "การใช้สื่อและเทคโนโลยี (หัวหน้า)"',
+                'dept_teach_assessment' => 'TINYINT DEFAULT 0 COMMENT "การประเมินระหว่างเรียน (หัวหน้า)"',
+                'dept_teach_explanation' => 'TINYINT DEFAULT 0 COMMENT "การอธิบายเนื้อหา (หัวหน้า)"',
+                'dept_teach_control' => 'TINYINT DEFAULT 0 COMMENT "การควบคุมชั้นเรียน (หัวหน้า)"',
+                'dept_teach_thinking' => 'TINYINT DEFAULT 0 COMMENT "การพัฒนาการคิด (หัวหน้า)"',
+                'dept_teach_adaptation' => 'TINYINT DEFAULT 0 COMMENT "การปรับเนื้อหา (หัวหน้า)"',
+                'dept_teach_integration' => 'TINYINT DEFAULT 0 COMMENT "การบูรณาการ (หัวหน้า)"',
+                'dept_teach_language' => 'TINYINT DEFAULT 0 COMMENT "การใช้ภาษา (หัวหน้า)"',
+                
+                // Evaluation assessment (Department Head)
+                'dept_eval_variety' => 'TINYINT DEFAULT 0 COMMENT "วิธีการประเมินหลากหลาย (หัวหน้า)"',
+                'dept_eval_standards' => 'TINYINT DEFAULT 0 COMMENT "สอดคล้องมาตรฐาน (หัวหน้า)"',
+                'dept_eval_criteria' => 'TINYINT DEFAULT 0 COMMENT "เกณฑ์การประเมิน (หัวหน้า)"',
+                'dept_eval_feedback' => 'TINYINT DEFAULT 0 COMMENT "การให้ข้อมูลย้อนกลับ (หัวหน้า)"',
+                'dept_eval_evidence' => 'TINYINT DEFAULT 0 COMMENT "หลักฐานการเรียนรู้ (หัวหน้า)"',
+                
+                // Environment assessment (Department Head)
+                'dept_env_classroom' => 'TINYINT DEFAULT 0 COMMENT "การจัดห้องเรียน (หัวหน้า)"',
+                'dept_env_interaction' => 'TINYINT DEFAULT 0 COMMENT "ปฏิสัมพันธ์เชิงบวก (หัวหน้า)"',
+                'dept_env_safety' => 'TINYINT DEFAULT 0 COMMENT "ความปลอดภัย (หัวหน้า)"',
+                'dept_env_management' => 'TINYINT DEFAULT 0 COMMENT "การจัดการชั้นเรียน (หัวหน้า)"',
+                'dept_env_rules' => 'TINYINT DEFAULT 0 COMMENT "กฎกติกาการเรียน (หัวหน้า)"',
+                'dept_env_behavior' => 'TINYINT DEFAULT 0 COMMENT "การดูแลพฤติกรรม (หัวหน้า)"',
+                
+                // Summary fields
+                'dept_score' => 'INT DEFAULT 0 COMMENT "คะแนนรวมหัวหน้า"',
+                'dept_quality_level' => 'VARCHAR(50) COMMENT "ระดับคุณภาพหัวหน้า"',
+                'dept_observation_notes' => 'TEXT COMMENT "บันทึกการสังเกต"',
+                'dept_reflection_notes' => 'TEXT COMMENT "การสะท้อนความคิด"',
+                'dept_strengths' => 'TEXT COMMENT "จุดเด่น"',
+                'dept_improvements' => 'TEXT COMMENT "จุดที่ควรปรับปรุง"',
+                'dept_supervisor_signature' => 'VARCHAR(255) COMMENT "ลายเซ็นผู้นิเทศ"'
+            ];
+
+            foreach ($deptColumns as $column => $definition) {
+                $checkSql = "SHOW COLUMNS FROM supervisions LIKE '$column'";
+                $stmt = $this->pdo->query($checkSql);
+                
+                if ($stmt->rowCount() == 0) {
+                    $alterSql = "ALTER TABLE supervisions ADD COLUMN $column $definition";
+                    $this->pdo->exec($alterSql);
+                    error_log("Added $column column to supervisions table");
+                }
+            }
+
+            // Check if term and pee columns exist, if not add them
+            $checkColumns = ['term', 'pee'];
+            foreach ($checkColumns as $column) {
+                $checkSql = "SHOW COLUMNS FROM supervisions LIKE '$column'";
+                $stmt = $this->pdo->query($checkSql);
+                
+                if ($stmt->rowCount() == 0) {
+                    $alterSql = "ALTER TABLE supervisions ADD COLUMN $column VARCHAR(10) AFTER supervision_round";
+                    $this->pdo->exec($alterSql);
+                    error_log("Added $column column to supervisions table");
+                }
             }
 
             // Update varchar lengths to match database
             $updates = [
                 "ALTER TABLE supervisions MODIFY COLUMN lesson_plan VARCHAR(500)",
-                "ALTER TABLE supervisions MODIFY COLUMN worksheets VARCHAR(500)", 
                 "ALTER TABLE supervisions MODIFY COLUMN supervisor_photos VARCHAR(500)",
                 "ALTER TABLE supervisions MODIFY COLUMN classroom_photos VARCHAR(500)"
             ];
@@ -437,8 +560,131 @@ class Supervision {
                 }
             }
 
+            // Add indexes for better performance
+            $indexes = [
+                "CREATE INDEX IF NOT EXISTS idx_dept_evaluation ON supervisions (dept_score, dept_quality_level)",
+                "CREATE INDEX IF NOT EXISTS idx_teacher_evaluation ON supervisions (total_score, quality_level)",
+                "CREATE INDEX IF NOT EXISTS idx_term_pee ON supervisions (term, pee)"
+            ];
+
+            foreach ($indexes as $indexSql) {
+                try {
+                    $this->pdo->exec($indexSql);
+                } catch (Exception $e) {
+                    // Index might already exist, continue
+                    error_log("Index creation note: " . $e->getMessage());
+                }
+            }
+
         } catch (Exception $e) {
             error_log("Error updating table structure: " . $e->getMessage());
+        }
+    }
+
+    public function updateDepartmentEvaluation($id, $data) {
+        try {
+            $sql = "UPDATE supervisions SET
+                dept_plan_effective = :dept_plan_effective,
+                dept_plan_correct = :dept_plan_correct,
+                dept_plan_activities = :dept_plan_activities,
+                dept_plan_media = :dept_plan_media,
+                dept_plan_assessment = :dept_plan_assessment,
+                dept_teach_techniques = :dept_teach_techniques,
+                dept_teach_media = :dept_teach_media,
+                dept_teach_assessment = :dept_teach_assessment,
+                dept_teach_explanation = :dept_teach_explanation,
+                dept_teach_control = :dept_teach_control,
+                dept_teach_thinking = :dept_teach_thinking,
+                dept_teach_adaptation = :dept_teach_adaptation,
+                dept_teach_integration = :dept_teach_integration,
+                dept_teach_language = :dept_teach_language,
+                dept_eval_variety = :dept_eval_variety,
+                dept_eval_standards = :dept_eval_standards,
+                dept_eval_criteria = :dept_eval_criteria,
+                dept_eval_feedback = :dept_eval_feedback,
+                dept_eval_evidence = :dept_eval_evidence,
+                dept_env_classroom = :dept_env_classroom,
+                dept_env_interaction = :dept_env_interaction,
+                dept_env_safety = :dept_env_safety,
+                dept_env_management = :dept_env_management,
+                dept_env_rules = :dept_env_rules,
+                dept_env_behavior = :dept_env_behavior,
+                dept_score = :dept_score,
+                dept_quality_level = :dept_quality_level,
+                dept_observation_notes = :dept_observation_notes,
+                dept_reflection_notes = :dept_reflection_notes,
+                dept_strengths = :dept_strengths,
+                dept_improvements = :dept_improvements,
+                dept_supervisor_signature = :dept_supervisor_signature,
+                updated_at = CURRENT_TIMESTAMP
+                WHERE id = :id";
+
+            $data['id'] = $id;
+            $stmt = $this->pdo->prepare($sql);
+            
+            return $stmt->execute($data);
+        } catch (Exception $e) {
+            error_log("Error updating department evaluation: " . $e->getMessage());
+            throw new Exception("Failed to update department evaluation: " . $e->getMessage());
+        }
+    }
+
+    public function getBySubjectGroup($subjectGroup) {
+        try {
+            // Since supervisions and teachers are in different databases,
+            // we need to get teacher IDs first, then filter supervisions
+            require_once __DIR__ . '/../classes/DatabaseUsers.php';
+            $dbUsers = new \App\DatabaseUsers();
+            $usersPdo = $dbUsers->getPDO();
+            
+            // Get teacher IDs that belong to the subject group
+            $teacherSql = "SELECT Teach_id FROM teacher WHERE Teach_major = :subject_group";
+            $teacherStmt = $usersPdo->prepare($teacherSql);
+            $teacherStmt->execute(['subject_group' => $subjectGroup]);
+            $teachers = $teacherStmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            if (empty($teachers)) {
+                return [];
+            }
+            
+            // Create placeholders for the IN clause
+            $placeholders = str_repeat('?,', count($teachers) - 1) . '?';
+            
+            // Get supervisions for these teachers
+            $sql = "SELECT s.*, t.Teach_name as teacher_full_name, t.Teach_major as teacher_subject_group 
+                    FROM supervisions s
+                    LEFT JOIN (SELECT ? as teacher_id, ? as Teach_name, ? as Teach_major) t 
+                    ON s.teacher_id = t.teacher_id
+                    WHERE s.teacher_id IN ($placeholders) 
+                    ORDER BY s.supervision_date DESC, s.created_at DESC";
+            
+            // Actually, let's simplify this since we can't easily do cross-database JOINs
+            // We'll get supervisions and then enrich them with teacher data
+            $sql = "SELECT * FROM supervisions WHERE teacher_id IN ($placeholders) 
+                    ORDER BY supervision_date DESC, created_at DESC";
+            
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($teachers);
+            $supervisions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Enrich with teacher data
+            foreach ($supervisions as &$supervision) {
+                $teacherSql = "SELECT Teach_name, Teach_major FROM teacher WHERE Teach_id = ?";
+                $teacherStmt = $usersPdo->prepare($teacherSql);
+                $teacherStmt->execute([$supervision['teacher_id']]);
+                $teacherData = $teacherStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($teacherData) {
+                    $supervision['teacher_full_name'] = $teacherData['Teach_name'];
+                    $supervision['teacher_subject_group'] = $teacherData['Teach_major'];
+                }
+            }
+            
+            return $supervisions;
+            
+        } catch (Exception $e) {
+            error_log("Error fetching supervisions by subject group: " . $e->getMessage());
+            return [];
         }
     }
 }
