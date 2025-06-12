@@ -21,6 +21,7 @@ class Supervision {
             $sql = "INSERT INTO supervisions (
                 teacher_id, teacher_name, position, academic_level, subject_group,
                 subject_name, subject_code, class_level, supervision_round, supervision_date,
+                term, pee,
                 plan_effective, plan_correct, plan_activities, plan_media, plan_assessment,
                 teach_techniques, teach_media, teach_assessment, teach_explanation, teach_control,
                 teach_thinking, teach_adaptation, teach_integration, teach_language,
@@ -31,6 +32,7 @@ class Supervision {
             ) VALUES (
                 :teacher_id, :teacher_name, :position, :academic_level, :subject_group,
                 :subject_name, :subject_code, :class_level, :supervision_round, :supervision_date,
+                :term, :pee,
                 :plan_effective, :plan_correct, :plan_activities, :plan_media, :plan_assessment,
                 :teach_techniques, :teach_media, :teach_assessment, :teach_explanation, :teach_control,
                 :teach_thinking, :teach_adaptation, :teach_integration, :teach_language,
@@ -101,6 +103,7 @@ class Supervision {
                 teacher_name = :teacher_name, position = :position, academic_level = :academic_level,
                 subject_group = :subject_group, subject_name = :subject_name, subject_code = :subject_code,
                 class_level = :class_level, supervision_round = :supervision_round, supervision_date = :supervision_date,
+                term = :term, pee = :pee,
                 plan_effective = :plan_effective, plan_correct = :plan_correct, plan_activities = :plan_activities,
                 plan_media = :plan_media, plan_assessment = :plan_assessment,
                 teach_techniques = :teach_techniques, teach_media = :teach_media, teach_assessment = :teach_assessment,

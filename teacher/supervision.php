@@ -262,50 +262,15 @@ require_once('header.php');
                     <th class="py-4 px-4 text-center font-semibold">👨‍🏫 ผู้รับการนิเทศ</th>
                     <th class="py-4 px-4 text-center font-semibold">📖 วิชา</th>
                     <th class="py-4 px-4 text-center font-semibold">🏫 ชั้น</th>
+                    <th class="py-4 px-4 text-center font-semibold">🔢 ครั้งที่</th>
+                    <th class="py-4 px-4 text-center font-semibold">📅 ภาคเรียน/ปีการศึกษา</th>
                     <th class="py-4 px-4 text-center font-semibold">📊 คะแนน</th>
                     <th class="py-4 px-4 text-center font-semibold">🏆 ระดับคุณภาพ</th>
                     <th class="py-4 px-4 text-center font-semibold">🔍 จัดการ</th>
                   </tr>
                 </thead>
                 <tbody id="supervisionTableBody">
-                  <tr class="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300">
-                    <td class="py-4 px-4 text-center border-b border-gray-100">15 มิ.ย. 2568</td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100 font-medium">นายสมชาย ใจดี</td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100">คณิตศาสตร์</td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100">ม.1/1</td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100">
-                      <span class="score-display">95</span>
-                    </td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100">
-                      <span class="quality-badge">ดีมาก</span>
-                    </td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100">
-                      <div class="flex gap-2 justify-center">
-                        <button class="btn-modern text-white px-3 py-2 rounded-lg text-sm shadow-md">👁️ ดู</button>
-                        <button class="btn-warning-modern px-3 py-2 rounded-lg text-sm shadow-md">✏️ แก้ไข</button>
-                        <button class="btn-danger-modern px-3 py-2 rounded-lg text-sm shadow-md">🗑️ ลบ</button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr class="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300">
-                    <td class="py-4 px-4 text-center border-b border-gray-100">10 มิ.ย. 2568</td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100 font-medium">นางสาวสมหญิง ขยัน</td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100">ภาษาไทย</td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100">ม.2/2</td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100">
-                      <span class="score-display">105</span>
-                    </td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100">
-                      <span class="quality-badge">ดีเยี่ยม</span>
-                    </td>
-                    <td class="py-4 px-4 text-center border-b border-gray-100">
-                      <div class="flex gap-2 justify-center">
-                        <button class="btn-modern text-white px-3 py-2 rounded-lg text-sm shadow-md">👁️ ดู</button>
-                        <button class="btn-warning-modern px-3 py-2 rounded-lg text-sm shadow-md">✏️ แก้ไข</button>
-                        <button class="btn-danger-modern px-3 py-2 rounded-lg text-sm shadow-md">🗑️ ลบ</button>
-                      </div>
-                    </td>
-                  </tr>
+
                 </tbody>
               </table>
             </div>
@@ -338,7 +303,7 @@ require_once('header.php');
                 
                 <div class="space-y-2">
                   <label class="block font-semibold text-gray-700">ตำแหน่ง</label>
-                  <input type="text" name="position" placeholder="เช่น ครูชำนาญการ" 
+                  <input type="text" name="position" placeholder="เช่น ครู" 
                     class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-all duration-300 bg-white/80" />
                 </div>
                 
@@ -1318,6 +1283,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <td class="py-4 px-4 text-center border-b border-gray-100 font-medium">${supervision.teacher_name}</td>
       <td class="py-4 px-4 text-center border-b border-gray-100">${supervision.subject_name || '-'}</td>
       <td class="py-4 px-4 text-center border-b border-gray-100">${supervision.class_level || '-'}</td>
+      <td class="py-4 px-4 text-center border-b border-gray-100">${supervision.supervision_round || '-'}</td>
+      <td class="py-4 px-4 text-center border-b border-gray-100">${supervision.term || '-'}/${supervision.pee || '-'}</td>
       <td class="py-4 px-4 text-center border-b border-gray-100">
         <span class="score-display">${supervision.total_score}</span>
       </td>
@@ -1438,6 +1405,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <p><strong>ชื่อ:</strong> ${supervision.teacher_name}</p>
             <p><strong>วิชา:</strong> ${supervision.subject_name || '-'}</p>
             <p><strong>ชั้น:</strong> ${supervision.class_level || '-'}</p>
+            <p><strong>ครั้งที่:</strong> ${supervision.supervision_round || '-'}</p>
+            <p><strong>ภาคเรียนที่:</strong> ${supervision.term || '-'}</p>
+            <p><strong>ปีการศึกษา:</strong> ${supervision.pee || '-'}</p>
             <p><strong>วันที่นิเทศ:</strong> ${formatDate(supervision.supervision_date)}</p>
           </div>
           
@@ -1790,19 +1760,19 @@ document.addEventListener('DOMContentLoaded', function() {
     Swal.fire({
       title: '🎉 ผลการประเมิน',
       html: `
-        <div class="text-left bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl">
+        <div class="text-left bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-xl">
           <div class="text-center mb-4">
-            <div class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${totalScore}</div>
+            <div class="text-4xl font-bold text-white">${totalScore}</div>
             <div class="text-lg font-semibold" style="color: ${levelColor}">${qualityLevel}</div>
           </div>
           <hr class="my-4 border-gray-300">
-          <p class="text-sm text-gray-600 mb-2"><strong>เกณฑ์การประเมิน:</strong></p>
-          <ul class="text-sm text-gray-600 space-y-1">
-            <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>98-125 คะแนน = ดีเยี่ยม</li>
-            <li class="flex items-center"><span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>74-97 คะแนน = ดีมาก</li>
-            <li class="flex items-center"><span class="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>50-73 คะแนน = ดี</li>
-            <li class="flex items-center"><span class="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>26-49 คะแนน = พอใช้</li>
-            <li class="flex items-center"><span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>ต่ำกว่า 26 คะแนน = ควรปรับปรุง</li>
+          <p class="text-sm text-gray-200 mb-2"><strong>เกณฑ์การประเมิน:</strong></p>
+          <ul class="text-sm text-gray-200 space-y-1">
+            <li class="flex items-center"><span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>98-125 คะแนน = ดีเยี่ยม</li>
+            <li class="flex items-center"><span class="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>74-97 คะแนน = ดีมาก</li>
+            <li class="flex items-center"><span class="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>50-73 คะแนน = ดี</li>
+            <li class="flex items-center"><span class="w-2 h-2 bg-orange-400 rounded-full mr-2"></span>26-49 คะแนน = พอใช้</li>
+            <li class="flex items-center"><span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>ต่ำกว่า 26 คะแนน = ควรปรับปรุง</li>
           </ul>
         </div>
       `,

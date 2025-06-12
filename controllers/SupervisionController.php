@@ -1,5 +1,6 @@
 <?php
 require_once '../models/Supervision.php';
+require_once '../models/TermPee.php';
 
 use App\Models\Supervision;
 
@@ -46,6 +47,9 @@ try {
                 throw new Exception('Method not allowed');
             }
 
+            // Get current term and pee
+            $termPee = TermPee::getCurrent();
+
             // Handle file uploads
             $uploadedFiles = [];
             if (!empty($_FILES)) {
@@ -64,6 +68,8 @@ try {
                 'class_level' => $_POST['class_level'] ?? '',
                 'supervision_round' => intval($_POST['supervision_round'] ?? 1),
                 'supervision_date' => $_POST['supervision_date'] ?? '',
+                'term' => $termPee->term ?? '',
+                'pee' => $termPee->pee ?? '',
                 
                 // แบบประเมิน
                 'plan_effective' => intval($_POST['plan_effective'] ?? 0),
