@@ -250,7 +250,7 @@ require_once('header.php');
                 <p class="text-gray-600 text-lg">บันทึกการนิเทศการสอนของครูในแต่ละภาคเรียน</p>
               </div>
               <button id="btnAddSupervision" class="btn-modern text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 font-semibold animate-pulse-slow">
-                ➕ เพิ่มการนิเทศ
+                ➕ บันทึกการนิเทศน์
               </button>
             </div>
             
@@ -344,7 +344,7 @@ require_once('header.php');
                 
                 <div class="space-y-2">
                   <label class="block font-semibold text-gray-700">ชั้น</label>
-                  <input type="text" name="class_level" placeholder="เช่น ม.1/1" 
+                  <input type="text" name="class_level" placeholder="เช่น 1/1" 
                     class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-all duration-300 bg-white/80" />
                 </div>
                 
@@ -1078,14 +1078,14 @@ require_once('header.php');
               
               <div class="space-y-6">
                 <div class="space-y-3">
-                  <label class="block font-semibold text-gray-700">แผนการจัดการเรียนรู้ + ใบความรู้ / ใบงาน / ใบกิจกรรม <span class="text-red-500">** อัปโหลดเป็นไฟล์ PDF เท่านั้น **</span></label>
+                  <label class="block font-semibold text-gray-700">แผนการสอน+ใบความรู้, ใบกิจกรรม+บันทึกหลังแผน+ภาพถ่าย 2 ภาพ<span class="text-red-500">** อัปโหลดเป็นไฟล์ PDF เท่านั้น **</span></label>
                   <input type="file" name="lesson_plan" accept=".pdf" 
                     class="w-full border-2 border-dashed border-gray-300 rounded-xl px-4 py-6 focus:outline-none focus:border-orange-500 transition-all duration-300 bg-white/80 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
                   <div id="lessonPlanPreview" class="mt-3"></div>
                 </div>
                 
                 
-                <div class="space-y-3">
+                <!-- <div class="space-y-3">
                   <label class="block font-semibold text-gray-700">ภาพถ่ายที่เห็นทั้งผู้นิเทศและผู้รับการนิเทศ</label>
                   <input type="file" name="supervisor_photos" accept="image/*" multiple 
                     class="w-full border-2 border-dashed border-gray-300 rounded-xl px-4 py-6 focus:outline-none focus:border-orange-500 transition-all duration-300 bg-white/80 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
@@ -1097,7 +1097,7 @@ require_once('header.php');
                   <input type="file" name="classroom_photos" accept="image/*" multiple 
                     class="w-full border-2 border-dashed border-gray-300 rounded-xl px-4 py-6 focus:outline-none focus:border-orange-500 transition-all duration-300 bg-white/80 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
                   <div id="classroomPhotosPreview" class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-                </div>
+                </div> -->
               </div>
             </div>
 
