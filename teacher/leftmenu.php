@@ -18,7 +18,7 @@ function createNavItem($href, $iconClass, $text) {
     echo createNavItem('subject.php', 'bi-book', 'จัดการรายวิชา');    
     echo createNavItem('timetable.php', 'bi-table', 'ตารางสอน');
 
-    echo createNavItem('supervision.php', 'bi-eye', 'บันทึกนิเทศน์การสอน');
+    echo createNavItem('supervision.php', 'bi-eye', 'บันทึกนิเทศการสอน');
 
     // เมนู "กำลังพัฒนา" พร้อมเมนูย่อย "วิเคราะห์ผู้เรียน"
     echo '

@@ -250,7 +250,7 @@ require_once('header.php');
                 <p class="text-gray-600 text-lg">บันทึกการนิเทศการสอนของครูในแต่ละภาคเรียน</p>
               </div>
               <button id="btnAddSupervision" class="btn-modern text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 font-semibold animate-pulse-slow">
-                ➕ บันทึกการนิเทศน์
+                ➕ บันทึกการนิเทศ
               </button>
             </div>
             
