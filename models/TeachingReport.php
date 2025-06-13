@@ -28,7 +28,7 @@ class TeachingReport
                 FROM teaching_reports r
                 LEFT JOIN subjects s ON r.subject_id = s.id
                 WHERE r.teacher_id = ?
-                ORDER BY r.report_date DESC, r.period_start ASC";
+                ORDER BY r.report_date DESC";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$teacher_id]);
         $reports = $stmt->fetchAll();
