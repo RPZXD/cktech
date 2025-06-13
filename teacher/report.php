@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
       'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
     ];
     const d = new Date(dateStr);
-    if (isNaN(d)) return dateStr;
+    if (isNaN(d.getTime())) return dateStr;
     const day = d.getDate();
     const month = months[d.getMonth() + 1];
     const year = d.getFullYear() + 543;
@@ -168,18 +168,20 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function renderDetailBtn(reportId) {
-    return `<button class="my-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded btn-report-detail flex items-center gap-1" data-id="${reportId}">
-      👁️ ดู
-    </button>
-    <button class="my-1 bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1 rounded btn-edit-report flex items-center gap-1" data-id="${reportId}">
-      ✏️ แก้ไข
-    </button>
-    <button class="my-1 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded btn-delete-report flex items-center gap-1" data-id="${reportId}">
-      🗑️ ลบ
-    </button>
-    <button class="my-1 bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded btn-print-report flex items-center gap-1" data-id="${reportId}">
-      🖨️ พิมพ์
-    </button>`;
+    return `
+      <button class="w-full mb-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded transition-colors duration-200 btn-report-detail flex items-center justify-center gap-1 text-xs" data-id="${reportId}">
+        👁️ ดู
+      </button>
+      <button class="w-full mb-1 bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1 rounded transition-colors duration-200 btn-edit-report flex items-center justify-center gap-1 text-xs" data-id="${reportId}">
+        ✏️ แก้ไข
+      </button>
+      <button class="w-full mb-1 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded transition-colors duration-200 btn-delete-report flex items-center justify-center gap-1 text-xs" data-id="${reportId}">
+        🗑️ ลบ
+      </button>
+      <button class="w-full mb-1 bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded transition-colors duration-200 btn-print-report flex items-center justify-center gap-1 text-xs" data-id="${reportId}">
+        🖨️ พิมพ์
+      </button>
+    `;
   }
 
   function loadReports() {
@@ -188,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(data => {
         const tbody = document.getElementById('reportTableBody');
         tbody.innerHTML = '';
+        
         if (!data.length) {
           tbody.innerHTML = `<tr><td colspan="8" class="text-center text-gray-400 py-6">ไม่มีข้อมูลรายงานการสอน</td></tr>`;
           // รีเซ็ต DataTable ถ้ามี
@@ -196,41 +199,79 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           return;
         }
-        data.forEach(report => {
+
+        // เรียงข้อมูลตามวันที่จากล่าสุดไปเก่าสุด
+        const sortedData = data.sort((a, b) => {
+          const dateA = new Date(a.report_date);
+          const dateB = new Date(b.report_date);
+          return dateB - dateA; // เรียงจากใหม่ไปเก่า
+        });
+
+        sortedData.forEach(report => {
           tbody.innerHTML += `
-            <tr class="hover:bg-blue-50">
-              <td class="py-2 px-3 border-b text-center">${formatThaiDate(report.report_date)}</td>
-              <td class="py-2 px-3 border-b text-center">${report.subject_name || '-'}</td>
-              <td class="py-2 px-3 border-b text-center">ม.${report.level}/${report.class_room}</td>
-              <td class="py-2 px-3 border-b text-center">${report.period_start} - ${report.period_end}</td>
-              <td class="py-2 px-3 border-b text-center">${report.plan_topic ? report.plan_topic.substring(0, 20) + '...' : '-'}</td>
-              <td class="py-2 px-3 border-b text-center">${report.activity ? report.activity.substring(0, 20) + '...' : '-'}</td>
-              <td class="py-2 px-3 border-b text-left text-sm">
-                ${report.absent_students ? `
-                  <div>
-                    <div class="font-semibold text-red-600 ">❌ ขาดเรียน</div>
-                    <div class="text-gray-700">${report.absent_students.replace(/,\s*/g, '<br>')}</div>
-                  </div>` : ''}
-
-                ${report.sick_students ? `
-                  <div>
-                    <div class="font-semibold text-blue-500 ">🤒 ป่วย</div>
-                    <div class="text-gray-700">${report.sick_students.replace(/,\s*/g, '<br>')}</div>
-                  </div>` : ''}
-
-                ${report.personal_students ? `
-                  <div>
-                    <div class="font-semibold text-indigo-500 ">📝 ลากิจ</div>
-                    <div class="text-gray-700">${report.personal_students.replace(/,\s*/g, '<br>')}</div>
-                  </div>` : ''}
-
-                ${report.activity_students ? `
-                  <div>
-                    <div class="font-semibold text-purple-500 ">🎉 กิจกรรม</div>
-                    <div class="text-gray-700">${report.activity_students.replace(/,\s*/g, '<br>')}</div>
-                  </div>` : ''}
+            <tr class="hover:bg-blue-50 transition-colors duration-200">
+              <td class="py-3 px-3 border-b text-center">
+                <div class="font-semibold text-blue-700">${formatThaiDate(report.report_date)}</div>
+                <div class="text-xs text-gray-500">${getThaiDayOfWeek(report.report_date)}</div>
               </td>
-              <td class="py-2 px-3 border-b text-center">${renderDetailBtn(report.id)}</td>
+              <td class="py-3 px-3 border-b text-center">
+                <div class="font-medium text-gray-800">${report.subject_name || '-'}</div>
+              </td>
+              <td class="py-3 px-3 border-b text-center">
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                  ม.${report.level}/${report.class_room}
+                </span>
+              </td>
+              <td class="py-3 px-3 border-b text-center">
+                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">
+                  ${report.period_start} - ${report.period_end}
+                </span>
+              </td>
+              <td class="py-3 px-3 border-b text-center">
+                <div class="max-w-xs truncate" title="${report.plan_topic || '-'}">
+                  ${report.plan_topic ? (report.plan_topic.length > 30 ? report.plan_topic.substring(0, 30) + '...' : report.plan_topic) : '-'}
+                </div>
+              </td>
+              <td class="py-3 px-3 border-b text-center">
+                <div class="max-w-xs truncate" title="${report.activity || '-'}">
+                  ${report.activity ? (report.activity.length > 30 ? report.activity.substring(0, 30) + '...' : report.activity) : '-'}
+                </div>
+              </td>
+              <td class="py-3 px-3 border-b text-left text-sm">
+                <div class="space-y-1">
+                  ${report.absent_students ? `
+                    <div class="flex items-start gap-1">
+                      <span class="text-red-600 font-semibold text-xs">❌ ขาดเรียน:</span>
+                      <div class="text-gray-700 text-xs">${report.absent_students.replace(/,\s*/g, ', ')}</div>
+                    </div>` : ''}
+
+                  ${report.sick_students ? `
+                    <div class="flex items-start gap-1">
+                      <span class="text-blue-500 font-semibold text-xs">🤒 ป่วย:</span>
+                      <div class="text-gray-700 text-xs">${report.sick_students.replace(/,\s*/g, ', ')}</div>
+                    </div>` : ''}
+
+                  ${report.personal_students ? `
+                    <div class="flex items-start gap-1">
+                      <span class="text-indigo-500 font-semibold text-xs">📝 ลากิจ:</span>
+                      <div class="text-gray-700 text-xs">${report.personal_students.replace(/,\s*/g, ', ')}</div>
+                    </div>` : ''}
+
+                  ${report.activity_students ? `
+                    <div class="flex items-start gap-1">
+                      <span class="text-purple-500 font-semibold text-xs">🎉 กิจกรรม:</span>
+                      <div class="text-gray-700 text-xs">${report.activity_students.replace(/,\s*/g, ', ')}</div>
+                    </div>` : ''}
+                    
+                  ${!report.absent_students && !report.sick_students && !report.personal_students && !report.activity_students ? 
+                    '<span class="text-green-600 text-xs font-medium">✅ เข้าเรียนครบ</span>' : ''}
+                </div>
+              </td>
+              <td class="py-3 px-3 border-b text-center">
+                <div class="flex flex-col gap-1">
+                  ${renderDetailBtn(report.id)}
+                </div>
+              </td>
             </tr>
           `;
         });
@@ -241,22 +282,22 @@ document.addEventListener('DOMContentLoaded', function() {
             language: {
               url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json'
             },
-            order: [[0, 'desc']],
             pageLength: 10,
             lengthMenu: [10, 25, 50, 100],
             pagingType: 'simple',
             searching: true,
             info: true,
             autoWidth: false,
+            order: [[0, 'desc']], // เรียงตามคอลัมน์แรก (วันที่) จากใหม่ไปเก่า
             columnDefs: [
-              { targets: 0, width: '10%' },
-              { targets: 1, width: '20%' },
-              { targets: 2, width: '5%' },
-              { targets: 3, width: '5%' },
+              { targets: 0, width: '12%', type: 'date' },
+              { targets: 1, width: '18%' },
+              { targets: 2, width: '8%' },
+              { targets: 3, width: '8%' },
               { targets: 4, width: '15%' },
               { targets: 5, width: '15%' },
-              { targets: 6, width: '25%' },
-              { targets: 7, width: '10%' }
+              { targets: 6, width: '18%' },
+              { targets: 7, width: '12%', orderable: false }
             ]
           });
         }
@@ -446,6 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function getThaiDayOfWeek(dateStr) {
     const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '-';
     return days[d.getDay()];
   }
 
