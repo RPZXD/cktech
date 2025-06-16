@@ -6,7 +6,7 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['rol
 }
 $config = json_decode(file_get_contents('../config.json'), true);
 $global = $config['global'];
-require_once('../director/header.php');
+require_once('header.php');
 
 // ดึงกลุ่มสาระจาก session
 $department = isset($_SESSION['user']['Teach_major']) ? $_SESSION['user']['Teach_major'] : '';
@@ -15,7 +15,7 @@ $department = isset($_SESSION['user']['Teach_major']) ? $_SESSION['user']['Teach
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
 <body class="hold-transition sidebar-mini layout-fixed light-mode bg-gray-50">
 <div class="wrapper">
-    <?php require_once('../director/wrapper.php'); ?>
+    <?php require_once('wrapper.php'); ?>
     <div class="content-wrapper bg-gray-50">
         <div class="content-header">
             <div class="container-fluid">
@@ -387,6 +387,6 @@ btnReload.addEventListener('click', function() {
 // เริ่มต้น
 loadWeeklyReport(department);
 </script>
-<?php require_once('../director/script.php'); ?>
+<?php require_once('script.php'); ?>
 </body>
 </html>
