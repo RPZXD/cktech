@@ -201,6 +201,8 @@ function renderReportTable(reports) {
         if (dataTable) dataTable.destroy();
         return;
     }
+    // เรียงวันที่จากล่าสุดไปเก่าสุด
+    reports.sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
     reports.forEach(report => {
         tbody.innerHTML += `
             <tr class="hover:bg-blue-50">
