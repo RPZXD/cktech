@@ -266,54 +266,9 @@ require_once('header.php');
                             <p class="text-xl font-bold text-purple-600" id="reportsWithProblems">0%</p>
                         </div>
                     </div>
-
-                <!-- Report Quality Analysis -->
-                <div class="bg-white rounded-xl shadow-lg p-6 mb-6 animate__animated animate__fadeInUp animate__delay-4s">
-                    <div class="flex items-center mb-6">
-                        <i class="fas fa-star text-amber-500 mr-2"></i>
-                        <h3 class="text-lg font-semibold text-gray-700">คุณภาพรายงาน</h3>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                            <i class="fas fa-images text-3xl text-blue-500 mb-2"></i>
-                            <h4 class="font-semibold text-gray-700">มีรูปภาพ</h4>
-                            <p class="text-2xl font-bold text-blue-600" id="reportsWithImages">0%</p>
-                        </div>
-                        <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-                            <i class="fas fa-comments text-3xl text-green-500 mb-2"></i>
-                            <h4 class="font-semibold text-gray-700">มีการสะท้อน</h4>
-                            <p class="text-2xl font-bold text-green-600" id="reportsWithReflection">0%</p>
-                        </div>
-                        <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                            <i class="fas fa-exclamation-triangle text-3xl text-purple-500 mb-2"></i>
-                            <h4 class="font-semibold text-gray-700">มีปัญหา</h4>
-                            <p class="text-2xl font-bold text-purple-600" id="reportsWithProblems">0%</p>
-                        </div>
-                    </div>
-                </div>                <!-- Report Quality Analysis -->
-                <div class="bg-white rounded-xl shadow-lg p-6 mb-6 animate__animated animate__fadeInUp animate__delay-4s">
-                    <div class="flex items-center mb-6">
-                        <i class="fas fa-star text-amber-500 mr-2"></i>
-                        <h3 class="text-lg font-semibold text-gray-700">คุณภาพรายงาน</h3>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                            <i class="fas fa-images text-3xl text-blue-500 mb-2"></i>
-                            <h4 class="font-semibold text-gray-700">มีรูปภาพ</h4>
-                            <p class="text-2xl font-bold text-blue-600" id="reportsWithImages">0%</p>
-                        </div>
-                        <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-                            <i class="fas fa-comments text-3xl text-green-500 mb-2"></i>
-                            <h4 class="font-semibold text-gray-700">มีการสะท้อน</h4>
-                            <p class="text-2xl font-bold text-green-600" id="reportsWithReflection">0%</p>
-                        </div>
-                        <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                            <i class="fas fa-exclamation-triangle text-3xl text-purple-500 mb-2"></i>
-                            <h4 class="font-semibold text-gray-700">มีปัญหา</h4>
-                            <p class="text-2xl font-bold text-purple-600" id="reportsWithProblems">0%</p>
-                        </div>
-                    </div>
                 </div>
+
+            
 
                 <!-- Weekly Completion Table -->
                 <div class="bg-white rounded-xl shadow-lg p-6 mb-6 animate__animated animate__fadeInUp animate__delay-5s">
