@@ -150,7 +150,7 @@ btnReload.addEventListener('click', function() {
 function loadReportsForTeacher(teacherId) {
     fetch('../controllers/TeachingReportController.php?action=list&teacher_id=' + encodeURIComponent(teacherId))
         .then(res => res.json())
-        .then(data => {
+        .then data => {
             renderCalendar(data);
             renderReportTable(data);
             reportSection.classList.remove('hidden');
@@ -201,6 +201,10 @@ function renderReportTable(reports) {
         if (dataTable) dataTable.destroy();
         return;
     }
+    
+    // เรียงข้อมูลตามวันที่ จากล่าสุดไปเก่าสุด
+    reports.sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
+    
     reports.forEach(report => {
         tbody.innerHTML += `
             <tr class="hover:bg-blue-50">

@@ -13,12 +13,12 @@ function createNavItem($href, $iconClass, $text) {
     echo createNavItem('index.php', 'bi-house', 'หน้าหลัก');
 
     echo createNavItem('report.php', 'bi-journal-text', 'รายงานการสอน');
-    echo createNavItem('reportindate.php', 'bi-calendar3', 'ปฏิทินการรายงานการสอน');
-
     echo createNavItem('subject.php', 'bi-book', 'จัดการรายวิชา');    
-    echo createNavItem('timetable.php', 'bi-table', 'ตารางสอน');
-
     echo createNavItem('supervision.php', 'bi-eye', 'บันทึกนิเทศการสอน');
+    echo createNavItem('certificate.php', 'bi-award', 'บันทึกเกียรติบัตรนักเรียน');
+
+    echo createNavItem('reportindate.php', 'bi-calendar3', 'ปฏิทินการบันทึก');
+    echo createNavItem('timetable.php', 'bi-table', 'ตารางสอน');
 
     // เมนู "กำลังพัฒนา" พร้อมเมนูย่อย "วิเคราะห์ผู้เรียน"
     echo '
