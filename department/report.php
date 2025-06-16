@@ -201,12 +201,11 @@ function renderReportTable(reports) {
         if (dataTable) dataTable.destroy();
         return;
     }
-    // เรียงวันที่จากล่าสุดไปเก่าสุด
-    reports.sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
+    // ไม่ต้อง sort ใน JS ให้ DataTables จัดการเอง
     reports.forEach(report => {
         tbody.innerHTML += `
             <tr class="hover:bg-blue-50">
-                <td class="py-2 px-3 border-b text-center">${formatThaiDate(report.report_date)}</td>
+                <td class="py-2 px-3 border-b text-center" data-order="${report.report_date}">${formatThaiDate(report.report_date)}</td>
                 <td class="py-2 px-3 border-b text-center">${report.subject_name || '-'}</td>
                 <td class="py-2 px-3 border-b text-center">ม.${report.level}/${report.class_room}</td>
                 <td class="py-2 px-3 border-b text-center">${report.period_start} - ${report.period_end}</td>
@@ -287,4 +286,5 @@ loadTeachersOfDepartmentHead();
 </script>
 <?php require_once('script.php'); ?>
 </body>
+</html>
 </html>
