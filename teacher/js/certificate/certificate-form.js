@@ -158,7 +158,7 @@ class CertificateFormHandler {
       // Save certificate
       await this.saveCertificate(certificateData);
     } catch (error) {
-      console.error('Form submission error:', error);
+    //   console.error('Form submission error:', error);
       this.manager.showError('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     }
   }
@@ -297,8 +297,8 @@ class CertificateFormHandler {
         this.manager.showError(result.message);
       }
     } catch (error) {
-      console.error('Save error:', error);
-      this.manager.showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    //   console.error('Save error:', error);
+    //   this.manager.showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
     } finally {
       this.manager.closeLoading();
     }
@@ -319,8 +319,8 @@ class CertificateFormHandler {
       this.populateForm(cert);
       this.showModal();
     } catch (error) {
-      console.error('Edit error:', error);
-      this.manager.showError('ไม่สามารถโหลดข้อมูลได้');
+    //   console.error('Edit error:', error);
+    //   this.manager.showError('ไม่สามารถโหลดข้อมูลได้');
     }
   }
 

@@ -30,7 +30,7 @@ class CertificateManager {
       ]);
       this.filterManager.init();
     } catch (error) {
-      console.error('Initialization error:', error);
+    //   console.error('Initialization error:', error);
       this.showError('เกิดข้อผิดพลาดในการเริ่มต้นระบบ');
     }
   }
@@ -44,7 +44,7 @@ class CertificateManager {
         this.displayCurrentTermInfo();
       }
     } catch (error) {
-      console.error('Error loading term info:', error);
+    //   console.error('Error loading term info:', error);
     }
   }
 
@@ -72,12 +72,12 @@ class CertificateManager {
         this.certificatesData = Array.isArray(result.data) ? result.data : [];
       } else {
         this.certificatesData = [];
-        console.error('List error:', result.message);
+        // console.error('List error:', result.message);
       }
       
       this.tableManager.renderTable(this.certificatesData);
     } catch (error) {
-      console.error('Error loading certificates:', error);
+    //   console.error('Error loading certificates:', error);
       this.tableManager.showErrorState();
     } finally {
       this.tableManager.hideLoadingState();
@@ -92,7 +92,7 @@ class CertificateManager {
         this.statsManager.updateDisplay(result.data);
       }
     } catch (error) {
-      console.error('Error loading statistics:', error);
+    //   console.error('Error loading statistics:', error);
     }
   }
 

@@ -59,7 +59,6 @@ class CertificateFilterManager {
         this.populateTermYearDropdowns(result.data);
       }
     } catch (error) {
-      console.error('Error loading terms and years:', error);
     }
   }
 
@@ -105,7 +104,6 @@ class CertificateFilterManager {
         this.manager.showError(result.message);
       }
     } catch (error) {
-      console.error('Search error:', error);
       this.manager.showError('เกิดข้อผิดพลาดในการค้นหา');
     }
   }
@@ -134,7 +132,6 @@ class CertificateFilterManager {
         this.manager.showError(result.message);
       }
     } catch (error) {
-      console.error('Filter error:', error);
       this.manager.showError('เกิดข้อผิดพลาดในการกรองข้อมูล');
     }
   }

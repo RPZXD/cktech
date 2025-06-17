@@ -48,7 +48,7 @@ class CertificateStatsManager {
         this.displayTopStudents(result.data);
       }
     } catch (error) {
-      console.error('Error loading top students:', error);
+    //   console.error('Error loading top students:', error);
     }
   }
 
@@ -61,13 +61,13 @@ class CertificateStatsManager {
         this.displayRecentCertificates(result.data);
       }
     } catch (error) {
-      console.error('Error loading recent certificates:', error);
+    //   console.error('Error loading recent certificates:', error);
     }
   }
 
   displayTopStudents(students) {
     // This could be implemented to show top students in a modal or sidebar
-    console.log('Top students:', students);
+    // console.log('Top students:', students);
     
     // Future implementation: Create a modal or section to display top students
     // Example: Show in a modal when clicking a "Top Students" button
@@ -75,7 +75,7 @@ class CertificateStatsManager {
 
   displayRecentCertificates(certificates) {
     // This could be implemented to show recent certificates in a sidebar or notification area
-    console.log('Recent certificates:', certificates);
+    // console.log('Recent certificates:', certificates);
     
     // Future implementation: Create a recent activity panel
   }
@@ -105,7 +105,7 @@ class CertificateStatsManager {
         throw new Error(result.message);
       }
     } catch (error) {
-      console.error('Error getting statistics by date range:', error);
+    //   console.error('Error getting statistics by date range:', error);
       throw error;
     }
   }
