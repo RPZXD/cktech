@@ -25,57 +25,17 @@ class Certificate
     public function create($data)
     {
         try {
-            $sql = "INSERT INTO {$this->table} 
-                    (student_name, student_class, student_room, award_type, award_detail, 
-                     award_date, note, certificate_image, teacher_id, term, year, 
-                     award_name, award_level, award_organization, created_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+            // Check if new columns exist
+            $columnsExist = $this->checkNewColumnsExist();
             
-            $stmt = $this->db->query($sql, [
-                $data['student_name'],
-                $data['student_class'],
-                $data['student_room'],
-                $data['award_type'],
-                $data['award_detail'],
-                $data['award_date'],
-                $data['note'] ?? null,
-                $data['certificate_image'] ?? null,
-                $data['teacher_id'],
-                $data['term'] ?? null,
-                $data['year'] ?? null,
-                $data['award_name'] ?? null,
-                $data['award_level'] ?? null,
-                $data['award_organization'] ?? null
-            ]);
-
-            return $this->db->getPDO()->lastInsertId();
-        } catch (Exception $e) {
-            throw new Exception('Failed to create certificate: ' . $e->getMessage());
-        }
-    }
-
-    public function createMultiple($students, $commonData)
-    {
-        try {
-            $this->db->getPDO()->beginTransaction();
-            $insertedIds = [];
-
-            foreach ($students as $student) {
-                $data = array_merge($commonData, [
-                    'student_name' => $student['name'],
-                    'student_class' => $student['class'],
-                    'student_room' => $student['room'],
-                    'certificate_image' => $student['certificate_image'] ?? null
-                ]);
-                
-                // Use direct SQL query instead of calling create() to avoid nested transactions
+            if ($columnsExist) {
                 $sql = "INSERT INTO {$this->table} 
                         (student_name, student_class, student_room, award_type, award_detail, 
-                         award_date, note, certificate_image, teacher_id, term, year,
+                         award_date, note, certificate_image, teacher_id, term, year, 
                          award_name, award_level, award_organization, created_at) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
                 
-                $stmt = $this->db->query($sql, [
+                $params = [
                     $data['student_name'],
                     $data['student_class'],
                     $data['student_room'],
@@ -90,8 +50,99 @@ class Certificate
                     $data['award_name'] ?? null,
                     $data['award_level'] ?? null,
                     $data['award_organization'] ?? null
-                ]);
+                ];
+            } else {
+                // Fallback insert without new columns
+                $sql = "INSERT INTO {$this->table} 
+                        (student_name, student_class, student_room, award_type, award_detail, 
+                         award_date, note, certificate_image, teacher_id, term, year, created_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                
+                $params = [
+                    $data['student_name'],
+                    $data['student_class'],
+                    $data['student_room'],
+                    $data['award_type'],
+                    $data['award_detail'],
+                    $data['award_date'],
+                    $data['note'] ?? null,
+                    $data['certificate_image'] ?? null,
+                    $data['teacher_id'],
+                    $data['term'] ?? null,
+                    $data['year'] ?? null
+                ];
+            }
+            
+            $stmt = $this->db->query($sql, $params);
+            return $this->db->getPDO()->lastInsertId();
+        } catch (Exception $e) {
+            throw new Exception('Failed to create certificate: ' . $e->getMessage());
+        }
+    }
 
+    public function createMultiple($students, $commonData)
+    {
+        try {
+            $this->db->getPDO()->beginTransaction();
+            $insertedIds = [];
+
+            // Check if new columns exist
+            $columnsExist = $this->checkNewColumnsExist();
+
+            foreach ($students as $student) {
+                $data = array_merge($commonData, [
+                    'student_name' => $student['name'],
+                    'student_class' => $student['class'],
+                    'student_room' => $student['room'],
+                    'certificate_image' => $student['certificate_image'] ?? null
+                ]);
+                
+                if ($columnsExist) {
+                    $sql = "INSERT INTO {$this->table} 
+                            (student_name, student_class, student_room, award_type, award_detail, 
+                             award_date, note, certificate_image, teacher_id, term, year,
+                             award_name, award_level, award_organization, created_at) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                    
+                    $params = [
+                        $data['student_name'],
+                        $data['student_class'],
+                        $data['student_room'],
+                        $data['award_type'],
+                        $data['award_detail'],
+                        $data['award_date'],
+                        $data['note'] ?? null,
+                        $data['certificate_image'] ?? null,
+                        $data['teacher_id'],
+                        $data['term'] ?? null,
+                        $data['year'] ?? null,
+                        $data['award_name'] ?? null,
+                        $data['award_level'] ?? null,
+                        $data['award_organization'] ?? null
+                    ];
+                } else {
+                    // Fallback insert without new columns
+                    $sql = "INSERT INTO {$this->table} 
+                            (student_name, student_class, student_room, award_type, award_detail, 
+                             award_date, note, certificate_image, teacher_id, term, year, created_at) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                    
+                    $params = [
+                        $data['student_name'],
+                        $data['student_class'],
+                        $data['student_room'],
+                        $data['award_type'],
+                        $data['award_detail'],
+                        $data['award_date'],
+                        $data['note'] ?? null,
+                        $data['certificate_image'] ?? null,
+                        $data['teacher_id'],
+                        $data['term'] ?? null,
+                        $data['year'] ?? null
+                    ];
+                }
+                
+                $stmt = $this->db->query($sql, $params);
                 $insertedIds[] = $this->db->getPDO()->lastInsertId();
             }
 
@@ -108,7 +159,20 @@ class Certificate
     public function getAll($teacherId = null)
     {
         try {
-            $sql = "SELECT c.* FROM {$this->table} c";
+            // Check if new columns exist first
+            $columnsExist = $this->checkNewColumnsExist();
+            
+            if ($columnsExist) {
+                $sql = "SELECT c.* FROM {$this->table} c";
+            } else {
+                // Fallback query without new columns
+                $sql = "SELECT c.id, c.student_name, c.student_class, c.student_room, 
+                               c.award_type, c.award_detail, c.award_date, c.note, 
+                               c.certificate_image, c.teacher_id, c.term, c.year, 
+                               c.created_at, c.updated_at,
+                               NULL as award_name, NULL as award_level, NULL as award_organization
+                        FROM {$this->table} c";
+            }
             
             $params = [];
             if ($teacherId) {
@@ -144,7 +208,20 @@ class Certificate
     public function getById($id)
     {
         try {
-            $sql = "SELECT c.* FROM {$this->table} c WHERE c.id = ?";
+            // Check if new columns exist first
+            $columnsExist = $this->checkNewColumnsExist();
+            
+            if ($columnsExist) {
+                $sql = "SELECT c.* FROM {$this->table} c WHERE c.id = ?";
+            } else {
+                // Fallback query without new columns
+                $sql = "SELECT c.id, c.student_name, c.student_class, c.student_room, 
+                               c.award_type, c.award_detail, c.award_date, c.note, 
+                               c.certificate_image, c.teacher_id, c.term, c.year, 
+                               c.created_at, c.updated_at,
+                               NULL as award_name, NULL as award_level, NULL as award_organization
+                        FROM {$this->table} c WHERE c.id = ?";
+            }
             
             $stmt = $this->db->query($sql, [$id]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -174,31 +251,59 @@ class Certificate
     public function update($id, $data)
     {
         try {
-            $sql = "UPDATE {$this->table} 
-                    SET student_name = ?, student_class = ?, student_room = ?, 
-                        award_type = ?, award_detail = ?, award_date = ?, note = ?, 
-                        certificate_image = COALESCE(?, certificate_image), 
-                        term = ?, year = ?, award_name = ?, award_level = ?, 
-                        award_organization = ?, updated_at = NOW()
-                    WHERE id = ?";
+            // Check if new columns exist
+            $columnsExist = $this->checkNewColumnsExist();
             
-            $stmt = $this->db->query($sql, [
-                $data['student_name'],
-                $data['student_class'],
-                $data['student_room'],
-                $data['award_type'],
-                $data['award_detail'],
-                $data['award_date'],
-                $data['note'] ?? null,
-                $data['certificate_image'] ?? null,
-                $data['term'] ?? null,
-                $data['year'] ?? null,
-                $data['award_name'] ?? null,
-                $data['award_level'] ?? null,
-                $data['award_organization'] ?? null,
-                $id
-            ]);
+            if ($columnsExist) {
+                $sql = "UPDATE {$this->table} 
+                        SET student_name = ?, student_class = ?, student_room = ?, 
+                            award_type = ?, award_detail = ?, award_date = ?, note = ?, 
+                            certificate_image = COALESCE(?, certificate_image), 
+                            term = ?, year = ?, award_name = ?, award_level = ?, 
+                            award_organization = ?, updated_at = NOW()
+                        WHERE id = ?";
+                
+                $params = [
+                    $data['student_name'],
+                    $data['student_class'],
+                    $data['student_room'],
+                    $data['award_type'],
+                    $data['award_detail'],
+                    $data['award_date'],
+                    $data['note'] ?? null,
+                    $data['certificate_image'] ?? null,
+                    $data['term'] ?? null,
+                    $data['year'] ?? null,
+                    $data['award_name'] ?? null,
+                    $data['award_level'] ?? null,
+                    $data['award_organization'] ?? null,
+                    $id
+                ];
+            } else {
+                // Fallback update without new columns
+                $sql = "UPDATE {$this->table} 
+                        SET student_name = ?, student_class = ?, student_room = ?, 
+                            award_type = ?, award_detail = ?, award_date = ?, note = ?, 
+                            certificate_image = COALESCE(?, certificate_image), 
+                            term = ?, year = ?, updated_at = NOW()
+                        WHERE id = ?";
+                
+                $params = [
+                    $data['student_name'],
+                    $data['student_class'],
+                    $data['student_room'],
+                    $data['award_type'],
+                    $data['award_detail'],
+                    $data['award_date'],
+                    $data['note'] ?? null,
+                    $data['certificate_image'] ?? null,
+                    $data['term'] ?? null,
+                    $data['year'] ?? null,
+                    $id
+                ];
+            }
 
+            $stmt = $this->db->query($sql, $params);
             return $stmt->rowCount() > 0;
         } catch (Exception $e) {
             throw new Exception('Failed to update certificate: ' . $e->getMessage());
@@ -541,6 +646,17 @@ class Certificate
             ];
         } catch (Exception $e) {
             throw new Exception('Failed to get current term info: ' . $e->getMessage());
+        }
+    }
+
+    private function checkNewColumnsExist()
+    {
+        try {
+            $sql = "SHOW COLUMNS FROM {$this->table} LIKE 'award_name'";
+            $stmt = $this->db->query($sql);
+            return $stmt->rowCount() > 0;
+        } catch (Exception $e) {
+            return false;
         }
     }
 }

@@ -62,14 +62,21 @@ class CertificateController {
     public function list() {
         try {
             $teacherId = $_GET['teacherId'] ?? null;
+            
+            if (!$teacherId) {
+                throw new Exception('Teacher ID is required');
+            }
+            
             $certificates = $this->certificateModel->getAll($teacherId);
 
             $this->sendResponse($certificates);
 
         } catch (Exception $e) {
+            error_log('Certificate list error: ' . $e->getMessage());
             $this->sendResponse([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
+                'error_details' => 'Database connection or query error'
             ]);
         }
     }
@@ -765,9 +772,6 @@ class CertificateController {
 
     private function validateInput($input) {
         $students = $input['students'] ?? [];
-        $awardName = $input['award_name'] ?? '';
-        $awardLevel = $input['award_level'] ?? '';
-        $awardOrganization = $input['award_organization'] ?? '';
         $awardType = $input['award_type'] ?? '';
         $awardDetail = $input['award_detail'] ?? '';
         $awardDate = $input['award_date'] ?? '';
@@ -778,14 +782,18 @@ class CertificateController {
             throw new Exception('กรุณาเพิ่มข้อมูลนักเรียนอย่างน้อย 1 คน');
         }
 
-        if (empty($awardName) || empty($awardLevel) || empty($awardOrganization) || 
-            empty($awardType) || empty($awardDetail) || empty($awardDate)) {
+        if (empty($awardType) || empty($awardDetail) || empty($awardDate)) {
             throw new Exception('กรุณากรอกข้อมูลให้ครบถ้วน');
         }
 
         if (empty($term) || empty($year)) {
             throw new Exception('กรุณากรอกภาคเรียนและปีการศึกษา');
         }
+
+        // Make new fields optional for now
+        // $awardName = $input['award_name'] ?? '';
+        // $awardLevel = $input['award_level'] ?? '';
+        // $awardOrganization = $input['award_organization'] ?? '';
 
         foreach ($students as $student) {
             if (empty($student['name']) || empty($student['class']) || empty($student['room'])) {
