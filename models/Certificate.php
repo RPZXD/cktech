@@ -399,8 +399,7 @@ class Certificate
             
             $sql .= " GROUP BY student_name, student_class, student_room 
                       ORDER BY total_awards DESC, student_name ASC 
-                      LIMIT ?";
-            $params[] = $limit;
+                      LIMIT " . intval($limit);
             
             $stmt = $this->db->query($sql, $params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -428,8 +427,7 @@ class Certificate
                 $params[] = $teacherId;
             }
             
-            $sql .= " ORDER BY created_at DESC LIMIT ?";
-            $params[] = $limit;
+            $sql .= " ORDER BY created_at DESC LIMIT " . intval($limit);
             
             $stmt = $this->db->query($sql, $params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
