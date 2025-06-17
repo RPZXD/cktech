@@ -23,19 +23,9 @@ class Certificate
         // Ensure PDO throws exceptions (defensive, in case not set in DatabaseTeachingReport)
         try {
             $pdo = $this->db->getPDO();
-            if ($pdo) { // Check if PDO object is valid
-                $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            } else {
-                // Log or handle the case where PDO object is not obtained
-                error_log("Certificate Model: Failed to get PDO object.");
-            }
-        } catch (\PDOException $e) {
-            // Log PDO specific error
-            error_log("Certificate Model Constructor PDOException: " . $e->getMessage());
-            // Optionally rethrow or handle more gracefully
+            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         } catch (\Exception $e) {
-            // Log generic error
-            error_log("Certificate Model Constructor Exception: " . $e->getMessage());
+            error_log('PDO Exception mode set failed: ' . $e->getMessage());
         }
     }
 
@@ -93,7 +83,6 @@ class Certificate
             $stmt = $this->db->query($sql, $params);
             return $this->db->getPDO()->lastInsertId();
         } catch (Exception $e) {
-            error_log("Error in Certificate::create: " . $e->getMessage());
             throw new Exception('Failed to create certificate: ' . $e->getMessage());
         }
     }
@@ -170,16 +159,13 @@ class Certificate
             if ($this->db->getPDO()->inTransaction()) {
                 $this->db->getPDO()->rollback();
             }
-            error_log("Error in Certificate::createMultiple: " . $e->getMessage());
             throw new Exception('Failed to create multiple certificates: ' . $e->getMessage());
         }
-    }
-
-    public function getAll($teacherId = null)
+    }    public function getAll($teacherId = null)
     {
         try {
-            // Debug: Log entry point
-            error_log('[DEBUG] Certificate::getAll called with teacherId=' . var_export($teacherId, true));
+            // Debug: Log entry point (commented out for production)
+            // error_log('[DEBUG] Certificate::getAll called with teacherId=' . var_export($teacherId, true));
 
             $columnsExist = $this->checkNewColumnsExist();
 
@@ -202,34 +188,31 @@ class Certificate
 
             $sql .= " ORDER BY c.created_at DESC";
 
-            // Debug: Log SQL and params
-            error_log('[DEBUG] Certificate::getAll SQL: ' . $sql);
-            error_log('[DEBUG] Certificate::getAll Params: ' . json_encode($params));
+            // Debug: Log SQL and params (commented out for production)
+            // error_log('[DEBUG] Certificate::getAll SQL: ' . $sql);
+            // error_log('[DEBUG] Certificate::getAll Params: ' . json_encode($params));
 
             $stmt = $this->db->query($sql, $params);
             $certificates = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Debug: Log result count
-            error_log('[DEBUG] Certificate::getAll fetched rows: ' . count($certificates));
+            // Debug: Log result count (commented out for production)
+            // error_log('[DEBUG] Certificate::getAll fetched rows: ' . count($certificates));
 
             foreach ($certificates as &$cert) {
-                if ($cert['teacher_id']) {
-                    try {
+                if ($cert['teacher_id']) {                    try {
                         $teacher = $this->userDb->getTeacherById($cert['teacher_id']);
                         $cert['teacher_name'] = $teacher ? $teacher['Teach_name'] : 'ไม่พบข้อมูลครู';
                     } catch (\Exception $e) {
                         $cert['teacher_name'] = 'ไม่สามารถโหลดข้อมูลครูได้';
-                        error_log('[DEBUG] Teacher name fetch error: ' . $e->getMessage());
+                        // error_log('[DEBUG] Teacher name fetch error: ' . $e->getMessage());
                     }
                 } else {
                     $cert['teacher_name'] = '-';
                 }
-            }
-
-            return $certificates;
+            }            return $certificates;
         } catch (\Exception $e) {
-            error_log('[DEBUG] Certificate::getAll error: ' . $e->getMessage());
-            error_log('[DEBUG] Trace: ' . $e->getTraceAsString());
+            // error_log('[DEBUG] Certificate::getAll error: ' . $e->getMessage());
+            // error_log('[DEBUG] Trace: ' . $e->getTraceAsString());
             throw new Exception('Failed to fetch certificates: ' . $e->getMessage());
         }
     }
@@ -273,7 +256,6 @@ class Certificate
             
             return $result;
         } catch (Exception $e) {
-            error_log("Error in Certificate::getById: " . $e->getMessage());
             throw new Exception('Failed to fetch certificate: ' . $e->getMessage());
         }
     }
@@ -336,7 +318,6 @@ class Certificate
             $stmt = $this->db->query($sql, $params);
             return $stmt->rowCount() > 0;
         } catch (Exception $e) {
-            error_log("Error in Certificate::update: " . $e->getMessage());
             throw new Exception('Failed to update certificate: ' . $e->getMessage());
         }
     }
@@ -360,7 +341,6 @@ class Certificate
             
             return $stmt->rowCount() > 0;
         } catch (Exception $e) {
-            error_log("Error in Certificate::delete: " . $e->getMessage());
             throw new Exception('Failed to delete certificate: ' . $e->getMessage());
         }
     }
@@ -400,8 +380,7 @@ class Certificate
 
             return $fileName;
         } catch (Exception $e) {
-            error_log("Error in Certificate::uploadImage: " . $e->getMessage());
-            throw $e; // Rethrow or handle as needed
+            throw $e;
         }
     }
 
@@ -509,7 +488,6 @@ class Certificate
                 'current_year' => $basicStats['year'] ?? null
             ];
         } catch (Exception $e) {
-            error_log("Error in Certificate::getStatisticsByDateRange: " . $e->getMessage());
             throw new Exception('Failed to fetch statistics: ' . $e->getMessage());
         }
     }
@@ -543,7 +521,6 @@ class Certificate
             $stmt = $this->db->query($sql, $params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            error_log("Error in Certificate::getTopStudents: " . $e->getMessage());
             throw new Exception('Failed to fetch top students: ' . $e->getMessage());
         }
     }
@@ -572,7 +549,6 @@ class Certificate
             $stmt = $this->db->query($sql, $params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            error_log("Error in Certificate::getRecentCertificates: " . $e->getMessage());
             throw new Exception('Failed to fetch recent certificates: ' . $e->getMessage());
         }
     }
@@ -646,7 +622,6 @@ class Certificate
             
             return $certificates;
         } catch (Exception $e) {
-            error_log("Error in Certificate::searchCertificates: " . $e->getMessage());
             throw new Exception('Failed to search certificates: ' . $e->getMessage());
         }
     }
@@ -669,7 +644,6 @@ class Certificate
             $stmt = $this->db->query($sql, $params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            error_log("Error in Certificate::getAvailableTermsAndYears: " . $e->getMessage());
             throw new Exception('Failed to fetch terms and years: ' . $e->getMessage());
         }
     }
@@ -683,7 +657,6 @@ class Certificate
                 'year' => $termPee->pee
             ];
         } catch (Exception $e) {
-            error_log("Error in Certificate::getCurrentTermInfo: " . $e->getMessage());
             throw new Exception('Failed to get current term info: ' . $e->getMessage());
         }
     }
@@ -695,7 +668,6 @@ class Certificate
             $stmt = $this->db->query($sql);
             return $stmt->rowCount() > 0;
         } catch (Exception $e) {
-            error_log("Error in Certificate::checkNewColumnsExist: " . $e->getMessage());
             return false;
         }
     }
