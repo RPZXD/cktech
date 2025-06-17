@@ -230,6 +230,15 @@ require_once('header.php');
                       <i class="fas fa-school mr-2"></i>ชั้น/ห้อง
                     </th>
                     <th class="py-4 px-4 border-b text-center font-semibold">
+                      <i class="fas fa-award mr-2"></i>ชื่อรางวัล
+                    </th>
+                    <th class="py-4 px-4 border-b text-center font-semibold">
+                      <i class="fas fa-star mr-2"></i>ระดับรางวัล
+                    </th>
+                    <th class="py-4 px-4 border-b text-center font-semibold">
+                      <i class="fas fa-building mr-2"></i>หน่วยงาน
+                    </th>
+                    <th class="py-4 px-4 border-b text-center font-semibold">
                       <i class="fas fa-trophy mr-2"></i>ประเภทรางวัล
                     </th>
                     <th class="py-4 px-4 border-b text-center font-semibold">
@@ -255,7 +264,7 @@ require_once('header.php');
                 <tbody>
                   <!-- Loading skeleton -->
                   <tr class="loading-row">
-                    <td colspan="9" class="py-8 text-center">
+                    <td colspan="12" class="py-8 text-center">
                       <div class="flex justify-center items-center">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                         <span class="ml-3 text-gray-600">กำลังโหลดข้อมูล...</span>
@@ -320,6 +329,28 @@ require_once('header.php');
               <button type="button" id="addStudentBtn" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm flex items-center gap-1">
                 ➕ เพิ่มนักเรียน
               </button>
+            </div>
+            <div>
+              <label class="block mb-2 font-medium">ชื่อรางวัล <span class="text-red-500">*</span></label>
+              <input type="text" name="award_name" required class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-300" placeholder="เช่น การแข่งขันคณิตศาสตร์ รายการ..." />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block mb-1 font-medium">ระดับรางวัล <span class="text-red-500">*</span></label>
+                <select name="award_level" required class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-300">
+                  <option value="">-- เลือกระดับรางวัล --</option>
+                  <option value="ระดับโรงเรียน">🏫 ระดับโรงเรียน</option>
+                  <option value="ระดับอำเภอ">🏘️ ระดับอำเภอ</option>
+                  <option value="ระดับจังหวัด">🏙️ ระดับจังหวัด</option>
+                  <option value="ระดับภาค">🌏 ระดับภาค</option>
+                  <option value="ระดับประเทศ">🇹🇭 ระดับประเทศ</option>
+                  <option value="ระดับนานาชาติ">🌍 ระดับนานาชาติ</option>
+                </select>
+              </div>
+              <div>
+                <label class="block mb-1 font-medium">หน่วยงานที่มอบรางวัล <span class="text-red-500">*</span></label>
+                <input type="text" name="award_organization" required class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-300" placeholder="เช่น สพฐ., มหาวิทยาลัย..." />
+              </div>
             </div>
             <div>
               <label class="block mb-1 font-medium">ประเภทรางวัล <span class="text-red-500">*</span></label>
@@ -530,7 +561,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (certificates.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="9" class="text-center py-8">
+          <td colspan="12" class="text-center py-8">
             <div class="flex flex-col items-center">
               <i class="fas fa-certificate text-6xl text-gray-300 mb-4"></i>
               <p class="text-gray-500 text-lg">ยังไม่มีข้อมูลเกียรติบัตร</p>
@@ -563,6 +594,13 @@ document.addEventListener('DOMContentLoaded', function() {
               ${cert.student_class}/${cert.student_room}
             </span>
           </td>
+          <td class="py-4 px-4 border-b">${cert.award_name || '-'}</td>
+          <td class="py-4 px-4 border-b text-center">
+            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
+              ${cert.award_level || '-'}
+            </span>
+          </td>
+          <td class="py-4 px-4 border-b">${cert.award_organization || '-'}</td>
           <td class="py-4 px-4 border-b text-center">${awardBadge}</td>
           <td class="py-4 px-4 border-b max-w-xs truncate" title="${cert.award_detail}">
             ${cert.award_detail}
@@ -955,6 +993,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // ข้อมูลรางวัลที่ใช้ร่วมกัน
     const certificateData = {
       students: students,
+      award_name: formData.get('award_name'),
+      award_level: formData.get('award_level'),
+      award_organization: formData.get('award_organization'),
       award_type: formData.get('award_type'),
       award_detail: formData.get('award_detail'),
       award_date: formData.get('award_date'),
@@ -1026,6 +1067,12 @@ document.addEventListener('DOMContentLoaded', function() {
       url = '../controllers/CertificateController.php?action=update';
       certificateData.id = certId;
     }
+
+    // เพิ่มฟิลด์ใหม่ในข้อมูลที่ส่ง
+    const formData = new FormData(form);
+    certificateData.award_name = formData.get('award_name');
+    certificateData.award_level = formData.get('award_level');
+    certificateData.award_organization = formData.get('award_organization');
 
     // Show loading state
     Swal.fire({
@@ -1104,6 +1151,9 @@ document.addEventListener('DOMContentLoaded', function() {
         firstStudent.querySelector('select[name="students[0][class]"]').value = cert.student_class;
         firstStudent.querySelector('input[name="students[0][room]"]').value = cert.student_room;
         
+        form.award_name.value = cert.award_name || '';
+        form.award_level.value = cert.award_level || '';
+        form.award_organization.value = cert.award_organization || '';
         form.award_type.value = cert.award_type;
         form.award_detail.value = cert.award_detail;
         form.award_date.value = cert.award_date;
@@ -1340,7 +1390,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const tbody = document.querySelector('#certificateTable tbody');
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" class="text-center py-8">
+        <td colspan="12" class="text-center py-8">
           <div class="flex flex-col items-center">
             <i class="fas fa-exclamation-triangle text-6xl text-red-300 mb-4"></i>
             <p class="text-red-500 text-lg">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>
@@ -1530,7 +1580,387 @@ document.addEventListener('DOMContentLoaded', function() {
     const tbody = document.querySelector('#certificateTable tbody');
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" class="text-center py-8">
+        <td colspan="12" class="text-center py-8">
+          <div class="flex flex-col items-center">
+            <i class="fas fa-exclamation-triangle text-6xl text-red-300 mb-4"></i>
+            <p class="text-red-500 text-lg">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>
+            <p class="text-gray-500 mb-4">กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</p>
+            <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+              <i class="fas fa-sync-alt mr-2"></i>ลองใหม่
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  // Filter and search functionality
+  function initFilters() {
+    const searchInput = document.getElementById('searchStudent');
+    const filterClass = document.getElementById('filterClass');
+    const filterAward = document.getElementById('filterAward');
+    const filterTerm = document.getElementById('filterTerm');
+    const filterYear = document.getElementById('filterYear');
+    const btnClearFilter = document.getElementById('btnClearFilter');
+
+    // Debounced search
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        const searchTerm = searchInput.value.trim();
+        if (searchTerm.length >= 2) {
+          performSearch(searchTerm);
+        } else if (searchTerm.length === 0) {
+          loadCertificates();
+        }
+      }, 500);
+    });
+
+    // โหลดตัวเลือกภาคเรียน/ปีการศึกษา
+    loadAvailableTermsAndYears();
+
+    filterClass.addEventListener('change', applyFilters);
+    filterAward.addEventListener('change', applyFilters);
+    filterTerm.addEventListener('change', applyFilters);
+    filterYear.addEventListener('change', applyFilters);
+
+    btnClearFilter.addEventListener('click', function() {
+      searchInput.value = '';
+      filterClass.value = '';
+      filterAward.value = '';
+      filterTerm.value = '';
+      filterYear.value = '';
+      loadCertificates();
+    });
+  }
+
+  function loadAvailableTermsAndYears() {
+    fetch('../controllers/CertificateController.php?action=availableTerms&teacherId=' + encodeURIComponent(teacherId))
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && Array.isArray(result.data)) {
+          const terms = new Set();
+          const years = new Set();
+          result.data.forEach(item => {
+            if (item.term) terms.add(item.term);
+            if (item.year) years.add(item.year);
+          });
+
+          // เติม dropdown ภาคเรียน
+          const filterTerm = document.getElementById('filterTerm');
+          filterTerm.innerHTML = '<option value="">ทุกภาคเรียน</option>';
+          Array.from(terms).sort().forEach(term => {
+            filterTerm.innerHTML += `<option value="${term}">${term}</option>`;
+          });
+
+          // เติม dropdown ปีการศึกษา
+          const filterYear = document.getElementById('filterYear');
+          filterYear.innerHTML = '<option value="">ทุกปี</option>';
+          Array.from(years).sort((a, b) => b - a).forEach(year => {
+            filterYear.innerHTML += `<option value="${year}">${year}</option>`;
+          });
+        }
+      });
+  }
+
+  function performSearch(searchTerm) {
+    fetch(`../controllers/CertificateController.php?action=search&term=${encodeURIComponent(searchTerm)}&teacherId=${encodeURIComponent(teacherId)}`)
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          certificatesData = result.data;
+          renderCertificateTable(certificatesData);
+          
+          // Show search results info
+          if (result.count === 0) {
+            Swal.fire({
+              title: 'ไม่พบผลลัพธ์',
+              text: `ไม่พบข้อมูลที่ตรงกับคำค้นหา "${searchTerm}"`,
+              icon: 'info',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+        } else {
+          Swal.fire('ข้อผิดพลาด', result.message, 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Search error:', err);
+        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการค้นหา', 'error');
+      });
+  }
+
+  // ปรับ applyFilters ให้ส่ง term/year ไป backend
+  function applyFilters() {
+    const filterClass = document.getElementById('filterClass').value;
+    const filterAward = document.getElementById('filterAward').value;
+    const filterTerm = document.getElementById('filterTerm').value;
+    const filterYear = document.getElementById('filterYear').value;
+    let url = `../controllers/CertificateController.php?action=search&teacherId=${encodeURIComponent(teacherId)}`;
+    if (filterClass) url += `&classFilter=${encodeURIComponent(filterClass)}`;
+    if (filterAward) url += `&awardFilter=${encodeURIComponent(filterAward)}`;
+    if (filterTerm) url += `&termFilter=${encodeURIComponent(filterTerm)}`;
+    if (filterYear) url += `&yearFilter=${encodeURIComponent(filterYear)}`;
+    fetch(url)
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          certificatesData = result.data;
+          renderCertificateTable(certificatesData);
+        } else {
+          Swal.fire('ข้อผิดพลาด', result.message, 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Filter error:', err);
+        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการกรองข้อมูล', 'error');
+      });
+  }
+
+  // Enhanced statistics with additional info
+  function loadStatistics() {
+    fetch('../controllers/CertificateController.php?action=statistics&teacherId=' + encodeURIComponent(teacherId))
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          updateStatsDisplay(result.data);
+          loadTopStudents();
+          loadRecentCertificates();
+        }
+      })
+      .catch(err => console.error('Error loading statistics:', err));
+  }
+
+  function loadTopStudents() {
+    fetch('../controllers/CertificateController.php?action=topStudents&teacherId=' + encodeURIComponent(teacherId) + '&limit=5')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data.length > 0) {
+          displayTopStudents(result.data);
+        }
+      })
+      .catch(err => console.error('Error loading top students:', err));
+  }
+
+  function loadRecentCertificates() {
+    fetch('../controllers/CertificateController.php?action=recent&teacherId=' + encodeURIComponent(teacherId) + '&limit=3')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data.length > 0) {
+          displayRecentCertificates(result.data);
+        }
+      })
+      .catch(err => console.error('Error loading recent certificates:', err));
+  }
+
+  function displayTopStudents(students) {
+    // This could be displayed in a separate modal or section
+    console.log('Top students:', students);
+  }
+
+  function displayRecentCertificates(certificates) {
+    // This could be displayed in a separate section
+    console.log('Recent certificates:', certificates);
+  }
+
+  // Enhanced error handling
+  function showErrorState() {
+    const tbody = document.querySelector('#certificateTable tbody');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="12" class="text-center py-8">
+          <div class="flex flex-col items-center">
+            <i class="fas fa-exclamation-triangle text-6xl text-red-300 mb-4"></i>
+            <p class="text-red-500 text-lg">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>
+            <p class="text-gray-500 mb-4">กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</p>
+            <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+              <i class="fas fa-sync-alt mr-2"></i>ลองใหม่
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  // Filter and search functionality
+  function initFilters() {
+    const searchInput = document.getElementById('searchStudent');
+    const filterClass = document.getElementById('filterClass');
+    const filterAward = document.getElementById('filterAward');
+    const filterTerm = document.getElementById('filterTerm');
+    const filterYear = document.getElementById('filterYear');
+    const btnClearFilter = document.getElementById('btnClearFilter');
+
+    // Debounced search
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        const searchTerm = searchInput.value.trim();
+        if (searchTerm.length >= 2) {
+          performSearch(searchTerm);
+        } else if (searchTerm.length === 0) {
+          loadCertificates();
+        }
+      }, 500);
+    });
+
+    // โหลดตัวเลือกภาคเรียน/ปีการศึกษา
+    loadAvailableTermsAndYears();
+
+    filterClass.addEventListener('change', applyFilters);
+    filterAward.addEventListener('change', applyFilters);
+    filterTerm.addEventListener('change', applyFilters);
+    filterYear.addEventListener('change', applyFilters);
+
+    btnClearFilter.addEventListener('click', function() {
+      searchInput.value = '';
+      filterClass.value = '';
+      filterAward.value = '';
+      filterTerm.value = '';
+      filterYear.value = '';
+      loadCertificates();
+    });
+  }
+
+  function loadAvailableTermsAndYears() {
+    fetch('../controllers/CertificateController.php?action=availableTerms&teacherId=' + encodeURIComponent(teacherId))
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && Array.isArray(result.data)) {
+          const terms = new Set();
+          const years = new Set();
+          result.data.forEach(item => {
+            if (item.term) terms.add(item.term);
+            if (item.year) years.add(item.year);
+          });
+
+          // เติม dropdown ภาคเรียน
+          const filterTerm = document.getElementById('filterTerm');
+          filterTerm.innerHTML = '<option value="">ทุกภาคเรียน</option>';
+          Array.from(terms).sort().forEach(term => {
+            filterTerm.innerHTML += `<option value="${term}">${term}</option>`;
+          });
+
+          // เติม dropdown ปีการศึกษา
+          const filterYear = document.getElementById('filterYear');
+          filterYear.innerHTML = '<option value="">ทุกปี</option>';
+          Array.from(years).sort((a, b) => b - a).forEach(year => {
+            filterYear.innerHTML += `<option value="${year}">${year}</option>`;
+          });
+        }
+      });
+  }
+
+  function performSearch(searchTerm) {
+    fetch(`../controllers/CertificateController.php?action=search&term=${encodeURIComponent(searchTerm)}&teacherId=${encodeURIComponent(teacherId)}`)
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          certificatesData = result.data;
+          renderCertificateTable(certificatesData);
+          
+          // Show search results info
+          if (result.count === 0) {
+            Swal.fire({
+              title: 'ไม่พบผลลัพธ์',
+              text: `ไม่พบข้อมูลที่ตรงกับคำค้นหา "${searchTerm}"`,
+              icon: 'info',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+        } else {
+          Swal.fire('ข้อผิดพลาด', result.message, 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Search error:', err);
+        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการค้นหา', 'error');
+      });
+  }
+
+  // ปรับ applyFilters ให้ส่ง term/year ไป backend
+  function applyFilters() {
+    const filterClass = document.getElementById('filterClass').value;
+    const filterAward = document.getElementById('filterAward').value;
+    const filterTerm = document.getElementById('filterTerm').value;
+    const filterYear = document.getElementById('filterYear').value;
+    let url = `../controllers/CertificateController.php?action=search&teacherId=${encodeURIComponent(teacherId)}`;
+    if (filterClass) url += `&classFilter=${encodeURIComponent(filterClass)}`;
+    if (filterAward) url += `&awardFilter=${encodeURIComponent(filterAward)}`;
+    if (filterTerm) url += `&termFilter=${encodeURIComponent(filterTerm)}`;
+    if (filterYear) url += `&yearFilter=${encodeURIComponent(filterYear)}`;
+    fetch(url)
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          certificatesData = result.data;
+          renderCertificateTable(certificatesData);
+        } else {
+          Swal.fire('ข้อผิดพลาด', result.message, 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Filter error:', err);
+        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการกรองข้อมูล', 'error');
+      });
+  }
+
+  // Enhanced statistics with additional info
+  function loadStatistics() {
+    fetch('../controllers/CertificateController.php?action=statistics&teacherId=' + encodeURIComponent(teacherId))
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          updateStatsDisplay(result.data);
+          loadTopStudents();
+          loadRecentCertificates();
+        }
+      })
+      .catch(err => console.error('Error loading statistics:', err));
+  }
+
+  function loadTopStudents() {
+    fetch('../controllers/CertificateController.php?action=topStudents&teacherId=' + encodeURIComponent(teacherId) + '&limit=5')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data.length > 0) {
+          displayTopStudents(result.data);
+        }
+      })
+      .catch(err => console.error('Error loading top students:', err));
+  }
+
+  function loadRecentCertificates() {
+    fetch('../controllers/CertificateController.php?action=recent&teacherId=' + encodeURIComponent(teacherId) + '&limit=3')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data.length > 0) {
+          displayRecentCertificates(result.data);
+        }
+      })
+      .catch(err => console.error('Error loading recent certificates:', err));
+  }
+
+  function displayTopStudents(students) {
+    // This could be displayed in a separate modal or section
+    console.log('Top students:', students);
+  }
+
+  function displayRecentCertificates(certificates) {
+    // This could be displayed in a separate section
+    console.log('Recent certificates:', certificates);
+  }
+
+  // Enhanced error handling
+  function showErrorState() {
+    const tbody = document.querySelector('#certificateTable tbody');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="12" class="text-center py-8">
           <div class="flex flex-col items-center">
             <i class="fas fa-exclamation-triangle text-6xl text-red-300 mb-4"></i>
             <p class="text-red-500 text-lg">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>
@@ -1648,7 +2078,7 @@ function showLoadingState() {
   const tbody = document.querySelector('#certificateTable tbody');
   tbody.innerHTML = `
     <tr class="loading-row">
-      <td colspan="9" class="py-8 text-center">
+      <td colspan="12" class="py-8 text-center">
         <div class="flex justify-center items-center">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span class="ml-3 text-gray-600">กำลังโหลดข้อมูล...</span>
@@ -1669,7 +2099,7 @@ function showErrorState() {
   const tbody = document.querySelector('#certificateTable tbody');
   tbody.innerHTML = `
     <tr>
-      <td colspan="9" class="text-center py-8">
+      <td colspan="12" class="text-center py-8">
         <div class="flex flex-col items-center">
           <i class="fas fa-exclamation-triangle text-6xl text-red-300 mb-4"></i>
           <p class="text-red-500 text-lg">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>

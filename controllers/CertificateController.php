@@ -116,7 +116,10 @@ class CertificateController {
                 'note' => $input['note'] ?? '',
                 'term' => $input['term'] ?? null,
                 'year' => $input['year'] ?? null,
-                'certificate_image' => $student['certificate_image'] ?? null
+                'certificate_image' => $student['certificate_image'] ?? null,
+                'award_name' => $input['award_name'] ?? null,
+                'award_level' => $input['award_level'] ?? null,
+                'award_organization' => $input['award_organization'] ?? null
             ];
 
             $success = $this->certificateModel->update($id, $data);
@@ -355,12 +358,15 @@ class CertificateController {
         // Add BOM for UTF-8 to ensure proper Thai display in Excel
         fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
         
-        // Headers in Thai
+        // Headers in Thai - เพิ่มฟิลด์ใหม่
         fputcsv($output, [
             'ลำดับ',
             'ชื่อนักเรียน',
             'ระดับชั้น',
             'ห้อง',
+            'ชื่อรางวัล',
+            'ระดับรางวัล',
+            'หน่วยงานที่มอบรางวัล',
             'ประเภทรางวัล',
             'รายละเอียดรางวัล',
             'วันที่ได้รับรางวัล',
@@ -371,13 +377,16 @@ class CertificateController {
             'วันที่บันทึก'
         ]);
         
-        // Data with proper encoding
+        // Data with proper encoding - เพิ่มฟิลด์ใหม่
         foreach ($certificates as $index => $cert) {
             fputcsv($output, [
                 $index + 1,
                 $cert['student_name'],
                 $cert['student_class'],
                 $cert['student_room'],
+                $cert['award_name'] ?? '-',
+                $cert['award_level'] ?? '-',
+                $cert['award_organization'] ?? '-',
                 $cert['award_type'],
                 $cert['award_detail'],
                 $cert['award_date'],
@@ -432,9 +441,10 @@ class CertificateController {
             // ตั้งค่า encoding สำหรับ worksheet
             $sheet->setTitle('เกียรติบัตร');
 
-            // Header with Thai text
+            // Header with Thai text - เพิ่มฟิลด์ใหม่
             $headers = [
-                'ลำดับ', 'ชื่อนักเรียน', 'ระดับชั้น', 'ห้อง', 'ประเภทรางวัล', 'รายละเอียดรางวัล',
+                'ลำดับ', 'ชื่อนักเรียน', 'ระดับชั้น', 'ห้อง', 'ชื่อรางวัล', 'ระดับรางวัล', 
+                'หน่วยงานที่มอบรางวัล', 'ประเภทรางวัล', 'รายละเอียดรางวัล',
                 'วันที่ได้รับรางวัล', 'ภาคเรียน', 'ปีการศึกษา', 'หมายเหตุ', 'ผู้บันทึก', 'วันที่บันทึก'
             ];
             
@@ -447,7 +457,7 @@ class CertificateController {
                     ->getStartColor()->setARGB('FFE6E6FA');
             }
 
-            // Data
+            // Data - เพิ่มฟิลด์ใหม่
             $row = 2;
             foreach ($certificates as $index => $cert) {
                 $rowData = [
@@ -455,6 +465,9 @@ class CertificateController {
                     $cert['student_name'],
                     $cert['student_class'],
                     $cert['student_room'],
+                    $cert['award_name'] ?? '-',
+                    $cert['award_level'] ?? '-',
+                    $cert['award_organization'] ?? '-',
                     $cert['award_type'],
                     $cert['award_detail'],
                     $cert['award_date'],
@@ -471,8 +484,8 @@ class CertificateController {
                 $row++;
             }
 
-            // Auto-size columns
-            foreach (range('A', 'L') as $col) {
+            // Auto-size columns - ปรับให้ครอบคลุมคอลัมน์ใหม่
+            foreach (range('A', 'O') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
 
@@ -563,8 +576,8 @@ class CertificateController {
             $html .= '<table>';
             $html .= '<thead><tr>';
             $headers = [
-                'ลำดับ', 'ชื่อนักเรียน', 'ชั้น/ห้อง', 'ประเภทรางวัล', 'รายละเอียด',
-                'วันที่ได้รับ', 'ภาค/ปี', 'ผู้บันทึก'
+                'ลำดับ', 'ชื่อนักเรียน', 'ชั้น/ห้อง', 'ชื่อรางวัล', 'ระดับรางวัล', 
+                'หน่วยงาน', 'ประเภทรางวัล', 'รายละเอียด', 'วันที่ได้รับ', 'ภาค/ปี', 'ผู้บันทึก'
             ];
             foreach ($headers as $header) {
                 $html .= '<th>' . htmlspecialchars($header, ENT_QUOTES, 'UTF-8') . '</th>';
@@ -576,6 +589,9 @@ class CertificateController {
                 $html .= '<td class="center">' . ($index + 1) . '</td>';
                 $html .= '<td>' . htmlspecialchars($cert['student_name'], ENT_QUOTES, 'UTF-8') . '</td>';
                 $html .= '<td class="center">' . htmlspecialchars($cert['student_class'], ENT_QUOTES, 'UTF-8') . '/' . htmlspecialchars($cert['student_room'], ENT_QUOTES, 'UTF-8') . '</td>';
+                $html .= '<td>' . htmlspecialchars($cert['award_name'] ?? '-', ENT_QUOTES, 'UTF-8') . '</td>';
+                $html .= '<td>' . htmlspecialchars($cert['award_level'] ?? '-', ENT_QUOTES, 'UTF-8') . '</td>';
+                $html .= '<td>' . htmlspecialchars($cert['award_organization'] ?? '-', ENT_QUOTES, 'UTF-8') . '</td>';
                 $html .= '<td>' . htmlspecialchars($cert['award_type'], ENT_QUOTES, 'UTF-8') . '</td>';
                 $html .= '<td class="truncate">' . htmlspecialchars(mb_substr($cert['award_detail'], 0, 50, 'UTF-8') . (mb_strlen($cert['award_detail'], 'UTF-8') > 50 ? '...' : ''), ENT_QUOTES, 'UTF-8') . '</td>';
                 $html .= '<td class="center">' . htmlspecialchars($cert['award_date'], ENT_QUOTES, 'UTF-8') . '</td>';
@@ -677,8 +693,8 @@ class CertificateController {
                 .title { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #333; }
                 .subtitle { font-size: 16px; color: #666; margin-bottom: 5px; }
                 .notice { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-                table { width: 100%; border-collapse: collapse; font-size: 14px; }
-                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
                 th { background-color: #f8f9fa; font-weight: bold; text-align: center; }
                 tr:nth-child(even) { background-color: #f9f9f9; }
                 .center { text-align: center; }
@@ -696,13 +712,15 @@ class CertificateController {
                 <div class="subtitle">จำนวนรายการทั้งหมด: ' . count($certificates) . ' รายการ</div>
             </div>
             
-            
             <table>
                 <thead>
                     <tr>
                         <th>ลำดับ</th>
                         <th>ชื่อนักเรียน</th>
                         <th>ชั้น/ห้อง</th>
+                        <th>ชื่อรางวัล</th>
+                        <th>ระดับรางวัล</th>
+                        <th>หน่วยงาน</th>
                         <th>ประเภทรางวัล</th>
                         <th>รายละเอียด</th>
                         <th>วันที่ได้รับ</th>
@@ -717,8 +735,11 @@ class CertificateController {
             echo '<td class="center">' . ($index + 1) . '</td>';
             echo '<td>' . htmlspecialchars($cert['student_name'], ENT_QUOTES, 'UTF-8') . '</td>';
             echo '<td class="center no-wrap">' . htmlspecialchars($cert['student_class'], ENT_QUOTES, 'UTF-8') . '/' . htmlspecialchars($cert['student_room'], ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '<td>' . htmlspecialchars($cert['award_name'] ?? '-', ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '<td>' . htmlspecialchars($cert['award_level'] ?? '-', ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '<td>' . htmlspecialchars($cert['award_organization'] ?? '-', ENT_QUOTES, 'UTF-8') . '</td>';
             echo '<td>' . htmlspecialchars($cert['award_type'], ENT_QUOTES, 'UTF-8') . '</td>';
-            echo '<td>' . htmlspecialchars($cert['award_detail'], ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '<td>' . htmlspecialchars(mb_substr($cert['award_detail'], 0, 30, 'UTF-8') . (mb_strlen($cert['award_detail'], 'UTF-8') > 30 ? '...' : ''), ENT_QUOTES, 'UTF-8') . '</td>';
             echo '<td class="center no-wrap">' . htmlspecialchars($cert['award_date'], ENT_QUOTES, 'UTF-8') . '</td>';
             echo '<td class="center no-wrap">' . htmlspecialchars(($cert['term'] ?? '-') . '/' . ($cert['year'] ?? '-'), ENT_QUOTES, 'UTF-8') . '</td>';
             echo '<td>' . htmlspecialchars($cert['teacher_name'] ?? '-', ENT_QUOTES, 'UTF-8') . '</td>';

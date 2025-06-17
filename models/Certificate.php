@@ -27,8 +27,9 @@ class Certificate
         try {
             $sql = "INSERT INTO {$this->table} 
                     (student_name, student_class, student_room, award_type, award_detail, 
-                     award_date, note, certificate_image, teacher_id, term, year, created_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                     award_date, note, certificate_image, teacher_id, term, year, 
+                     award_name, award_level, award_organization, created_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
             
             $stmt = $this->db->query($sql, [
                 $data['student_name'],
@@ -41,7 +42,10 @@ class Certificate
                 $data['certificate_image'] ?? null,
                 $data['teacher_id'],
                 $data['term'] ?? null,
-                $data['year'] ?? null
+                $data['year'] ?? null,
+                $data['award_name'] ?? null,
+                $data['award_level'] ?? null,
+                $data['award_organization'] ?? null
             ]);
 
             return $this->db->getPDO()->lastInsertId();
@@ -67,8 +71,9 @@ class Certificate
                 // Use direct SQL query instead of calling create() to avoid nested transactions
                 $sql = "INSERT INTO {$this->table} 
                         (student_name, student_class, student_room, award_type, award_detail, 
-                         award_date, note, certificate_image, teacher_id, term, year, created_at) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                         award_date, note, certificate_image, teacher_id, term, year,
+                         award_name, award_level, award_organization, created_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
                 
                 $stmt = $this->db->query($sql, [
                     $data['student_name'],
@@ -81,7 +86,10 @@ class Certificate
                     $data['certificate_image'] ?? null,
                     $data['teacher_id'],
                     $data['term'] ?? null,
-                    $data['year'] ?? null
+                    $data['year'] ?? null,
+                    $data['award_name'] ?? null,
+                    $data['award_level'] ?? null,
+                    $data['award_organization'] ?? null
                 ]);
 
                 $insertedIds[] = $this->db->getPDO()->lastInsertId();
@@ -170,7 +178,8 @@ class Certificate
                     SET student_name = ?, student_class = ?, student_room = ?, 
                         award_type = ?, award_detail = ?, award_date = ?, note = ?, 
                         certificate_image = COALESCE(?, certificate_image), 
-                        term = ?, year = ?, updated_at = NOW()
+                        term = ?, year = ?, award_name = ?, award_level = ?, 
+                        award_organization = ?, updated_at = NOW()
                     WHERE id = ?";
             
             $stmt = $this->db->query($sql, [
@@ -184,6 +193,9 @@ class Certificate
                 $data['certificate_image'] ?? null,
                 $data['term'] ?? null,
                 $data['year'] ?? null,
+                $data['award_name'] ?? null,
+                $data['award_level'] ?? null,
+                $data['award_organization'] ?? null,
                 $id
             ]);
 
@@ -432,9 +444,13 @@ class Certificate
             $sql = "SELECT c.* FROM {$this->table} c WHERE 1=1";
             $params = [];
             
-            // Search term condition
+            // Search term condition - เพิ่มการค้นหาในฟิลด์ใหม่
             if (!empty($searchTerm)) {
-                $sql .= " AND (c.student_name LIKE ? OR c.award_type LIKE ? OR c.award_detail LIKE ?)";
+                $sql .= " AND (c.student_name LIKE ? OR c.award_type LIKE ? OR c.award_detail LIKE ? 
+                          OR c.award_name LIKE ? OR c.award_level LIKE ? OR c.award_organization LIKE ?)";
+                $params[] = "%$searchTerm%";
+                $params[] = "%$searchTerm%";
+                $params[] = "%$searchTerm%";
                 $params[] = "%$searchTerm%";
                 $params[] = "%$searchTerm%";
                 $params[] = "%$searchTerm%";
