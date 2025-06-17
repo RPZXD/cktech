@@ -62,16 +62,17 @@ class CertificateController {
     public function list() {
         try {
             $teacherId = $_GET['teacherId'] ?? null;
+            
             if (!$teacherId) {
                 throw new Exception('Teacher ID is required');
             }
+            
             $certificates = $this->certificateModel->getAll($teacherId);
 
-            // Wrap in success response for consistency
+            // Always wrap response as object
             $this->sendResponse([
                 'success' => true,
-                'data' => $certificates,
-                'count' => count($certificates)
+                'data' => $certificates
             ]);
 
         } catch (Exception $e) {
