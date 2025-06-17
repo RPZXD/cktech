@@ -90,13 +90,78 @@ class CertificateManager {
       const result = await response.json();
       if (result.success) {
         this.statsManager.updateDisplay(result.data);
-      }
-    } catch (error) {
+      }    } catch (error) {
     //   console.error('Error loading statistics:', error);
     }
   }
+  setupModalFocusTrap() {
+    const modal = document.getElementById('modalAddCertificate');
+    
+    // ป้องกันการกด Escape และการคลิกนอก modal
+    document.addEventListener('keydown', (e) => {
+      if (!modal.classList.contains('hidden')) {
+        // ป้องกันการกด Escape
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+        
+        // จัดการ Tab navigation ให้อยู่ใน modal เท่านั้น
+        if (e.key === 'Tab') {
+          const focusableElements = modal.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          const focusableArray = Array.from(focusableElements);
+          const firstElement = focusableArray[0];
+          const lastElement = focusableArray[focusableArray.length - 1];
+          
+          if (e.shiftKey) {
+            // Shift + Tab
+            if (document.activeElement === firstElement) {
+              e.preventDefault();
+              lastElement.focus();
+            }
+          } else {
+            // Tab
+            if (document.activeElement === lastElement) {
+              e.preventDefault();
+              firstElement.focus();
+            }
+          }
+        }
+      }
+    });
+
+    // ป้องกันการคลิกนอก modal อย่างสมบูรณ์
+    modal.addEventListener('click', (e) => {
+      // หยุดการ propagation ทุก event
+      e.stopPropagation();
+      e.preventDefault();
+      
+      // ถ้าคลิกที่ background ของ modal (ไม่ใช่เนื้อหา)
+      if (e.target === modal) {
+        return false;
+      }
+    });
+
+    // ป้องกัน event bubbling จาก document
+    document.addEventListener('click', (e) => {
+      if (!modal.classList.contains('hidden')) {
+        // ถ้า modal เปิดอยู่และคลิกที่ไหนก็ตาม ให้ตรวจสอบว่าอยู่ใน modal หรือไม่
+        if (!modal.contains(e.target)) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }
+    }, true); // ใช้ capture phase
+  }
 
   initEventHandlers() {
+    // Modal focus management
+    this.setupModalFocusTrap();
+
     // Statistics toggle
     const btnStats = document.getElementById('btnStats');
     const statsCards = document.getElementById('statsCards');

@@ -108,24 +108,64 @@ class CertificateFormHandler {
       }
     });
   }
-
   initModalEvents() {
     const btnClose = document.getElementById('closeModalAddCertificate');
     const btnCancel = document.getElementById('cancelAddCertificate');
 
-    btnClose?.addEventListener('click', () => {
-      this.hideModal();
+    // เฉพาะปุ่ม X และ ยกเลิก เท่านั้นที่ปิดได้
+    btnClose?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.confirmCloseModal();
     });
 
-    btnCancel?.addEventListener('click', () => {
-      this.hideModal();
+    btnCancel?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.confirmCloseModal();
     });
 
-    this.modal?.addEventListener('click', (e) => {
-      if (e.target === this.modal) {
-        this.hideModal();
+    // ลบการปิด modal เมื่อคลิกข้างนอก
+    // this.modal?.addEventListener('click', (e) => {
+    //   if (e.target === this.modal) {
+    //     this.hideModal();
+    //   }
+    // });
+  }
+
+  // เพิ่มการยืนยันก่อนปิด modal
+  confirmCloseModal() {
+    const hasData = this.checkFormData();
+    
+    if (hasData) {
+      Swal.fire({
+        title: 'ยืนยันการออก',
+        text: 'ข้อมูลที่กรอกจะสูญหาย ต้องการออกจริงหรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ใช่, ออก',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.hideModal();
+        }
+      });
+    } else {
+      this.hideModal();
+    }
+  }
+
+  // ตรวจสอบว่ามีข้อมูลในฟอร์มหรือไม่
+  checkFormData() {
+    const inputs = this.form?.querySelectorAll('input[type="text"], input[type="date"], select, textarea');
+    if (!inputs) return false;
+    
+    for (let input of inputs) {
+      if (input.value.trim() !== '') {
+        return true;
       }
-    });
+    }
+    return false;
   }
 
   initFormSubmission() {
@@ -379,14 +419,27 @@ class CertificateFormHandler {
     const yearInput = document.getElementById('yearInput');
     if (termInput && cert.term) termInput.value = cert.term;
     if (yearInput && cert.year) yearInput.value = cert.year;
-  }
-
-  showModal() {
+  }  showModal() {
     this.modal?.classList.remove('hidden');
+    
+    // เพิ่ม class เพื่อป้องกันการ scroll ของ body
+    document.body.classList.add('modal-open');
+    
+    // Focus management และ trap focus ใน modal
+    setTimeout(() => {
+      const firstInput = this.modal?.querySelector('input[name="students[0][name]"]');
+      if (firstInput) {
+        firstInput.focus();
+      }
+    }, 100);
   }
 
   hideModal() {
     this.modal?.classList.add('hidden');
+    
+    // ลบ class เพื่อคืนค่าการ scroll ของ body
+    document.body.classList.remove('modal-open');
+    
     this.resetForm();
   }
 

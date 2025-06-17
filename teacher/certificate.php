@@ -61,6 +61,49 @@ require_once('header.php');
 .award-silver { background-color: #e5e7eb; color: #374151; }
 .award-bronze { background-color: #fed7aa; color: #9a3412; }
 .award-other { background-color: #dbeafe; color: #1e40af; }
+
+/* Modal specific styles */
+#modalAddCertificate {
+  z-index: 9999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+#modalAddCertificate .bg-white {
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  margin: 2rem !important;
+  z-index: 10000 !important;
+  position: relative !important;
+}
+
+/* ป้องกันการ scroll ของ body เมื่อ modal เปิด */
+body.modal-open {
+  overflow: hidden !important;
+  padding-right: 17px !important; /* ป้องกันการกระต่าย layout */
+}
+
+/* ซ่อน scrollbar ของ modal content */
+#modalAddCertificate .bg-white::-webkit-scrollbar {
+  width: 8px;
+}
+
+#modalAddCertificate .bg-white::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+#modalAddCertificate .bg-white::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+#modalAddCertificate .bg-white::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
 </style>
 <body class="hold-transition sidebar-mini layout-fixed light-mode bg-gradient-to-br from-blue-50 to-indigo-100">
 <div class="wrapper">
@@ -276,11 +319,9 @@ require_once('header.php');
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Enhanced Modal -->
-      <div id="modalAddCertificate" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-8 relative overflow-y-auto max-h-screen animate-modal-in">
+      </div>      <!-- Enhanced Modal -->
+      <div id="modalAddCertificate" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] hidden backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-8 relative overflow-y-auto max-h-[90vh] animate-modal-in" onclick="event.stopPropagation();">
           <button id="closeModalAddCertificate" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl transition-colors hover:rotate-90 transform duration-300">&times;</button>
           
           <h2 class="text-2xl font-bold mb-6 flex items-center gap-3 text-blue-800">
@@ -407,6 +448,8 @@ require_once('header.php');
 <script>
   // Set global teacher ID for JavaScript modules
   window.teacherId = <?php echo isset($_SESSION['user']['Teach_id']) ? json_encode($_SESSION['user']['Teach_id']) : 'null'; ?>;
+
+  
 </script>
 
 <!-- Load Certificate Management JavaScript Modules -->
