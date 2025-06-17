@@ -14,18 +14,54 @@ class Certificate
 {
     private $db;
     private $userDb;
-    private $table = 'certificates';
-
-    public function __construct()
+    private $table = 'certificates';    public function __construct()
     {
-        $this->db = new DatabaseTeachingReport();
-        $this->userDb = new DatabaseUsers();
+        try {
+            $this->db = new DatabaseTeachingReport();
+            error_log('[CERT_INIT] Main database connected successfully');
+        } catch (Exception $e) {
+            error_log('[CERT_INIT] Main database connection failed: ' . $e->getMessage());
+            throw $e;
+        }
+        
+        try {
+            $this->userDb = new DatabaseUsers();
+            error_log('[CERT_INIT] Users database connected successfully');
+        } catch (Exception $e) {
+            error_log('[CERT_INIT] Users database connection failed: ' . $e->getMessage());
+            // Set userDb to null so we can handle it gracefully
+            $this->userDb = null;
+        }
+        
         // Ensure PDO throws exceptions (defensive, in case not set in DatabaseTeachingReport)
         try {
             $pdo = $this->db->getPDO();
             $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         } catch (\Exception $e) {
             error_log('PDO Exception mode set failed: ' . $e->getMessage());
+        }
+    }
+
+    public function testConnection()
+    {
+        try {
+            // Test database connection
+            $stmt = $this->db->query("SELECT 1 as test");
+            $result = $stmt->fetch();
+            
+            if (!$result || $result['test'] !== 1) {
+                throw new Exception('Database connection test failed');
+            }
+            
+            // Test if certificates table exists
+            $stmt = $this->db->query("SHOW TABLES LIKE 'certificates'");
+            if ($stmt->rowCount() === 0) {
+                throw new Exception('Certificates table does not exist');
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            throw new Exception('Connection test failed: ' . $e->getMessage());
         }
     }
 
@@ -164,10 +200,19 @@ class Certificate
     }    public function getAll($teacherId = null)
     {
         try {
-            // Debug: Log entry point (commented out for production)
-            // error_log('[DEBUG] Certificate::getAll called with teacherId=' . var_export($teacherId, true));
+            // Log for debugging on shared hosting
+            error_log('[CERT_MODEL] getAll() called with teacherId: ' . var_export($teacherId, true));
+            
+            // Ensure teacherId is properly typed
+            if ($teacherId !== null) {
+                $teacherId = intval($teacherId);
+                if ($teacherId <= 0) {
+                    throw new Exception('Invalid teacher ID: ' . $teacherId);
+                }
+            }
 
             $columnsExist = $this->checkNewColumnsExist();
+            error_log('[CERT_MODEL] New columns exist: ' . ($columnsExist ? 'YES' : 'NO'));
 
             if ($columnsExist) {
                 $sql = "SELECT c.* FROM {$this->table} c";
@@ -188,31 +233,61 @@ class Certificate
 
             $sql .= " ORDER BY c.created_at DESC";
 
-            // Debug: Log SQL and params (commented out for production)
-            // error_log('[DEBUG] Certificate::getAll SQL: ' . $sql);
-            // error_log('[DEBUG] Certificate::getAll Params: ' . json_encode($params));
+            error_log('[CERT_MODEL] SQL: ' . $sql);
+            error_log('[CERT_MODEL] Params: ' . json_encode($params));
 
-            $stmt = $this->db->query($sql, $params);
+            // Use prepared statement with explicit error handling
+            $pdo = $this->db->getPDO();
+            $stmt = $pdo->prepare($sql);
+            
+            if (!$stmt) {
+                $errorInfo = $pdo->errorInfo();
+                throw new Exception('SQL Prepare failed: ' . $errorInfo[2]);
+            }
+            
+            $result = $stmt->execute($params);
+            
+            if (!$result) {
+                $errorInfo = $stmt->errorInfo();
+                throw new Exception('SQL Execute failed: ' . $errorInfo[2]);
+            }
+            
             $certificates = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // Debug: Log result count (commented out for production)
-            // error_log('[DEBUG] Certificate::getAll fetched rows: ' . count($certificates));
-
-            foreach ($certificates as &$cert) {
-                if ($cert['teacher_id']) {                    try {
+            error_log('[CERT_MODEL] Fetched rows: ' . count($certificates));            foreach ($certificates as &$cert) {
+                if ($cert['teacher_id']) {
+                    try {
+                        error_log('[CERT_MODEL] Looking up teacher ID: ' . $cert['teacher_id']);
+                        
+                        // Check if users database is available
+                        if ($this->userDb === null) {
+                            $cert['teacher_name'] = 'ครู ID: ' . $cert['teacher_id'];
+                            error_log('[CERT_MODEL] Users DB not available, using fallback');
+                            continue;
+                        }
+                        
                         $teacher = $this->userDb->getTeacherById($cert['teacher_id']);
-                        $cert['teacher_name'] = $teacher ? $teacher['Teach_name'] : 'ไม่พบข้อมูลครู';
+                        if ($teacher && isset($teacher['Teach_name'])) {
+                            $cert['teacher_name'] = $teacher['Teach_name'];
+                            error_log('[CERT_MODEL] Teacher found: ' . $teacher['Teach_name']);
+                        } else {
+                            $cert['teacher_name'] = 'ไม่พบข้อมูลครู';
+                            error_log('[CERT_MODEL] No teacher found for ID: ' . $cert['teacher_id']);
+                        }
                     } catch (\Exception $e) {
                         $cert['teacher_name'] = 'ไม่สามารถโหลดข้อมูลครูได้';
-                        // error_log('[DEBUG] Teacher name fetch error: ' . $e->getMessage());
+                        error_log('[CERT_MODEL] Teacher lookup error: ' . $e->getMessage());
+                        // Don't let teacher lookup failure stop the whole process
                     }
                 } else {
                     $cert['teacher_name'] = '-';
                 }
-            }            return $certificates;
+            }
+
+            error_log('[CERT_MODEL] Successfully returning ' . count($certificates) . ' certificates');
+            return $certificates;
         } catch (\Exception $e) {
-            // error_log('[DEBUG] Certificate::getAll error: ' . $e->getMessage());
-            // error_log('[DEBUG] Trace: ' . $e->getTraceAsString());
+            error_log('[CERT_MODEL] ERROR in getAll(): ' . $e->getMessage());
+            error_log('[CERT_MODEL] Error file: ' . $e->getFile() . ' line: ' . $e->getLine());
             throw new Exception('Failed to fetch certificates: ' . $e->getMessage());
         }
     }

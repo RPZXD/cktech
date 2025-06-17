@@ -58,16 +58,33 @@ class CertificateController {
             ]);
         }
     }    public function list() {
-        // IMPORTANT: Set to false in your production environment!
-        // This flag enables detailed error messages to be sent to the client.
-        $debug = false;
+        // Set appropriate limits for shared hosting
+        if (function_exists('ini_set')) {
+            @ini_set('memory_limit', '256M');
+            @ini_set('max_execution_time', 60);
+        }
+        
+        // Enable debug mode for shared hosting troubleshooting
+        $debug = true;
         $debugInfo = [];
         $isOutputBufferingActiveByThisFunction = false;
         $teacherIdInput = $_GET['teacherId'] ?? null; // Store for logging
 
         try {
+            // Log environment info
+            error_log('[CERT_DEBUG] Environment: ' . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'CLI'));
+            error_log('[CERT_DEBUG] PHP Version: ' . PHP_VERSION);
+            error_log('[CERT_DEBUG] Memory Limit: ' . ini_get('memory_limit'));
+            error_log('[CERT_DEBUG] Max Execution Time: ' . ini_get('max_execution_time'));
+            error_log('[CERT_DEBUG] Teacher ID Input: ' . var_export($teacherIdInput, true));
+            
             if (!$teacherIdInput) {
                 throw new Exception('Teacher ID is required.');
+            }
+
+            // Validate teacher ID
+            if (!is_numeric($teacherIdInput)) {
+                throw new Exception('Teacher ID must be numeric.');
             }
 
             // Start output buffering if in debug mode to capture any direct output from the model
@@ -76,8 +93,19 @@ class CertificateController {
                 $isOutputBufferingActiveByThisFunction = true;
             }
 
+            // Test database connection first
+            try {
+                $testQuery = $this->certificateModel->testConnection();
+                error_log('[CERT_DEBUG] Database connection test: SUCCESS');
+            } catch (Exception $e) {
+                error_log('[CERT_DEBUG] Database connection test: FAILED - ' . $e->getMessage());
+                throw new Exception('Database connection failed: ' . $e->getMessage());
+            }
+
             // This is the critical call to your model that fetches data
+            error_log('[CERT_DEBUG] About to call getAll()');
             $certificates = $this->certificateModel->getAll($teacherIdInput);
+            error_log('[CERT_DEBUG] getAll() completed, count: ' . count($certificates));
 
             // If buffering was active, get the captured content
             if ($isOutputBufferingActiveByThisFunction) {
