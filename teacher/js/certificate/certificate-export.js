@@ -69,7 +69,6 @@ class CertificateExportManager {
       
     } catch (error) {
       this.manager.closeLoading();
-      console.error('Export error:', error);
       this.manager.showError(error.message || 'ไม่สามารถส่งออกข้อมูลได้');
     }
   }
