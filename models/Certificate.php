@@ -23,9 +23,19 @@ class Certificate
         // Ensure PDO throws exceptions (defensive, in case not set in DatabaseTeachingReport)
         try {
             $pdo = $this->db->getPDO();
-            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            if ($pdo) { // Check if PDO object is valid
+                $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            } else {
+                // Log or handle the case where PDO object is not obtained
+                error_log("Certificate Model: Failed to get PDO object.");
+            }
+        } catch (\PDOException $e) {
+            // Log PDO specific error
+            error_log("Certificate Model Constructor PDOException: " . $e->getMessage());
+            // Optionally rethrow or handle more gracefully
         } catch (\Exception $e) {
-            error_log('PDO Exception mode set failed: ' . $e->getMessage());
+            // Log generic error
+            error_log("Certificate Model Constructor Exception: " . $e->getMessage());
         }
     }
 
@@ -83,6 +93,7 @@ class Certificate
             $stmt = $this->db->query($sql, $params);
             return $this->db->getPDO()->lastInsertId();
         } catch (Exception $e) {
+            error_log("Error in Certificate::create: " . $e->getMessage());
             throw new Exception('Failed to create certificate: ' . $e->getMessage());
         }
     }
@@ -159,6 +170,7 @@ class Certificate
             if ($this->db->getPDO()->inTransaction()) {
                 $this->db->getPDO()->rollback();
             }
+            error_log("Error in Certificate::createMultiple: " . $e->getMessage());
             throw new Exception('Failed to create multiple certificates: ' . $e->getMessage());
         }
     }
@@ -261,6 +273,7 @@ class Certificate
             
             return $result;
         } catch (Exception $e) {
+            error_log("Error in Certificate::getById: " . $e->getMessage());
             throw new Exception('Failed to fetch certificate: ' . $e->getMessage());
         }
     }
@@ -323,6 +336,7 @@ class Certificate
             $stmt = $this->db->query($sql, $params);
             return $stmt->rowCount() > 0;
         } catch (Exception $e) {
+            error_log("Error in Certificate::update: " . $e->getMessage());
             throw new Exception('Failed to update certificate: ' . $e->getMessage());
         }
     }
@@ -346,6 +360,7 @@ class Certificate
             
             return $stmt->rowCount() > 0;
         } catch (Exception $e) {
+            error_log("Error in Certificate::delete: " . $e->getMessage());
             throw new Exception('Failed to delete certificate: ' . $e->getMessage());
         }
     }
@@ -385,7 +400,8 @@ class Certificate
 
             return $fileName;
         } catch (Exception $e) {
-            throw $e;
+            error_log("Error in Certificate::uploadImage: " . $e->getMessage());
+            throw $e; // Rethrow or handle as needed
         }
     }
 
@@ -493,6 +509,7 @@ class Certificate
                 'current_year' => $basicStats['year'] ?? null
             ];
         } catch (Exception $e) {
+            error_log("Error in Certificate::getStatisticsByDateRange: " . $e->getMessage());
             throw new Exception('Failed to fetch statistics: ' . $e->getMessage());
         }
     }
@@ -526,6 +543,7 @@ class Certificate
             $stmt = $this->db->query($sql, $params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
+            error_log("Error in Certificate::getTopStudents: " . $e->getMessage());
             throw new Exception('Failed to fetch top students: ' . $e->getMessage());
         }
     }
@@ -554,6 +572,7 @@ class Certificate
             $stmt = $this->db->query($sql, $params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
+            error_log("Error in Certificate::getRecentCertificates: " . $e->getMessage());
             throw new Exception('Failed to fetch recent certificates: ' . $e->getMessage());
         }
     }
@@ -627,6 +646,7 @@ class Certificate
             
             return $certificates;
         } catch (Exception $e) {
+            error_log("Error in Certificate::searchCertificates: " . $e->getMessage());
             throw new Exception('Failed to search certificates: ' . $e->getMessage());
         }
     }
@@ -649,6 +669,7 @@ class Certificate
             $stmt = $this->db->query($sql, $params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
+            error_log("Error in Certificate::getAvailableTermsAndYears: " . $e->getMessage());
             throw new Exception('Failed to fetch terms and years: ' . $e->getMessage());
         }
     }
@@ -662,6 +683,7 @@ class Certificate
                 'year' => $termPee->pee
             ];
         } catch (Exception $e) {
+            error_log("Error in Certificate::getCurrentTermInfo: " . $e->getMessage());
             throw new Exception('Failed to get current term info: ' . $e->getMessage());
         }
     }
@@ -673,6 +695,7 @@ class Certificate
             $stmt = $this->db->query($sql);
             return $stmt->rowCount() > 0;
         } catch (Exception $e) {
+            error_log("Error in Certificate::checkNewColumnsExist: " . $e->getMessage());
             return false;
         }
     }

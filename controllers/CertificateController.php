@@ -39,16 +39,14 @@ class CertificateController {
             ];
 
             $insertedIds = $this->certificateModel->createMultiple($students, $commonData);
+            $currentTermInfo = $this->certificateModel->getCurrentTermInfo(); // Get current term info
 
             $this->sendResponse([
                 'success' => true,
                 'message' => 'บันทึกเกียรติบัตรสำหรับนักเรียน ' . count($students) . ' คน เรียบร้อยแล้ว',
                 'inserted_ids' => $insertedIds,
                 'count' => count($insertedIds),
-                'term_info' => [
-                    'term' => $input['term'],
-                    'year' => $input['year']
-                ]
+                'term_info' => $currentTermInfo // Add term info to response
             ]);
 
         } catch (Exception $e) {
@@ -159,7 +157,7 @@ class CertificateController {
                 $response['debug'] = $debugInfo; // Add any collected debug info
             } else {
                 // For production (non-debug mode), a generic message is safer for the client
-                $response['message'] = 'Could not retrieve certificates due to a server error. Please contact support or check server logs.';
+                $response['message'] = 'ไม่สามารถดึงข้อมูลเกียรติบัตรได้เนื่องจากข้อผิดพลาดของเซิร์ฟเวอร์ กรุณาติดต่อผู้ดูแลระบบ';
             }
 
             $this->sendResponse($response);
@@ -691,8 +689,8 @@ class CertificateController {
                 $html .= '<td class="truncate">' . htmlspecialchars(mb_substr($cert['award_detail'], 0, 50, 'UTF-8') . (mb_strlen($cert['award_detail'], 'UTF-8') > 50 ? '...' : ''), ENT_QUOTES, 'UTF-8') . '</td>';
                 $html .= '<td class="center">' . htmlspecialchars($cert['award_date'], ENT_QUOTES, 'UTF-8') . '</td>';
                 $html .= '<td class="center">' . htmlspecialchars(($cert['term'] ?? '-') . '/' . ($cert['year'] ?? '-'), ENT_QUOTES, 'UTF-8') . '</td>';
-                $html .= '<td>' . htmlspecialchars($cert['teacher_name'] ?? '-', ENT_QUOTES, 'UTF-8') . '</td>';
-                $html .= '</tr>';
+                $html .= '<td>' . htmlspecialchars($cert['teacher_name'] ?? '-', ENT_QUOTES, 'UTF-8') . '</td>'; // Added teacher_name
+                $html .= '</tr>'; // Ensure tr is closed
             }
             
             $html .= '</tbody></table>';
@@ -738,6 +736,9 @@ class CertificateController {
             'ชื่อนักเรียน',
             'ระดับชั้น',
             'ห้อง',
+            'ชื่อรางวัล',
+            'ระดับรางวัล',
+            'หน่วยงานที่มอบรางวัล',
             'ประเภทรางวัล',
             'รายละเอียดรางวัล',
             'วันที่ได้รับรางวัล',
@@ -755,6 +756,9 @@ class CertificateController {
                 $cert['student_name'],
                 $cert['student_class'],
                 $cert['student_room'],
+                $cert['award_name'] ?? '-',
+                $cert['award_level'] ?? '-',
+                $cert['award_organization'] ?? '-',
                 $cert['award_type'],
                 $cert['award_detail'],
                 $cert['award_date'],

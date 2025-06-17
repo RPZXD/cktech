@@ -402,13 +402,8 @@ require_once('header.php');
 
   <?php require_once('../footer.php');?>
 </div>
-
-
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script>
-// Enhanced JavaScript with animations and better UX
+  // Enhanced JavaScript with animations and better UX
 const teacherId = <?php echo isset($_SESSION['user']['Teach_id']) ? json_encode($_SESSION['user']['Teach_id']) : 'null'; ?>;
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -2512,7 +2507,9 @@ function formatDate(dateString) {
 </script>
 
 
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="js/cerificate.js"></script>
 <?php require_once('script.php'); ?>
 </body>
 </html>
