@@ -20,6 +20,13 @@ class Certificate
     {
         $this->db = new DatabaseTeachingReport();
         $this->userDb = new DatabaseUsers();
+        // Ensure PDO throws exceptions (defensive, in case not set in DatabaseTeachingReport)
+        try {
+            $pdo = $this->db->getPDO();
+            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        } catch (\Exception $e) {
+            error_log('PDO Exception mode set failed: ' . $e->getMessage());
+        }
     }
 
     public function create($data)
@@ -161,7 +168,7 @@ class Certificate
         try {
             // Check if new columns exist first
             $columnsExist = $this->checkNewColumnsExist();
-            
+
             if ($columnsExist) {
                 $sql = "SELECT c.* FROM {$this->table} c";
             } else {
@@ -173,34 +180,36 @@ class Certificate
                                NULL as award_name, NULL as award_level, NULL as award_organization
                         FROM {$this->table} c";
             }
-            
+
             $params = [];
             if ($teacherId) {
                 $sql .= " WHERE c.teacher_id = ?";
                 $params[] = $teacherId;
             }
-            
+
             $sql .= " ORDER BY c.created_at DESC";
-            
+
             $stmt = $this->db->query($sql, $params);
             $certificates = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             // Add teacher names from the users database
             foreach ($certificates as &$cert) {
                 if ($cert['teacher_id']) {
                     try {
                         $teacher = $this->userDb->getTeacherById($cert['teacher_id']);
                         $cert['teacher_name'] = $teacher ? $teacher['Teach_name'] : 'ไม่พบข้อมูลครู';
-                    } catch (Exception $e) {
+                    } catch (\Exception $e) {
                         $cert['teacher_name'] = 'ไม่สามารถโหลดข้อมูลครูได้';
+                        error_log('Teacher name fetch error: ' . $e->getMessage());
                     }
                 } else {
                     $cert['teacher_name'] = '-';
                 }
             }
-            
+
             return $certificates;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
+            error_log('Certificate::getAll error: ' . $e->getMessage());
             throw new Exception('Failed to fetch certificates: ' . $e->getMessage());
         }
     }
