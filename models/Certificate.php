@@ -745,5 +745,166 @@ class Certificate
         } catch (Exception $e) {
             return false;
         }
+    }    public function getDepartmentCertificates($departmentId)
+    {
+        try {
+            error_log('[CERT_MODEL] getDepartmentCertificates called with departmentId: ' . $departmentId);
+            
+            $columnsExist = $this->checkNewColumnsExist();
+            
+            // If departmentId is numeric, get department name first
+            if (is_numeric($departmentId)) {
+                try {
+                    $deptSql = "SELECT Dep_name FROM department WHERE Dep_id = ?";
+                    $deptStmt = $this->userDb->query($deptSql, [$departmentId]);
+                    $dept = $deptStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($dept) {
+                        $departmentName = $dept['Dep_name'];
+                    } else {
+                        throw new Exception('Department not found');
+                    }
+                } catch (Exception $e) {
+                    error_log('[CERT_MODEL] Department lookup failed: ' . $e->getMessage());
+                    throw new Exception('Failed to find department: ' . $e->getMessage());
+                }
+            } else {
+                $departmentName = $departmentId;
+            }
+
+            if ($columnsExist) {
+                $sql = "SELECT c.*, t.Teach_name as teacher_name 
+                        FROM {$this->table} c 
+                        LEFT JOIN phichaia_student.teacher t ON c.teacher_id = t.Teach_id 
+                        WHERE t.Teach_major = ? AND t.Teach_status = '1'";
+            } else {
+                $sql = "SELECT c.id, c.student_name, c.student_class, c.student_room, 
+                               c.award_type, c.award_detail, c.award_date, c.note, 
+                               c.certificate_image, c.teacher_id, c.term, c.year, 
+                               c.created_at, c.updated_at,
+                               NULL as award_name, NULL as award_level, NULL as award_organization,
+                               t.Teach_name as teacher_name
+                        FROM {$this->table} c 
+                        LEFT JOIN phichaia_student.teacher t ON c.teacher_id = t.Teach_id 
+                        WHERE t.Teach_major = ? AND t.Teach_status = '1'";
+            }
+
+            $sql .= " ORDER BY c.created_at DESC";
+
+            error_log('[CERT_MODEL] Department SQL: ' . $sql);
+            error_log('[CERT_MODEL] Department Name: ' . $departmentName);
+            
+            $stmt = $this->db->query($sql, [$departmentName]);
+            $certificates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            error_log('[CERT_MODEL] Department certificates found: ' . count($certificates));
+            
+            return $certificates;
+        } catch (\Exception $e) {
+            error_log('[CERT_MODEL] ERROR in getDepartmentCertificates(): ' . $e->getMessage());
+            throw new Exception('Failed to fetch department certificates: ' . $e->getMessage());
+        }
+    }    public function getDepartmentStatistics($departmentId)
+    {
+        try {
+            // If departmentId is numeric, get department name first
+            if (is_numeric($departmentId)) {
+                try {
+                    $deptSql = "SELECT Dep_name FROM department WHERE Dep_id = ?";
+                    $deptStmt = $this->userDb->query($deptSql, [$departmentId]);
+                    $dept = $deptStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($dept) {
+                        $departmentName = $dept['Dep_name'];
+                    } else {
+                        throw new Exception('Department not found');
+                    }
+                } catch (Exception $e) {
+                    error_log('[CERT_MODEL] Department lookup failed: ' . $e->getMessage());
+                    throw new Exception('Failed to find department: ' . $e->getMessage());
+                }
+            } else {
+                $departmentName = $departmentId;
+            }
+            
+            // Get basic statistics
+            $sql = "SELECT 
+                        COUNT(c.id) as total_certificates,
+                        COUNT(DISTINCT c.teacher_id) as total_teachers,
+                        COUNT(DISTINCT c.student_name) as total_students
+                    FROM {$this->table} c 
+                    LEFT JOIN phichaia_student.teacher t ON c.teacher_id = t.Teach_id 
+                    WHERE t.Teach_major = ? AND t.Teach_status = '1'";
+            
+            $stmt = $this->db->query($sql, [$departmentName]);
+            $basicStats = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Get top teacher
+            $sql = "SELECT t.Teach_name, COUNT(c.id) as cert_count
+                    FROM {$this->table} c 
+                    LEFT JOIN phichaia_student.teacher t ON c.teacher_id = t.Teach_id 
+                    WHERE t.Teach_major = ? AND t.Teach_status = '1'
+                    GROUP BY c.teacher_id, t.Teach_name 
+                    ORDER BY cert_count DESC 
+                    LIMIT 1";
+            
+            $stmt = $this->db->query($sql, [$departmentName]);
+            $topTeacher = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Get this month's statistics
+            $sql = "SELECT COUNT(c.id) as this_month
+                    FROM {$this->table} c 
+                    LEFT JOIN phichaia_student.teacher t ON c.teacher_id = t.Teach_id 
+                    WHERE t.Teach_major = ? AND t.Teach_status = '1'
+                    AND MONTH(c.created_at) = MONTH(CURRENT_DATE()) 
+                    AND YEAR(c.created_at) = YEAR(CURRENT_DATE())";
+            
+            $stmt = $this->db->query($sql, [$departmentName]);
+            $monthStats = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            return [
+                'total_certificates' => $basicStats['total_certificates'] ?? 0,
+                'total_teachers' => $basicStats['total_teachers'] ?? 0,
+                'total_students' => $basicStats['total_students'] ?? 0,
+                'top_teacher' => $topTeacher ? $topTeacher['Teach_name'] . ' (' . $topTeacher['cert_count'] . ')' : '-',
+                'this_month' => $monthStats['this_month'] ?? 0
+            ];
+        } catch (Exception $e) {
+            error_log('[CERT_MODEL] ERROR in getDepartmentStatistics(): ' . $e->getMessage());
+            throw new Exception('Failed to fetch department statistics: ' . $e->getMessage());
+        }
+    }
+
+    public function getDepartmentTermsAndYears($departmentId)
+    {
+        try {
+            // Get distinct terms
+            $sql = "SELECT DISTINCT c.term 
+                    FROM {$this->table} c 
+                    LEFT JOIN phichaia_student.teacher t ON c.teacher_id = t.Teach_id 
+                    WHERE t.Dep_id = ? AND c.term IS NOT NULL 
+                    ORDER BY c.term";
+            
+            $stmt = $this->db->query($sql, [$departmentId]);
+            $terms = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            // Get distinct years
+            $sql = "SELECT DISTINCT c.year 
+                    FROM {$this->table} c 
+                    LEFT JOIN phichaia_student.teacher t ON c.teacher_id = t.Teach_id 
+                    WHERE t.Dep_id = ? AND c.year IS NOT NULL 
+                    ORDER BY c.year DESC";
+            
+            $stmt = $this->db->query($sql, [$departmentId]);
+            $years = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            return [
+                'terms' => $terms,
+                'years' => $years
+            ];
+        } catch (Exception $e) {
+            error_log('[CERT_MODEL] ERROR in getDepartmentTermsAndYears(): ' . $e->getMessage());
+            throw new Exception('Failed to fetch department terms and years: ' . $e->getMessage());
+        }
     }
 }

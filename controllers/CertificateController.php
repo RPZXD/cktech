@@ -467,6 +467,110 @@ class CertificateController {
         }
     }
 
+    public function departmentList() {
+        try {
+            $departmentId = $_GET['departmentId'] ?? null;
+            
+            if (!$departmentId) {
+                throw new Exception('Department ID is required');
+            }
+
+            $certificates = $this->certificateModel->getDepartmentCertificates($departmentId);
+            
+            $this->sendResponse([
+                'success' => true,
+                'data' => $certificates
+            ]);
+
+        } catch (Exception $e) {
+            $this->sendResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function departmentStats() {
+        try {
+            $departmentId = $_GET['departmentId'] ?? null;
+            
+            if (!$departmentId) {
+                throw new Exception('Department ID is required');
+            }
+
+            $stats = $this->certificateModel->getDepartmentStatistics($departmentId);
+            
+            $this->sendResponse([
+                'success' => true,
+                'data' => $stats
+            ]);
+
+        } catch (Exception $e) {
+            $this->sendResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function departmentTerms() {
+        try {
+            $departmentId = $_GET['departmentId'] ?? null;
+            
+            if (!$departmentId) {
+                throw new Exception('Department ID is required');
+            }
+
+            $terms = $this->certificateModel->getDepartmentTermsAndYears($departmentId);
+            
+            $this->sendResponse([
+                'success' => true,
+                'data' => $terms
+            ]);
+        } catch (Exception $e) {
+            $this->sendResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }    public function departmentExport() {
+        try {
+            $format = $_GET['format'] ?? $_POST['format'] ?? 'csv';
+            
+            // ตรวจสอบว่ามีข้อมูลส่งมาจาก POST หรือไม่
+            if (isset($_POST['certificates'])) {
+                $certificates = json_decode($_POST['certificates'], true);
+                if (!$certificates) {
+                    throw new Exception('Invalid certificate data');
+                }
+            } else {
+                // ถ้าไม่มีข้อมูลจาก POST ให้ใช้วิธีเดิม
+                $departmentId = $_GET['departmentId'] ?? null;
+                if (!$departmentId) {
+                    throw new Exception('Department ID or certificate data is required');
+                }
+                $certificates = $this->certificateModel->getDepartmentCertificates($departmentId);
+            }
+
+            switch ($format) {
+                case 'csv':
+                    $this->exportDepartmentCSV($certificates);
+                    break;
+                case 'json':
+                    $this->exportJSON($certificates);
+                    break;
+                default:
+                    throw new Exception('Unsupported format');
+            }
+
+        } catch (Exception $e) {
+            $this->sendResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     private function exportCSV($certificates) {
         // Set proper headers for Thai language support
         header('Content-Type: text/csv; charset=utf-8');
@@ -516,6 +620,61 @@ class CertificateController {
                 $cert['note'] ?? '',
                 $cert['teacher_name'] ?? '-',
                 $cert['created_at']
+            ]);
+        }
+          fclose($output);
+        exit;
+    }
+
+    private function exportDepartmentCSV($certificates) {
+        // Set proper headers for Thai language support
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="department_certificates_' . date('Y-m-d') . '.csv"');
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+        
+        $output = fopen('php://output', 'w');
+        
+        // Add BOM for UTF-8 to ensure proper Thai display in Excel
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+        
+        // Headers in Thai for department report
+        fputcsv($output, [
+            'ลำดับ',
+            'ชื่อนักเรียน',
+            'ชั้น',
+            'ห้อง',
+            'ชื่อรางวัล',
+            'ระดับรางวัล',
+            'หน่วยงาน',
+            'ประเภทรางวัล',
+            'รายละเอียดรางวัล',
+            'วันที่ได้รับรางวัล',
+            'ภาคเรียน',
+            'ปีการศึกษา',
+            'หมายเหตุ',
+            'ครูผู้บันทึก',
+            'วันที่บันทึก'
+        ]);
+        
+        // Data with proper encoding
+        foreach ($certificates as $index => $cert) {
+            fputcsv($output, [
+                $index + 1,
+                $cert['student_name'] ?? '-',
+                $cert['student_class'] ?? '-',
+                $cert['student_room'] ?? '-',
+                $cert['award_name'] ?? '-',
+                $cert['award_level'] ?? '-',
+                $cert['award_organization'] ?? '-',
+                $cert['award_type'] ?? '-',
+                $cert['award_detail'] ?? '-',
+                $cert['award_date'] ?? '-',
+                $cert['term'] ?? '-',
+                $cert['year'] ?? '-',
+                $cert['note'] ?? '',
+                $cert['teacher_name'] ?? '-',
+                $cert['created_at'] ?? '-'
             ]);
         }
         
@@ -962,6 +1121,18 @@ switch ($action) {
         break;
     case 'availableTerms':
         $controller->availableTerms();
+        break;
+    case 'departmentList':
+        $controller->departmentList();
+        break;
+    case 'departmentStats':
+        $controller->departmentStats();
+        break;
+    case 'departmentTerms':
+        $controller->departmentTerms();
+        break;
+    case 'departmentExport':
+        $controller->departmentExport();
         break;
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action'], JSON_UNESCAPED_UNICODE);
