@@ -60,28 +60,50 @@ class CertificateController {
     }
 
     public function list() {
+        // เปิด debug mode เฉพาะ dev หรือ admin เท่านั้น!
+        $debug = true; // เปลี่ยนเป็น false เมื่อขึ้น production จริง
+        $debugInfo = [];
+
         try {
             $teacherId = $_GET['teacherId'] ?? null;
             
             if (!$teacherId) {
                 throw new Exception('Teacher ID is required');
             }
-            
+
+            // ดักจับ debug log จาก model (ใช้ output buffering)
+            if ($debug) ob_start();
+
             $certificates = $this->certificateModel->getAll($teacherId);
 
-            // Always wrap response as object
-            $this->sendResponse([
+            if ($debug) {
+                $debugInfo['php_error_log'] = ob_get_clean();
+            }
+
+            $response = [
                 'success' => true,
                 'data' => $certificates
-            ]);
+            ];
+            if ($debug) $response['debug'] = $debugInfo;
+
+            $this->sendResponse($response);
 
         } catch (Exception $e) {
+            if ($debug) {
+                $debugInfo['exception'] = $e->getMessage();
+                $debugInfo['trace'] = $e->getTraceAsString();
+                if (empty($debugInfo['php_error_log'])) {
+                    $debugInfo['php_error_log'] = ob_get_clean();
+                }
+            }
             error_log('Certificate list error: ' . $e->getMessage());
-            $this->sendResponse([
+            $response = [
                 'success' => false,
                 'message' => $e->getMessage(),
                 'error_details' => 'Database connection or query error'
-            ]);
+            ];
+            if ($debug) $response['debug'] = $debugInfo;
+            $this->sendResponse($response);
         }
     }
 
