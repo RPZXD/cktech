@@ -542,8 +542,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     fetch('../controllers/CertificateController.php?action=list&teacherId=' + encodeURIComponent(teacherId))
       .then(res => res.json())
-      .then(data => {
-        certificatesData = Array.isArray(data) ? data : [];
+      .then(result => {
+        console.log('List response:', result); // Debug log
+        
+        if (result.success) {
+          certificatesData = Array.isArray(result.data) ? result.data : [];
+        } else {
+          console.error('List error:', result.message);
+          certificatesData = [];
+        }
+        
         renderCertificateTable(certificatesData);
         hideLoadingState();
       })
@@ -1215,6 +1223,386 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Enhanced search functionality
+  function initFilters() {
+    const searchInput = document.getElementById('searchStudent');
+    const filterClass = document.getElementById('filterClass');
+    const filterAward = document.getElementById('filterAward');
+    const filterTerm = document.getElementById('filterTerm');
+    const filterYear = document.getElementById('filterYear');
+    const btnClearFilter = document.getElementById('btnClearFilter');
+
+    // Debounced search
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        const searchTerm = searchInput.value.trim();
+        if (searchTerm.length >= 2) {
+          performSearch(searchTerm);
+        } else if (searchTerm.length === 0) {
+          loadCertificates();
+        }
+      }, 500);
+    });
+
+    // โหลดตัวเลือกภาคเรียน/ปีการศึกษา
+    loadAvailableTermsAndYears();
+
+    filterClass.addEventListener('change', applyFilters);
+    filterAward.addEventListener('change', applyFilters);
+    filterTerm.addEventListener('change', applyFilters);
+    filterYear.addEventListener('change', applyFilters);
+
+    btnClearFilter.addEventListener('click', function() {
+      searchInput.value = '';
+      filterClass.value = '';
+      filterAward.value = '';
+      filterTerm.value = '';
+      filterYear.value = '';
+      loadCertificates();
+    });
+  }
+
+  function loadAvailableTermsAndYears() {
+    fetch('../controllers/CertificateController.php?action=availableTerms&teacherId=' + encodeURIComponent(teacherId))
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && Array.isArray(result.data)) {
+          const terms = new Set();
+          const years = new Set();
+          result.data.forEach(item => {
+            if (item.term) terms.add(item.term);
+            if (item.year) years.add(item.year);
+          });
+
+          // เติม dropdown ภาคเรียน
+          const filterTerm = document.getElementById('filterTerm');
+          filterTerm.innerHTML = '<option value="">ทุกภาคเรียน</option>';
+          Array.from(terms).sort().forEach(term => {
+            filterTerm.innerHTML += `<option value="${term}">${term}</option>`;
+          });
+
+          // เติม dropdown ปีการศึกษา
+          const filterYear = document.getElementById('filterYear');
+          filterYear.innerHTML = '<option value="">ทุกปี</option>';
+          Array.from(years).sort((a, b) => b - a).forEach(year => {
+            filterYear.innerHTML += `<option value="${year}">${year}</option>`;
+          });
+        }
+      });
+  }
+
+  function performSearch(searchTerm) {
+    fetch(`../controllers/CertificateController.php?action=search&term=${encodeURIComponent(searchTerm)}&teacherId=${encodeURIComponent(teacherId)}`)
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          certificatesData = result.data;
+          renderCertificateTable(certificatesData);
+          
+          // Show search results info
+          if (result.count === 0) {
+            Swal.fire({
+              title: 'ไม่พบผลลัพธ์',
+              text: `ไม่พบข้อมูลที่ตรงกับคำค้นหา "${searchTerm}"`,
+              icon: 'info',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+        } else {
+          Swal.fire('ข้อผิดพลาด', result.message, 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Search error:', err);
+        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการค้นหา', 'error');
+      });
+  }
+
+  // ปรับ applyFilters ให้ส่ง term/year ไป backend
+  function applyFilters() {
+    const filterClass = document.getElementById('filterClass').value;
+    const filterAward = document.getElementById('filterAward').value;
+    const filterTerm = document.getElementById('filterTerm').value;
+    const filterYear = document.getElementById('filterYear').value;
+    let url = `../controllers/CertificateController.php?action=search&teacherId=${encodeURIComponent(teacherId)}`;
+    if (filterClass) url += `&classFilter=${encodeURIComponent(filterClass)}`;
+    if (filterAward) url += `&awardFilter=${encodeURIComponent(filterAward)}`;
+    if (filterTerm) url += `&termFilter=${encodeURIComponent(filterTerm)}`;
+    if (filterYear) url += `&yearFilter=${encodeURIComponent(filterYear)}`;
+    fetch(url)
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          certificatesData = result.data;
+          renderCertificateTable(certificatesData);
+        } else {
+          Swal.fire('ข้อผิดพลาด', result.message, 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Filter error:', err);
+        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการกรองข้อมูล', 'error');
+      });
+  }
+
+  // Enhanced statistics with additional info
+  function loadStatistics() {
+    fetch('../controllers/CertificateController.php?action=statistics&teacherId=' + encodeURIComponent(teacherId))
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          updateStatsDisplay(result.data);
+          loadTopStudents();
+          loadRecentCertificates();
+        }
+      })
+      .catch(err => console.error('Error loading statistics:', err));
+  }
+
+  function loadTopStudents() {
+    fetch('../controllers/CertificateController.php?action=topStudents&teacherId=' + encodeURIComponent(teacherId) + '&limit=5')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data.length > 0) {
+          displayTopStudents(result.data);
+        }
+      })
+      .catch(err => console.error('Error loading top students:', err));
+  }
+
+  function loadRecentCertificates() {
+    fetch('../controllers/CertificateController.php?action=recent&teacherId=' + encodeURIComponent(teacherId) + '&limit=3')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data.length > 0) {
+          displayRecentCertificates(result.data);
+        }
+      })
+      .catch(err => console.error('Error loading recent certificates:', err));
+  }
+
+  function displayTopStudents(students) {
+    // This could be displayed in a separate modal or section
+    console.log('Top students:', students);
+  }
+
+  function displayRecentCertificates(certificates) {
+    // This could be displayed in a separate section
+    console.log('Recent certificates:', certificates);
+  }
+
+  // Enhanced error handling
+  function showErrorState() {
+    const tbody = document.querySelector('#certificateTable tbody');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="12" class="text-center py-8">
+          <div class="flex flex-col items-center">
+            <i class="fas fa-exclamation-triangle text-6xl text-red-300 mb-4"></i>
+            <p class="text-red-500 text-lg">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>
+            <p class="text-gray-500 mb-4">กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</p>
+            <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+              <i class="fas fa-sync-alt mr-2"></i>ลองใหม่
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  // Filter and search functionality
+  function initFilters() {
+    const searchInput = document.getElementById('searchStudent');
+    const filterClass = document.getElementById('filterClass');
+    const filterAward = document.getElementById('filterAward');
+    const filterTerm = document.getElementById('filterTerm');
+    const filterYear = document.getElementById('filterYear');
+    const btnClearFilter = document.getElementById('btnClearFilter');
+
+    // Debounced search
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        const searchTerm = searchInput.value.trim();
+        if (searchTerm.length >= 2) {
+          performSearch(searchTerm);
+        } else if (searchTerm.length === 0) {
+          loadCertificates();
+        }
+      }, 500);
+    });
+
+    // โหลดตัวเลือกภาคเรียน/ปีการศึกษา
+    loadAvailableTermsAndYears();
+
+    filterClass.addEventListener('change', applyFilters);
+    filterAward.addEventListener('change', applyFilters);
+    filterTerm.addEventListener('change', applyFilters);
+    filterYear.addEventListener('change', applyFilters);
+
+    btnClearFilter.addEventListener('click', function() {
+      searchInput.value = '';
+      filterClass.value = '';
+      filterAward.value = '';
+      filterTerm.value = '';
+      filterYear.value = '';
+      loadCertificates();
+    });
+  }
+
+  function loadAvailableTermsAndYears() {
+    fetch('../controllers/CertificateController.php?action=availableTerms&teacherId=' + encodeURIComponent(teacherId))
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && Array.isArray(result.data)) {
+          const terms = new Set();
+          const years = new Set();
+          result.data.forEach(item => {
+            if (item.term) terms.add(item.term);
+            if (item.year) years.add(item.year);
+          });
+
+          // เติม dropdown ภาคเรียน
+          const filterTerm = document.getElementById('filterTerm');
+          filterTerm.innerHTML = '<option value="">ทุกภาคเรียน</option>';
+          Array.from(terms).sort().forEach(term => {
+            filterTerm.innerHTML += `<option value="${term}">${term}</option>`;
+          });
+
+          // เติม dropdown ปีการศึกษา
+          const filterYear = document.getElementById('filterYear');
+          filterYear.innerHTML = '<option value="">ทุกปี</option>';
+          Array.from(years).sort((a, b) => b - a).forEach(year => {
+            filterYear.innerHTML += `<option value="${year}">${year}</option>`;
+          });
+        }
+      });
+  }
+
+  function performSearch(searchTerm) {
+    fetch(`../controllers/CertificateController.php?action=search&term=${encodeURIComponent(searchTerm)}&teacherId=${encodeURIComponent(teacherId)}`)
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          certificatesData = result.data;
+          renderCertificateTable(certificatesData);
+          
+          // Show search results info
+          if (result.count === 0) {
+            Swal.fire({
+              title: 'ไม่พบผลลัพธ์',
+              text: `ไม่พบข้อมูลที่ตรงกับคำค้นหา "${searchTerm}"`,
+              icon: 'info',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+        } else {
+          Swal.fire('ข้อผิดพลาด', result.message, 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Search error:', err);
+        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการค้นหา', 'error');
+      });
+  }
+
+  // ปรับ applyFilters ให้ส่ง term/year ไป backend
+  function applyFilters() {
+    const filterClass = document.getElementById('filterClass').value;
+    const filterAward = document.getElementById('filterAward').value;
+    const filterTerm = document.getElementById('filterTerm').value;
+    const filterYear = document.getElementById('filterYear').value;
+    let url = `../controllers/CertificateController.php?action=search&teacherId=${encodeURIComponent(teacherId)}`;
+    if (filterClass) url += `&classFilter=${encodeURIComponent(filterClass)}`;
+    if (filterAward) url += `&awardFilter=${encodeURIComponent(filterAward)}`;
+    if (filterTerm) url += `&termFilter=${encodeURIComponent(filterTerm)}`;
+    if (filterYear) url += `&yearFilter=${encodeURIComponent(filterYear)}`;
+    fetch(url)
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          certificatesData = result.data;
+          renderCertificateTable(certificatesData);
+        } else {
+          Swal.fire('ข้อผิดพลาด', result.message, 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Filter error:', err);
+        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการกรองข้อมูล', 'error');
+      });
+  }
+
+  // Enhanced statistics with additional info
+  function loadStatistics() {
+    fetch('../controllers/CertificateController.php?action=statistics&teacherId=' + encodeURIComponent(teacherId))
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          updateStatsDisplay(result.data);
+          loadTopStudents();
+          loadRecentCertificates();
+        }
+      })
+      .catch(err => console.error('Error loading statistics:', err));
+  }
+
+  function loadTopStudents() {
+    fetch('../controllers/CertificateController.php?action=topStudents&teacherId=' + encodeURIComponent(teacherId) + '&limit=5')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data.length > 0) {
+          displayTopStudents(result.data);
+        }
+      })
+      .catch(err => console.error('Error loading top students:', err));
+  }
+
+  function loadRecentCertificates() {
+    fetch('../controllers/CertificateController.php?action=recent&teacherId=' + encodeURIComponent(teacherId) + '&limit=3')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data.length > 0) {
+          displayRecentCertificates(result.data);
+        }
+      })
+      .catch(err => console.error('Error loading recent certificates:', err));
+  }
+
+  function displayTopStudents(students) {
+    // This could be displayed in a separate modal or section
+    console.log('Top students:', students);
+  }
+
+  function displayRecentCertificates(certificates) {
+    // This could be displayed in a separate section
+    console.log('Recent certificates:', certificates);
+  }
+
+  // Enhanced error handling
+  function showErrorState() {
+    const tbody = document.querySelector('#certificateTable tbody');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="12" class="text-center py-8">
+          <div class="flex flex-col items-center">
+            <i class="fas fa-exclamation-triangle text-6xl text-red-300 mb-4"></i>
+            <p class="text-red-500 text-lg">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>
+            <p class="text-gray-500 mb-4">กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</p>
+            <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+              <i class="fas fa-sync-alt mr-2"></i>ลองใหม่
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  // Filter and search functionality
   function initFilters() {
     const searchInput = document.getElementById('searchStudent');
     const filterClass = document.getElementById('filterClass');

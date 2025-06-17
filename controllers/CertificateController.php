@@ -69,7 +69,12 @@ class CertificateController {
             
             $certificates = $this->certificateModel->getAll($teacherId);
 
-            $this->sendResponse($certificates);
+            // ส่ง response ในรูปแบบเดียวกับ action อื่นๆ
+            $this->sendResponse([
+                'success' => true,
+                'data' => $certificates,
+                'count' => count($certificates)
+            ]);
 
         } catch (Exception $e) {
             error_log('Certificate list error: ' . $e->getMessage());
