@@ -32,7 +32,10 @@ class CertificateController {
                 'note' => $input['note'] ?? '',
                 'term' => $input['term'] ?? null,
                 'year' => $input['year'] ?? null,
-                'teacher_id' => $_SESSION['user']['Teach_id'] ?? null
+                'teacher_id' => $_SESSION['user']['Teach_id'] ?? null,
+                'award_name' => $input['award_name'] ?? null,
+                'award_level' => $input['award_level'] ?? null,
+                'award_organization' => $input['award_organization'] ?? null
             ];
 
             $insertedIds = $this->certificateModel->createMultiple($students, $commonData);
@@ -762,6 +765,9 @@ class CertificateController {
 
     private function validateInput($input) {
         $students = $input['students'] ?? [];
+        $awardName = $input['award_name'] ?? '';
+        $awardLevel = $input['award_level'] ?? '';
+        $awardOrganization = $input['award_organization'] ?? '';
         $awardType = $input['award_type'] ?? '';
         $awardDetail = $input['award_detail'] ?? '';
         $awardDate = $input['award_date'] ?? '';
@@ -772,7 +778,8 @@ class CertificateController {
             throw new Exception('กรุณาเพิ่มข้อมูลนักเรียนอย่างน้อย 1 คน');
         }
 
-        if (empty($awardType) || empty($awardDetail) || empty($awardDate)) {
+        if (empty($awardName) || empty($awardLevel) || empty($awardOrganization) || 
+            empty($awardType) || empty($awardDetail) || empty($awardDate)) {
             throw new Exception('กรุณากรอกข้อมูลให้ครบถ้วน');
         }
 
