@@ -60,49 +60,108 @@ class CertificateController {
     }
 
     public function list() {
-        // เปิด debug mode เฉพาะ dev หรือ admin เท่านั้น!
-        $debug = true; // เปลี่ยนเป็น false เมื่อขึ้น production จริง
+        // IMPORTANT: Set to false in your production environment!
+        // This flag enables detailed error messages to be sent to the client.
+        $debug = true; 
         $debugInfo = [];
+        $isOutputBufferingActiveByThisFunction = false;
+        $teacherIdInput = $_GET['teacherId'] ?? null; // Store for logging
 
         try {
-            $teacherId = $_GET['teacherId'] ?? null;
-            
-            if (!$teacherId) {
-                throw new Exception('Teacher ID is required');
+            if (!$teacherIdInput) {
+                throw new Exception('Teacher ID is required.');
             }
 
-            // ดักจับ debug log จาก model (ใช้ output buffering)
-            if ($debug) ob_start();
-
-            $certificates = $this->certificateModel->getAll($teacherId);
-
+            // Start output buffering if in debug mode to capture any direct output from the model
             if ($debug) {
-                $debugInfo['php_error_log'] = ob_get_clean();
+                ob_start();
+                $isOutputBufferingActiveByThisFunction = true;
             }
 
-            $response = [
-                'success' => true,
-                'data' => $certificates
-            ];
-            if ($debug) $response['debug'] = $debugInfo;
+            // This is the critical call to your model that fetches data
+            $certificates = $this->certificateModel->getAll($teacherIdInput);
 
+            // If buffering was active, get the captured content
+            if ($isOutputBufferingActiveByThisFunction) {
+                $bufferedOutput = ob_get_clean();
+                if (!empty($bufferedOutput)) {
+                    $debugInfo['model_output_capture'] = $bufferedOutput;
+                }
+                $isOutputBufferingActiveByThisFunction = false; // Buffer is now clean
+            }
+
+            $response = ['success' => true, 'data' => $certificates];
+            if ($debug && !empty($debugInfo)) {
+                $response['debug'] = $debugInfo;
+            }
             $this->sendResponse($response);
 
         } catch (Exception $e) {
+            // If output buffering was started by this function and an exception occurred, clean it.
+            if ($isOutputBufferingActiveByThisFunction) {
+                $exceptionBufferedOutput = ob_get_clean();
+                if (!empty($exceptionBufferedOutput) && $debug) {
+                    // Prepend to debugInfo so it's available in the JSON response if debug is on
+                    $debugInfo = ['model_output_before_exception' => $exceptionBufferedOutput] + $debugInfo;
+                }
+                $isOutputBufferingActiveByThisFunction = false;
+            }
+
+            // Construct a detailed error message for server-side logging
+            $logMessage = sprintf(
+                "CertificateController::list Error: [%s] %s in %s on line %d. TeacherID: %s. PHP Version: %s. Server: %s.",
+                get_class($e),
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine(),
+                $teacherIdInput ?? 'N/A', // Use the stored input value
+                phpversion(),
+                $_SERVER['SERVER_SOFTWARE'] ?? 'N/A'
+            );
+
+            // For PDOExceptions, add more SQL specific info to server log
+            if ($e instanceof \PDOException) { // Fixed the backslash issue here
+                $logMessage .= " SQLSTATE: " . $e->getCode() . ". Driver ErrorInfo: " . implode(", ", $e->errorInfo ?? ['N/A']);
+            }
+            error_log($logMessage); // Log to server's error log
+            // For very detailed debugging on the server, you might also log the trace:
+            // error_log("Full Trace: " . $e->getTraceAsString());
+
+            // Prepare client response
+            $clientMessage = 'An error occurred while fetching the certificate list.';
+            $clientErrorDetails = 'Specific error details are not available. Check server logs.';
+
             if ($debug) {
-                $debugInfo['exception'] = $e->getMessage();
-                $debugInfo['trace'] = $e->getTraceAsString();
-                if (empty($debugInfo['php_error_log'])) {
-                    $debugInfo['php_error_log'] = ob_get_clean();
+                // In debug mode, provide more detailed error information to the client
+                $clientMessage = 'Error fetching certificates: ' . $e->getMessage();
+                $debugInfo['error_type'] = get_class($e);
+                $debugInfo['error_message'] = $e->getMessage();
+                $debugInfo['error_file'] = $e->getFile();
+                $debugInfo['error_line'] = $e->getLine();
+                // Consider sending only a snippet of the trace to the client, or none at all, for security.
+                // $debugInfo['error_trace_snippet'] = substr($e->getTraceAsString(), 0, 500) . "... (see server log for full trace)";
+
+                if ($e instanceof \PDOException) { // Fixed the backslash issue here
+                    $clientErrorDetails = 'Database Query Error: ' . $e->getMessage() . ' (SQLSTATE: ' . $e->getCode() . ')';
+                    // $debugInfo['pdo_error_info'] = $e->errorInfo; // Be cautious about exposing this directly
+                } else {
+                    $clientErrorDetails = 'Application Error: ' . $e->getMessage();
                 }
             }
-            error_log('Certificate list error: ' . $e->getMessage());
+
             $response = [
                 'success' => false,
-                'message' => $e->getMessage(),
-                'error_details' => 'Database connection or query error'
+                'message' => $clientMessage,
             ];
-            if ($debug) $response['debug'] = $debugInfo;
+
+            if ($debug) {
+                $response['error_details'] = $clientErrorDetails;
+                $response['debug'] = $debugInfo; // Add any collected debug info
+            } else {
+                // For production (non-debug mode), a generic message is safer for the client
+                $response['message'] = 'Could not retrieve certificates due to a server error. Please contact support or check server logs.';
+            }
+
             $this->sendResponse($response);
         }
     }
