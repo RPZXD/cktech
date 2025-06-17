@@ -166,13 +166,14 @@ class Certificate
     public function getAll($teacherId = null)
     {
         try {
-            // Check if new columns exist first
+            // Debug: Log entry point
+            error_log('[DEBUG] Certificate::getAll called with teacherId=' . var_export($teacherId, true));
+
             $columnsExist = $this->checkNewColumnsExist();
 
             if ($columnsExist) {
                 $sql = "SELECT c.* FROM {$this->table} c";
             } else {
-                // Fallback query without new columns
                 $sql = "SELECT c.id, c.student_name, c.student_class, c.student_room, 
                                c.award_type, c.award_detail, c.award_date, c.note, 
                                c.certificate_image, c.teacher_id, c.term, c.year, 
@@ -189,10 +190,16 @@ class Certificate
 
             $sql .= " ORDER BY c.created_at DESC";
 
+            // Debug: Log SQL and params
+            error_log('[DEBUG] Certificate::getAll SQL: ' . $sql);
+            error_log('[DEBUG] Certificate::getAll Params: ' . json_encode($params));
+
             $stmt = $this->db->query($sql, $params);
             $certificates = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Add teacher names from the users database
+            // Debug: Log result count
+            error_log('[DEBUG] Certificate::getAll fetched rows: ' . count($certificates));
+
             foreach ($certificates as &$cert) {
                 if ($cert['teacher_id']) {
                     try {
@@ -200,7 +207,7 @@ class Certificate
                         $cert['teacher_name'] = $teacher ? $teacher['Teach_name'] : 'ไม่พบข้อมูลครู';
                     } catch (\Exception $e) {
                         $cert['teacher_name'] = 'ไม่สามารถโหลดข้อมูลครูได้';
-                        error_log('Teacher name fetch error: ' . $e->getMessage());
+                        error_log('[DEBUG] Teacher name fetch error: ' . $e->getMessage());
                     }
                 } else {
                     $cert['teacher_name'] = '-';
@@ -209,7 +216,8 @@ class Certificate
 
             return $certificates;
         } catch (\Exception $e) {
-            error_log('Certificate::getAll error: ' . $e->getMessage());
+            error_log('[DEBUG] Certificate::getAll error: ' . $e->getMessage());
+            error_log('[DEBUG] Trace: ' . $e->getTraceAsString());
             throw new Exception('Failed to fetch certificates: ' . $e->getMessage());
         }
     }
