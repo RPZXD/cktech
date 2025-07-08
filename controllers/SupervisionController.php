@@ -18,6 +18,16 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['role'])) {
     exit;
 }
 
+// Check for file upload size exceeded (PHP handles this before script runs, but we can check for empty $_POST with a file upload)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && !empty($_FILES)) {
+    http_response_code(413);
+    echo json_encode([
+        'success' => false,
+        'message' => 'ขนาดไฟล์ที่อัปโหลดใหญ่เกินกว่าที่ระบบกำหนด กรุณาลดขนาดไฟล์และลองใหม่อีกครั้ง'
+    ]);
+    exit;
+}
+
 try {
     $supervision = new Supervision();
     $action = $_GET['action'] ?? '';
@@ -300,14 +310,11 @@ try {
             }
 
             $data = [
-                // Planning evaluation (5 items)
                 'dept_plan_effective' => intval($_POST['dept_plan_effective'] ?? 0),
                 'dept_plan_correct' => intval($_POST['dept_plan_correct'] ?? 0),
                 'dept_plan_activities' => intval($_POST['dept_plan_activities'] ?? 0),
                 'dept_plan_media' => intval($_POST['dept_plan_media'] ?? 0),
                 'dept_plan_assessment' => intval($_POST['dept_plan_assessment'] ?? 0),
-                
-                // Teaching evaluation (9 items)
                 'dept_teach_techniques' => intval($_POST['dept_teach_techniques'] ?? 0),
                 'dept_teach_media' => intval($_POST['dept_teach_media'] ?? 0),
                 'dept_teach_assessment' => intval($_POST['dept_teach_assessment'] ?? 0),
@@ -317,29 +324,22 @@ try {
                 'dept_teach_adaptation' => intval($_POST['dept_teach_adaptation'] ?? 0),
                 'dept_teach_integration' => intval($_POST['dept_teach_integration'] ?? 0),
                 'dept_teach_language' => intval($_POST['dept_teach_language'] ?? 0),
-                
-                // Evaluation assessment (5 items)
                 'dept_eval_variety' => intval($_POST['dept_eval_variety'] ?? 0),
                 'dept_eval_standards' => intval($_POST['dept_eval_standards'] ?? 0),
                 'dept_eval_criteria' => intval($_POST['dept_eval_criteria'] ?? 0),
                 'dept_eval_feedback' => intval($_POST['dept_eval_feedback'] ?? 0),
                 'dept_eval_evidence' => intval($_POST['dept_eval_evidence'] ?? 0),
-                
-                // Environment assessment (6 items)
                 'dept_env_classroom' => intval($_POST['dept_env_classroom'] ?? 0),
                 'dept_env_interaction' => intval($_POST['dept_env_interaction'] ?? 0),
                 'dept_env_safety' => intval($_POST['dept_env_safety'] ?? 0),
                 'dept_env_management' => intval($_POST['dept_env_management'] ?? 0),
                 'dept_env_rules' => intval($_POST['dept_env_rules'] ?? 0),
                 'dept_env_behavior' => intval($_POST['dept_env_behavior'] ?? 0),
-                
-                // Score and quality
                 'dept_score' => intval($_POST['dept_score'] ?? 0),
                 'dept_quality_level' => $_POST['dept_quality_level'] ?? '',
                 'dept_observation_notes' => $_POST['dept_observation_notes'] ?? '',
-                'dept_reflection_notes' => $_POST['dept_reflection_notes'] ?? '',
                 'dept_strengths' => $_POST['dept_strengths'] ?? '',
-                'dept_improvements' => $_POST['dept_improvements'] ?? '',
+                'dept_suggestion' => $_POST['dept_suggestion'] ?? '',
                 'dept_supervisor_signature' => $_POST['dept_supervisor_signature'] ?? ''
             ];
 
@@ -348,6 +348,58 @@ try {
                 echo json_encode(['success' => true, 'message' => 'บันทึกการประเมินของหัวหน้ากลุ่มสาระสำเร็จ']);
             } else {
                 throw new Exception('Failed to update department evaluation');
+            }
+            break;
+
+        case 'director_evaluate':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Method not allowed');
+            }
+
+            $id = $_POST['id'] ?? '';
+            if (!$id) {
+                throw new Exception('ID is required');
+            }
+
+            $data = [
+                'dir_plan_effective' => intval($_POST['dir_plan_effective'] ?? 0),
+                'dir_plan_correct' => intval($_POST['dir_plan_correct'] ?? 0),
+                'dir_plan_activities' => intval($_POST['dir_plan_activities'] ?? 0),
+                'dir_plan_media' => intval($_POST['dir_plan_media'] ?? 0),
+                'dir_plan_assessment' => intval($_POST['dir_plan_assessment'] ?? 0),
+                'dir_teach_techniques' => intval($_POST['dir_teach_techniques'] ?? 0),
+                'dir_teach_media' => intval($_POST['dir_teach_media'] ?? 0),
+                'dir_teach_assessment' => intval($_POST['dir_teach_assessment'] ?? 0),
+                'dir_teach_explanation' => intval($_POST['dir_teach_explanation'] ?? 0),
+                'dir_teach_control' => intval($_POST['dir_teach_control'] ?? 0),
+                'dir_teach_thinking' => intval($_POST['dir_teach_thinking'] ?? 0),
+                'dir_teach_adaptation' => intval($_POST['dir_teach_adaptation'] ?? 0),
+                'dir_teach_integration' => intval($_POST['dir_teach_integration'] ?? 0),
+                'dir_teach_language' => intval($_POST['dir_teach_language'] ?? 0),
+                'dir_eval_variety' => intval($_POST['dir_eval_variety'] ?? 0),
+                'dir_eval_standards' => intval($_POST['dir_eval_standards'] ?? 0),
+                'dir_eval_criteria' => intval($_POST['dir_eval_criteria'] ?? 0),
+                'dir_eval_feedback' => intval($_POST['dir_eval_feedback'] ?? 0),
+                'dir_eval_evidence' => intval($_POST['dir_eval_evidence'] ?? 0),
+                'dir_env_classroom' => intval($_POST['dir_env_classroom'] ?? 0),
+                'dir_env_interaction' => intval($_POST['dir_env_interaction'] ?? 0),
+                'dir_env_safety' => intval($_POST['dir_env_safety'] ?? 0),
+                'dir_env_management' => intval($_POST['dir_env_management'] ?? 0),
+                'dir_env_rules' => intval($_POST['dir_env_rules'] ?? 0),
+                'dir_env_behavior' => intval($_POST['dir_env_behavior'] ?? 0),
+                'dir_score' => intval($_POST['dir_score'] ?? 0),
+                'dir_quality_level' => $_POST['dir_quality_level'] ?? '',
+                'dir_observation_notes' => $_POST['dir_observation_notes'] ?? '',
+                'dir_strengths' => $_POST['dir_strengths'] ?? '',
+                'dir_suggestion' => $_POST['dir_suggestion'] ?? '',
+                'dir_supervisor_signature' => $_POST['dir_supervisor_signature'] ?? ''
+            ];
+
+            $success = $supervision->updateDirectorEvaluation($id, $data);
+            if ($success) {
+                echo json_encode(['success' => true, 'message' => 'บันทึกการประเมินของผู้บริหารสำเร็จ']);
+            } else {
+                throw new Exception('Failed to update director evaluation');
             }
             break;
 
@@ -360,3 +412,4 @@ try {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => $e->getMessage(), 'debug' => $e->getTraceAsString()]);
 }
+

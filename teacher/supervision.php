@@ -1870,7 +1870,29 @@ document.addEventListener('DOMContentLoaded', function() {
       Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลสำหรับพิมพ์ได้', 'error');
     }
   };
+
+  // ====== Add file size check for uploads (max 40MB per file) ======
+  // Adjust selector as needed for your file input fields
+  document.querySelectorAll('input[type="file"]').forEach(function(input) {
+    input.addEventListener('change', function(e) {
+      const maxSize = 40 * 1024 * 1024; // 40MB
+      for (let i = 0; i < this.files.length; i++) {
+        if (this.files[i].size > maxSize) {
+          Swal.fire({
+            icon: 'error',
+            title: 'ขนาดไฟล์ใหญ่เกินไป',
+            text: 'ไฟล์ที่เลือกมีขนาดเกิน 40MB กรุณาเลือกไฟล์ที่มีขนาดเล็กกว่า 40MB',
+            confirmButtonColor: '#d33'
+          });
+          this.value = '';
+          break;
+        }
+      }
+    });
+  });
 });
+
+
 </script>
 
 <?php require_once('script.php');?>

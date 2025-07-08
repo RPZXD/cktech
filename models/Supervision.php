@@ -449,6 +449,49 @@ class Supervision {
                 dept_improvements TEXT,
                 dept_supervisor_signature VARCHAR(255),
                 
+                -- Director Evaluation Fields
+                -- ด้านที่ 1: การจัดทำแผน (ผู้อำนวยการ)
+                dir_plan_effective TINYINT DEFAULT 0,
+                dir_plan_correct TINYINT DEFAULT 0,
+                dir_plan_activities TINYINT DEFAULT 0,
+                dir_plan_media TINYINT DEFAULT 0,
+                dir_plan_assessment TINYINT DEFAULT 0,
+                
+                -- ด้านที่ 2: การจัดการเรียนรู้ (ผู้อำนวยการ)
+                dir_teach_techniques TINYINT DEFAULT 0,
+                dir_teach_media TINYINT DEFAULT 0,
+                dir_teach_assessment TINYINT DEFAULT 0,
+                dir_teach_explanation TINYINT DEFAULT 0,
+                dir_teach_control TINYINT DEFAULT 0,
+                dir_teach_thinking TINYINT DEFAULT 0,
+                dir_teach_adaptation TINYINT DEFAULT 0,
+                dir_teach_integration TINYINT DEFAULT 0,
+                dir_teach_language TINYINT DEFAULT 0,
+                
+                -- ด้านที่ 3: การประเมินผล (ผู้อำนวยการ)
+                dir_eval_variety TINYINT DEFAULT 0,
+                dir_eval_standards TINYINT DEFAULT 0,
+                dir_eval_criteria TINYINT DEFAULT 0,
+                dir_eval_feedback TINYINT DEFAULT 0,
+                dir_eval_evidence TINYINT DEFAULT 0,
+                
+                -- ด้านที่ 4: สภาพแวดล้อม (ผู้อำนวยการ)
+                dir_env_classroom TINYINT DEFAULT 0,
+                dir_env_interaction TINYINT DEFAULT 0,
+                dir_env_safety TINYINT DEFAULT 0,
+                dir_env_management TINYINT DEFAULT 0,
+                dir_env_rules TINYINT DEFAULT 0,
+                dir_env_behavior TINYINT DEFAULT 0,
+                
+                -- Director evaluation summary
+                dir_score INT DEFAULT 0,
+                dir_quality_level VARCHAR(50),
+                dir_observation_notes TEXT,
+                dir_reflection_notes TEXT,
+                dir_strengths TEXT,
+                dir_improvements TEXT,
+                dir_supervisor_signature VARCHAR(255),
+                
                 -- File attachments
                 lesson_plan VARCHAR(500),
                 supervisor_photos VARCHAR(500),
@@ -531,6 +574,61 @@ class Supervision {
                 }
             }
 
+            // Check if all director evaluation columns exist, if not add them
+            $dirColumns = [
+                // Planning evaluation (Director)
+                'dir_plan_effective' => 'TINYINT DEFAULT 0 COMMENT "การวางแผนการสอนที่มีประสิทธิภาพ (ผู้บริหาร)"',
+                'dir_plan_correct' => 'TINYINT DEFAULT 0 COMMENT "แผนการจัดการเรียนรู้ถูกต้อง (ผู้บริหาร)"',
+                'dir_plan_activities' => 'TINYINT DEFAULT 0 COMMENT "กิจกรรมการเรียนรู้ (ผู้บริหาร)"',
+                'dir_plan_media' => 'TINYINT DEFAULT 0 COMMENT "การจัดหาสื่อการเรียน (ผู้บริหาร)"',
+                'dir_plan_assessment' => 'TINYINT DEFAULT 0 COMMENT "การวัดและประเมินผล (ผู้บริหาร)"',
+                
+                // Teaching evaluation (Director)
+                'dir_teach_techniques' => 'TINYINT DEFAULT 0 COMMENT "เทคนิคการสอน (ผู้บริหาร)"',
+                'dir_teach_media' => 'TINYINT DEFAULT 0 COMMENT "การใช้สื่อและเทคโนโลยี (ผู้บริหาร)"',
+                'dir_teach_assessment' => 'TINYINT DEFAULT 0 COMMENT "การประเมินระหว่างเรียน (ผู้บริหาร)"',
+                'dir_teach_explanation' => 'TINYINT DEFAULT 0 COMMENT "การอธิบายเนื้อหา (ผู้บริหาร)"',
+                'dir_teach_control' => 'TINYINT DEFAULT 0 COMMENT "การควบคุมชั้นเรียน (ผู้บริหาร)"',
+                'dir_teach_thinking' => 'TINYINT DEFAULT 0 COMMENT "การพัฒนาการคิด (ผู้บริหาร)"',
+                'dir_teach_adaptation' => 'TINYINT DEFAULT 0 COMMENT "การปรับเนื้อหา (ผู้บริหาร)"',
+                'dir_teach_integration' => 'TINYINT DEFAULT 0 COMMENT "การบูรณาการ (ผู้บริหาร)"',
+                'dir_teach_language' => 'TINYINT DEFAULT 0 COMMENT "การใช้ภาษา (ผู้บริหาร)"',
+                
+                // Evaluation assessment (Director)
+                'dir_eval_variety' => 'TINYINT DEFAULT 0 COMMENT "วิธีการประเมินหลากหลาย (ผู้บริหาร)"',
+                'dir_eval_standards' => 'TINYINT DEFAULT 0 COMMENT "สอดคล้องมาตรฐาน (ผู้บริหาร)"',
+                'dir_eval_criteria' => 'TINYINT DEFAULT 0 COMMENT "เกณฑ์การประเมิน (ผู้บริหาร)"',
+                'dir_eval_feedback' => 'TINYINT DEFAULT 0 COMMENT "การให้ข้อมูลย้อนกลับ (ผู้บริหาร)"',
+                'dir_eval_evidence' => 'TINYINT DEFAULT 0 COMMENT "หลักฐานการเรียนรู้ (ผู้บริหาร)"',
+                
+                // Environment assessment (Director)
+                'dir_env_classroom' => 'TINYINT DEFAULT 0 COMMENT "การจัดห้องเรียน (ผู้บริหาร)"',
+                'dir_env_interaction' => 'TINYINT DEFAULT 0 COMMENT "ปฏิสัมพันธ์เชิงบวก (ผู้บริหาร)"',
+                'dir_env_safety' => 'TINYINT DEFAULT 0 COMMENT "ความปลอดภัย (ผู้บริหาร)"',
+                'dir_env_management' => 'TINYINT DEFAULT 0 COMMENT "การจัดการชั้นเรียน (ผู้บริหาร)"',
+                'dir_env_rules' => 'TINYINT DEFAULT 0 COMMENT "กฎกติกาการเรียน (ผู้บริหาร)"',
+                'dir_env_behavior' => 'TINYINT DEFAULT 0 COMMENT "การดูแลพฤติกรรม (ผู้บริหาร)"',
+                
+                // Summary fields (Director)
+                'dir_score' => 'INT DEFAULT 0 COMMENT "คะแนนรวมผู้บริหาร"',
+                'dir_quality_level' => 'VARCHAR(50) COMMENT "ระดับคุณภาพผู้บริหาร"',
+                'dir_observation_notes' => 'TEXT COMMENT "บันทึกการสังเกต (ผู้บริหาร)"',
+                'dir_strengths' => 'TEXT COMMENT "จุดเด่น (ผู้บริหาร)"',
+                'dir_suggestion' => 'TEXT COMMENT "ข้อเสนอแนะ (ผู้บริหาร)"',
+                'dir_supervisor_signature' => 'VARCHAR(255) COMMENT "ลายเซ็นผู้บริหาร"'
+            ];
+
+            foreach ($dirColumns as $column => $definition) {
+                $checkSql = "SHOW COLUMNS FROM supervisions LIKE '$column'";
+                $stmt = $this->pdo->query($checkSql);
+                
+                if ($stmt->rowCount() == 0) {
+                    $alterSql = "ALTER TABLE supervisions ADD COLUMN $column $definition";
+                    $this->pdo->exec($alterSql);
+                    error_log("Added $column column to supervisions table");
+                }
+            }
+
             // Check if term and pee columns exist, if not add them
             $checkColumns = ['term', 'pee'];
             foreach ($checkColumns as $column) {
@@ -582,51 +680,81 @@ class Supervision {
     }
 
     public function updateDepartmentEvaluation($id, $data) {
-        try {
-            $sql = "UPDATE supervisions SET
-                dept_plan_effective = :dept_plan_effective,
-                dept_plan_correct = :dept_plan_correct,
-                dept_plan_activities = :dept_plan_activities,
-                dept_plan_media = :dept_plan_media,
-                dept_plan_assessment = :dept_plan_assessment,
-                dept_teach_techniques = :dept_teach_techniques,
-                dept_teach_media = :dept_teach_media,
-                dept_teach_assessment = :dept_teach_assessment,
-                dept_teach_explanation = :dept_teach_explanation,
-                dept_teach_control = :dept_teach_control,
-                dept_teach_thinking = :dept_teach_thinking,
-                dept_teach_adaptation = :dept_teach_adaptation,
-                dept_teach_integration = :dept_teach_integration,
-                dept_teach_language = :dept_teach_language,
-                dept_eval_variety = :dept_eval_variety,
-                dept_eval_standards = :dept_eval_standards,
-                dept_eval_criteria = :dept_eval_criteria,
-                dept_eval_feedback = :dept_eval_feedback,
-                dept_eval_evidence = :dept_eval_evidence,
-                dept_env_classroom = :dept_env_classroom,
-                dept_env_interaction = :dept_env_interaction,
-                dept_env_safety = :dept_env_safety,
-                dept_env_management = :dept_env_management,
-                dept_env_rules = :dept_env_rules,
-                dept_env_behavior = :dept_env_behavior,
-                dept_score = :dept_score,
-                dept_quality_level = :dept_quality_level,
-                dept_observation_notes = :dept_observation_notes,
-                dept_reflection_notes = :dept_reflection_notes,
-                dept_strengths = :dept_strengths,
-                dept_improvements = :dept_improvements,
-                dept_supervisor_signature = :dept_supervisor_signature,
-                updated_at = CURRENT_TIMESTAMP
-                WHERE id = :id";
+        $sql = "UPDATE supervisions SET
+            dept_plan_effective = :dept_plan_effective,
+            dept_plan_correct = :dept_plan_correct,
+            dept_plan_activities = :dept_plan_activities,
+            dept_plan_media = :dept_plan_media,
+            dept_plan_assessment = :dept_plan_assessment,
+            dept_teach_techniques = :dept_teach_techniques,
+            dept_teach_media = :dept_teach_media,
+            dept_teach_assessment = :dept_teach_assessment,
+            dept_teach_explanation = :dept_teach_explanation,
+            dept_teach_control = :dept_teach_control,
+            dept_teach_thinking = :dept_teach_thinking,
+            dept_teach_adaptation = :dept_teach_adaptation,
+            dept_teach_integration = :dept_teach_integration,
+            dept_teach_language = :dept_teach_language,
+            dept_eval_variety = :dept_eval_variety,
+            dept_eval_standards = :dept_eval_standards,
+            dept_eval_criteria = :dept_eval_criteria,
+            dept_eval_feedback = :dept_eval_feedback,
+            dept_eval_evidence = :dept_eval_evidence,
+            dept_env_classroom = :dept_env_classroom,
+            dept_env_interaction = :dept_env_interaction,
+            dept_env_safety = :dept_env_safety,
+            dept_env_management = :dept_env_management,
+            dept_env_rules = :dept_env_rules,
+            dept_env_behavior = :dept_env_behavior,
+            dept_score = :dept_score,
+            dept_quality_level = :dept_quality_level,
+            dept_observation_notes = :dept_observation_notes,
+            dept_strengths = :dept_strengths,
+            dept_suggestion = :dept_suggestion,
+            dept_supervisor_signature = :dept_supervisor_signature
+        WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $data['id'] = $id;
+        return $stmt->execute($data);
+    }
 
-            $data['id'] = $id;
-            $stmt = $this->pdo->prepare($sql);
-            
-            return $stmt->execute($data);
-        } catch (Exception $e) {
-            error_log("Error updating department evaluation: " . $e->getMessage());
-            throw new Exception("Failed to update department evaluation: " . $e->getMessage());
-        }
+    public function updateDirectorEvaluation($id, $data) {
+        $sql = "UPDATE supervisions SET
+            dir_plan_effective = :dir_plan_effective,
+            dir_plan_correct = :dir_plan_correct,
+            dir_plan_activities = :dir_plan_activities,
+            dir_plan_media = :dir_plan_media,
+            dir_plan_assessment = :dir_plan_assessment,
+            dir_teach_techniques = :dir_teach_techniques,
+            dir_teach_media = :dir_teach_media,
+            dir_teach_assessment = :dir_teach_assessment,
+            dir_teach_explanation = :dir_teach_explanation,
+            dir_teach_control = :dir_teach_control,
+            dir_teach_thinking = :dir_teach_thinking,
+            dir_teach_adaptation = :dir_teach_adaptation,
+            dir_teach_integration = :dir_teach_integration,
+            dir_teach_language = :dir_teach_language,
+            dir_eval_variety = :dir_eval_variety,
+            dir_eval_standards = :dir_eval_standards,
+            dir_eval_criteria = :dir_eval_criteria,
+            dir_eval_feedback = :dir_eval_feedback,
+            dir_eval_evidence = :dir_eval_evidence,
+            dir_env_classroom = :dir_env_classroom,
+            dir_env_interaction = :dir_env_interaction,
+            dir_env_safety = :dir_env_safety,
+            dir_env_management = :dir_env_management,
+            dir_env_rules = :dir_env_rules,
+            dir_env_behavior = :dir_env_behavior,
+            dir_score = :dir_score,
+            dir_quality_level = :dir_quality_level,
+            dir_observation_notes = :dir_observation_notes,
+            dir_strengths = :dir_strengths,
+            dir_suggestion = :dir_suggestion,
+            dir_supervisor_signature = :dir_supervisor_signature
+        WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $data['id'] = $id;
+        return $stmt->execute($data);
     }
 
     public function getBySubjectGroup($subjectGroup) {
@@ -688,3 +816,4 @@ class Supervision {
         }
     }
 }
+
