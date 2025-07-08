@@ -41,8 +41,12 @@ try {
                 // For department users - get supervisions by subject group
                 $supervisions = $supervision->getBySubjectGroup($subjectGroup);
             } else {
-                // For teachers - get their own supervisions
-                $supervisions = $supervision->getAll($teacherId);
+                // For directors - get all supervisions, for teachers - get their own supervisions
+                if ($_SESSION['role'] === 'ผู้บริหาร') {
+                    $supervisions = $supervision->getAll(null); // Get all supervisions for directors
+                } else {
+                    $supervisions = $supervision->getAll($teacherId); // Get teacher's own supervisions
+                }
             }
             echo json_encode($supervisions);
             break;

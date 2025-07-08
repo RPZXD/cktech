@@ -76,22 +76,20 @@ class Supervision {
             $stmt->execute($params);
             $supervisions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Enrich with teacher data if needed
-            if (!$teacherId) {
-                require_once __DIR__ . '/../classes/DatabaseUsers.php';
-                $dbUsers = new \App\DatabaseUsers();
-                $usersPdo = $dbUsers->getPDO();
+            // Always enrich with teacher data for better filtering and display
+            require_once __DIR__ . '/../classes/DatabaseUsers.php';
+            $dbUsers = new \App\DatabaseUsers();
+            $usersPdo = $dbUsers->getPDO();
+            
+            foreach ($supervisions as &$supervision) {
+                $teacherSql = "SELECT Teach_name, Teach_major FROM teacher WHERE Teach_id = ?";
+                $teacherStmt = $usersPdo->prepare($teacherSql);
+                $teacherStmt->execute([$supervision['teacher_id']]);
+                $teacherData = $teacherStmt->fetch(PDO::FETCH_ASSOC);
                 
-                foreach ($supervisions as &$supervision) {
-                    $teacherSql = "SELECT Teach_name, Teach_major FROM teacher WHERE Teach_id = ?";
-                    $teacherStmt = $usersPdo->prepare($teacherSql);
-                    $teacherStmt->execute([$supervision['teacher_id']]);
-                    $teacherData = $teacherStmt->fetch(PDO::FETCH_ASSOC);
-                    
-                    if ($teacherData) {
-                        $supervision['teacher_full_name'] = $teacherData['Teach_name'];
-                        $supervision['teacher_subject_group'] = $teacherData['Teach_major'];
-                    }
+                if ($teacherData) {
+                    $supervision['teacher_full_name'] = $teacherData['Teach_name'];
+                    $supervision['teacher_subject_group'] = $teacherData['Teach_major'];
                 }
             }
             
