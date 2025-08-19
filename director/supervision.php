@@ -273,6 +273,21 @@ require_once('header.php');
               </div>
             </div>
 
+            <!-- แสดงรายละเอียดการประเมินของหัวหน้ากลุ่มสาระ -->
+            <div class="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-2xl border-l-4 border-blue-500 card-hover">
+              <h3 class="text-xl font-bold text-blue-700 mb-4 flex items-center gap-2">
+                👥 การประเมินของหัวหน้ากลุ่มสาระ (สรุปสิ่งที่ประเมิน)
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div id="deptEvaluation">
+                  <!-- Department head's detailed evaluation will be shown here -->
+                </div>
+                <div id="deptNotes">
+                  <!-- Department head's notes will be shown here -->
+                </div>
+              </div>
+            </div>
+
             <!-- การประเมินของผู้บริหาร -->
             <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border-l-4 border-purple-500 card-hover">
               <h3 class="text-xl font-bold text-purple-700 mb-4 flex items-center gap-2">
@@ -1373,6 +1388,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Populate teacher data
     populateTeacherData(supervision);
     
+  // Show department head evaluation summary and notes
+  renderDeptEvaluation(supervision);
+  renderDeptNotes(supervision);
+
     // Populate existing department evaluation if any
     populateDirectorEvaluation(supervision);
     
@@ -1512,6 +1531,101 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Set supervisee signature
     document.getElementById('superviseeSignature').value = displayName;
+  }
+
+  // Render department head detailed evaluation for directors to review
+  function renderDeptEvaluation(supervision) {
+    const container = document.getElementById('deptEvaluation');
+    if (!container) return;
+
+    const overallScore = supervision.dept_score != null ? supervision.dept_score : '-';
+    const quality = supervision.dept_quality_level || '-';
+
+    container.innerHTML = `
+      <h4 class="font-bold text-blue-600 mb-2">สรุปคะแนนของหัวหน้ากลุ่มสาระ</h4>
+      <div class="text-center p-4 bg-white rounded-lg border mb-4">
+        <div class="text-3xl font-bold text-blue-600">${overallScore}</div>
+        <div class="text-lg font-semibold text-blue-600">${quality}</div>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <div class="bg-blue-50 p-3 rounded-lg">
+          <div class="font-semibold text-blue-700 mb-2">1. ความสามารถในการจัดทำแผนการจัดการเรียนรู้</div>
+          <ul class="space-y-1 text-gray-700">
+            <li>• การวางแผนการสอนที่มีประสิทธิภาพ: <span class="font-semibold">${supervision.dept_plan_effective || 0}</span> คะแนน</li>
+            <li>• แผนการจัดการเรียนรู้ถูกต้อง เป็นขั้นตอน: <span class="font-semibold">${supervision.dept_plan_correct || 0}</span> คะแนน</li>
+            <li>• มีกิจกรรมที่ทำให้นักเรียนเกิดการเรียนรู้: <span class="font-semibold">${supervision.dept_plan_activities || 0}</span> คะแนน</li>
+            <li>• การจัดหาสื่อที่เหมาะสม: <span class="font-semibold">${supervision.dept_plan_media || 0}</span> คะแนน</li>
+            <li>• การวัดและประเมินผลผู้เรียน: <span class="font-semibold">${supervision.dept_plan_assessment || 0}</span> คะแนน</li>
+          </ul>
+        </div>
+        <div class="bg-green-50 p-3 rounded-lg">
+          <div class="font-semibold text-green-700 mb-2">2. ความสามารถในการจัดการเรียนรู้</div>
+          <ul class="space-y-1 text-gray-700">
+            <li>• ใช้เทคนิคที่ทำให้นักเรียนมีส่วนร่วม: <span class="font-semibold">${supervision.dept_teach_techniques || 0}</span> คะแนน</li>
+            <li>• เลือกใช้สื่อและเทคโนโลยี: <span class="font-semibold">${supervision.dept_teach_media || 0}</span> คะแนน</li>
+            <li>• มีการประเมินนักเรียนระหว่างเรียน: <span class="font-semibold">${supervision.dept_teach_assessment || 0}</span> คะแนน</li>
+            <li>• อธิบายเนื้อหาได้ชัดเจน: <span class="font-semibold">${supervision.dept_teach_explanation || 0}</span> คะแนน</li>
+            <li>• ความสามารถในการควบคุมชั้นเรียน: <span class="font-semibold">${supervision.dept_teach_control || 0}</span> คะแนน</li>
+            <li>• จัดกิจกรรมพัฒนาการคิด: <span class="font-semibold">${supervision.dept_teach_thinking || 0}</span> คะแนน</li>
+            <li>• ปรับเนื้อหาตามสถานการณ์: <span class="font-semibold">${supervision.dept_teach_adaptation || 0}</span> คะแนน</li>
+            <li>• บูรณาการกับชีวิตประจำวัน: <span class="font-semibold">${supervision.dept_teach_integration || 0}</span> คะแนน</li>
+            <li>• ใช้ภาษาได้ถูกต้องเหมาะสม: <span class="font-semibold">${supervision.dept_teach_language || 0}</span> คะแนน</li>
+          </ul>
+        </div>
+        <div class="bg-yellow-50 p-3 rounded-lg">
+          <div class="font-semibold text-yellow-700 mb-2">3. ความสามารถในการประเมินผล</div>
+          <ul class="space-y-1 text-gray-700">
+            <li>• วัดและประเมินด้วยวิธีหลากหลาย: <span class="font-semibold">${supervision.dept_eval_variety || 0}</span> คะแนน</li>
+            <li>• สอดคล้องกับมาตรฐานการเรียนรู้: <span class="font-semibold">${supervision.dept_eval_standards || 0}</span> คะแนน</li>
+            <li>• มีเกณฑ์การประเมินที่ชัดเจน: <span class="font-semibold">${supervision.dept_eval_criteria || 0}</span> คะแนน</li>
+            <li>• ให้ข้อมูลย้อนกลับแก่นักเรียน: <span class="font-semibold">${supervision.dept_eval_feedback || 0}</span> คะแนน</li>
+            <li>• มีผลงานเป็นหลักฐานการเรียนรู้: <span class="font-semibold">${supervision.dept_eval_evidence || 0}</span> คะแนน</li>
+          </ul>
+        </div>
+        <div class="bg-purple-50 p-3 rounded-lg">
+          <div class="font-semibold text-purple-700 mb-2">4. ความสามารถในการจัดสภาพแวดล้อมในชั้นเรียน</div>
+          <ul class="space-y-1 text-gray-700">
+            <li>• จัดสภาพห้องเรียนเหมาะสม: <span class="font-semibold">${supervision.dept_env_classroom || 0}</span> คะแนน</li>
+            <li>• สร้างปฏิสัมพันธ์เชิงบวก: <span class="font-semibold">${supervision.dept_env_interaction || 0}</span> คะแนน</li>
+            <li>• จัดชั้นเรียนให้ปลอดภัย: <span class="font-semibold">${supervision.dept_env_safety || 0}</span> คะแนน</li>
+            <li>• ความสามารถควบคุมชั้นเรียน: <span class="font-semibold">${supervision.dept_env_management || 0}</span> คะแนน</li>
+            <li>• ชี้แจงกฎกติกาในการเรียน: <span class="font-semibold">${supervision.dept_env_rules || 0}</span> คะแนน</li>
+            <li>• ดูแลพฤติกรรมนักเรียน: <span class="font-semibold">${supervision.dept_env_behavior || 0}</span> คะแนน</li>
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDeptNotes(supervision) {
+    const container = document.getElementById('deptNotes');
+    if (!container) return;
+    const obs = supervision.dept_observation_notes || '-';
+    const strengths = supervision.dept_strengths || '-';
+    const suggestion = supervision.dept_suggestion || '-';
+    const signer = supervision.dept_supervisor_signature || '-';
+    container.innerHTML = `
+      <h4 class="font-bold text-blue-600 mb-2">บันทึกของหัวหน้ากลุ่มสาระ</h4>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white p-3 rounded-lg border">
+          <div class="font-semibold text-gray-700 mb-1">สิ่งที่พบจากการสังเกต</div>
+          <div class="text-gray-700 whitespace-pre-line">${obs}</div>
+        </div>
+        <div class="bg-white p-3 rounded-lg border">
+          <div class="font-semibold text-gray-700 mb-1">ความประทับใจ/จุดเด่น</div>
+          <div class="text-gray-700 whitespace-pre-line">${strengths}</div>
+        </div>
+        <div class="bg-white p-3 rounded-lg border">
+          <div class="font-semibold text-gray-700 mb-1">ข้อเสนอแนะ</div>
+          <div class="text-gray-700 whitespace-pre-line">${suggestion}</div>
+        </div>
+        <div class="bg-white p-3 rounded-lg border">
+          <div class="font-semibold text-gray-700 mb-1">ผู้นิเทศ (หัวหน้ากลุ่มสาระ)</div>
+          <div class="text-gray-700">${signer}</div>
+        </div>
+      </div>
+    `;
   }
 
   function populateDirectorEvaluation(supervision) {
