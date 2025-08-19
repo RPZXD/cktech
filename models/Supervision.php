@@ -444,6 +444,7 @@ class Supervision {
                 dept_observation_notes TEXT,
                 dept_reflection_notes TEXT,
                 dept_strengths TEXT,
+                dept_suggestion TEXT,
                 dept_improvements TEXT,
                 dept_supervisor_signature VARCHAR(255),
                 
@@ -557,6 +558,7 @@ class Supervision {
                 'dept_observation_notes' => 'TEXT COMMENT "บันทึกการสังเกต"',
                 'dept_reflection_notes' => 'TEXT COMMENT "การสะท้อนความคิด"',
                 'dept_strengths' => 'TEXT COMMENT "จุดเด่น"',
+                'dept_suggestion' => 'TEXT COMMENT "ข้อเสนอแนะ"',
                 'dept_improvements' => 'TEXT COMMENT "จุดที่ควรปรับปรุง"',
                 'dept_supervisor_signature' => 'VARCHAR(255) COMMENT "ลายเซ็นผู้นิเทศ"'
             ];
