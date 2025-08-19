@@ -1541,6 +1541,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const overallScore = supervision.dept_score != null ? supervision.dept_score : '-';
     const quality = supervision.dept_quality_level || '-';
 
+    // compute domain totals safely
+    const toInt = v => parseInt(v) || 0;
+    const planTotal = toInt(supervision.dept_plan_effective) + toInt(supervision.dept_plan_correct) + toInt(supervision.dept_plan_activities) + toInt(supervision.dept_plan_media) + toInt(supervision.dept_plan_assessment);
+    const teachTotal = toInt(supervision.dept_teach_techniques) + toInt(supervision.dept_teach_media) + toInt(supervision.dept_teach_assessment) + toInt(supervision.dept_teach_explanation) + toInt(supervision.dept_teach_control) + toInt(supervision.dept_teach_thinking) + toInt(supervision.dept_teach_adaptation) + toInt(supervision.dept_teach_integration) + toInt(supervision.dept_teach_language);
+    const evalTotal = toInt(supervision.dept_eval_variety) + toInt(supervision.dept_eval_standards) + toInt(supervision.dept_eval_criteria) + toInt(supervision.dept_eval_feedback) + toInt(supervision.dept_eval_evidence);
+    const envTotal = toInt(supervision.dept_env_classroom) + toInt(supervision.dept_env_interaction) + toInt(supervision.dept_env_safety) + toInt(supervision.dept_env_management) + toInt(supervision.dept_env_rules) + toInt(supervision.dept_env_behavior);
+
     container.innerHTML = `
       <h4 class="font-bold text-blue-600 mb-2">สรุปคะแนนของหัวหน้ากลุ่มสาระ</h4>
       <div class="text-center p-4 bg-white rounded-lg border mb-4">
@@ -1558,6 +1565,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <li>• การจัดหาสื่อที่เหมาะสม: <span class="font-semibold">${supervision.dept_plan_media || 0}</span> คะแนน</li>
             <li>• การวัดและประเมินผลผู้เรียน: <span class="font-semibold">${supervision.dept_plan_assessment || 0}</span> คะแนน</li>
           </ul>
+          <div class="mt-2 text-right text-blue-600 font-semibold">รวม: ${planTotal} คะแนน</div>
         </div>
         <div class="bg-green-50 p-3 rounded-lg">
           <div class="font-semibold text-green-700 mb-2">2. ความสามารถในการจัดการเรียนรู้</div>
@@ -1572,6 +1580,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <li>• บูรณาการกับชีวิตประจำวัน: <span class="font-semibold">${supervision.dept_teach_integration || 0}</span> คะแนน</li>
             <li>• ใช้ภาษาได้ถูกต้องเหมาะสม: <span class="font-semibold">${supervision.dept_teach_language || 0}</span> คะแนน</li>
           </ul>
+          <div class="mt-2 text-right text-green-600 font-semibold">รวม: ${teachTotal} คะแนน</div>
         </div>
         <div class="bg-yellow-50 p-3 rounded-lg">
           <div class="font-semibold text-yellow-700 mb-2">3. ความสามารถในการประเมินผล</div>
@@ -1582,6 +1591,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <li>• ให้ข้อมูลย้อนกลับแก่นักเรียน: <span class="font-semibold">${supervision.dept_eval_feedback || 0}</span> คะแนน</li>
             <li>• มีผลงานเป็นหลักฐานการเรียนรู้: <span class="font-semibold">${supervision.dept_eval_evidence || 0}</span> คะแนน</li>
           </ul>
+          <div class="mt-2 text-right text-yellow-600 font-semibold">รวม: ${evalTotal} คะแนน</div>
         </div>
         <div class="bg-purple-50 p-3 rounded-lg">
           <div class="font-semibold text-purple-700 mb-2">4. ความสามารถในการจัดสภาพแวดล้อมในชั้นเรียน</div>
@@ -1593,6 +1603,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <li>• ชี้แจงกฎกติกาในการเรียน: <span class="font-semibold">${supervision.dept_env_rules || 0}</span> คะแนน</li>
             <li>• ดูแลพฤติกรรมนักเรียน: <span class="font-semibold">${supervision.dept_env_behavior || 0}</span> คะแนน</li>
           </ul>
+          <div class="mt-2 text-right text-purple-600 font-semibold">รวม: ${envTotal} คะแนน</div>
         </div>
       </div>
     `;
