@@ -1368,73 +1368,202 @@ document.addEventListener('DOMContentLoaded', function() {
     const qualityColor = getQualityColor(supervision.quality_level);
     const isDeptEvaluated = supervision.dept_score && supervision.dept_score > 0;
     
+    // Helper to safely render a field value
+    const val = (v) => (typeof v !== 'undefined' && v !== null && v !== '' ? v : '-');
+
     Swal.fire({
       title: '📋 รายละเอียดการนิเทศ',
       html: `
         <div class="text-left space-y-4">
           <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
             <h4 class="font-bold text-blue-700 mb-2">ข้อมูลผู้รับการนิเทศ</h4>
-            <p><strong>ชื่อ:</strong> ${supervision.teacher_name}</p>
-            <p><strong>วิชา:</strong> ${supervision.subject_name || '-'}</p>
-            <p><strong>ชั้น:</strong> ${supervision.class_level || '-'}</p>
-            <p><strong>ครั้งที่:</strong> ${supervision.supervision_round || '-'}</p>
-            <p><strong>ภาคเรียนที่:</strong> ${supervision.term || '-'}</p>
-            <p><strong>ปีการศึกษา:</strong> ${supervision.pee || '-'}</p>
+            <p><strong>ชื่อ:</strong> ${val(supervision.teacher_name)}</p>
+            <p><strong>วิชา:</strong> ${val(supervision.subject_name)}</p>
+            <p><strong>ชั้น:</strong> ${val(supervision.class_level)}</p>
+            <p><strong>ครั้งที่:</strong> ${val(supervision.supervision_round)}</p>
+            <p><strong>ภาคเรียนที่:</strong> ${val(supervision.term)}</p>
+            <p><strong>ปีการศึกษา:</strong> ${val(supervision.pee)}</p>
             <p><strong>วันที่นิเทศ:</strong> ${formatDate(supervision.supervision_date)}</p>
           </div>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg">
               <h4 class="font-bold text-green-700 mb-2">การประเมินของครู</h4>
               <div class="text-center">
-                <div class="text-3xl font-bold text-blue-600">${supervision.total_score}</div>
-                <div class="text-lg font-semibold" style="color: ${qualityColor}">${supervision.quality_level}</div>
+                <div class="text-3xl font-bold text-blue-600">${val(supervision.total_score)}</div>
+                <div class="text-lg font-semibold" style="color: ${qualityColor}">${val(supervision.quality_level)}</div>
               </div>
             </div>
-            
+
             <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg">
               <h4 class="font-bold text-purple-700 mb-2">การประเมินของหัวหน้ากลุ่มสาระ</h4>
               <div class="text-center">
                 ${isDeptEvaluated ? `
                   <div class="text-3xl font-bold text-purple-600">${supervision.dept_score}</div>
-                  <div class="text-lg font-semibold text-purple-600">${supervision.dept_quality_level}</div>
+                  <div class="text-lg font-semibold text-purple-600">${val(supervision.dept_quality_level)}</div>
                 ` : `
                   <div class="text-xl text-gray-400 italic">ยังไม่ได้ประเมิน</div>
                   <div class="text-sm text-gray-500">รอการประเมินจากหัวหน้ากลุ่มสาระ</div>
                 `}
               </div>
             </div>
+
+            <div class="bg-gradient-to-r from-indigo-50 to-sky-50 p-4 rounded-lg">
+              <h4 class="font-bold text-indigo-700 mb-2">การประเมินของผู้บริหาร</h4>
+              <div class="text-center">
+                ${supervision.dir_score && supervision.dir_score > 0 ? `
+                  <div class="text-3xl font-bold text-indigo-600">${supervision.dir_score}</div>
+                  <div class="text-lg font-semibold text-indigo-600">${val(supervision.dir_quality_level)}</div>
+                ` : `
+                  <div class="text-xl text-gray-400 italic">ยังไม่ได้ประเมิน</div>
+                  <div class="text-sm text-gray-500">รอการประเมินจากผู้บริหาร</div>
+                `}
+              </div>
+            </div>
           </div>
-          
-          ${isDeptEvaluated && (supervision.dept_observation_notes || supervision.dept_reflection_notes || supervision.dept_strengths || supervision.dept_improvements) ? `
+
+          <!-- Department notes -->
+          ${isDeptEvaluated && (supervision.dept_observation_notes || supervision.dept_strengths || supervision.dept_improvements) ? `
           <div class="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg">
             <h4 class="font-bold text-orange-700 mb-2">บันทึกจากหัวหน้ากลุ่มสาระ</h4>
-            
-            ${supervision.dept_observation_notes ? `
-            <div class="mb-3">
-              <strong class="text-gray-700">การสังเกต:</strong>
-              <p class="text-sm text-gray-600 mt-1">${supervision.dept_observation_notes}</p>
-            </div>
-            ` : ''}
-            
-            ${supervision.dept_strengths ? `
-            <div class="mb-3">
-              <strong class="text-green-700">จุดเด่น:</strong>
-              <p class="text-sm text-gray-600 mt-1">${supervision.dept_strengths}</p>
-            </div>
-            ` : ''}
-            
-            ${supervision.dept_improvements ? `
-            <div class="mb-3">
-              <strong class="text-red-700">ข้อเสนอแนะ:</strong>
-              <p class="text-sm text-gray-600 mt-1">${supervision.dept_improvements}</p>
-            </div>
-            ` : ''}
+            ${supervision.dept_observation_notes ? `<div class="mb-3"><strong class="text-gray-700">การสังเกต:</strong><p class="text-sm text-gray-600 mt-1">${supervision.dept_observation_notes}</p></div>` : ''}
+            ${supervision.dept_strengths ? `<div class="mb-3"><strong class="text-green-700">จุดเด่น:</strong><p class="text-sm text-gray-600 mt-1">${supervision.dept_strengths}</p></div>` : ''}
+            ${supervision.dept_improvements ? `<div class="mb-3"><strong class="text-red-700">ข้อเสนอแนะ:</strong><p class="text-sm text-gray-600 mt-1">${supervision.dept_improvements}</p></div>` : ''}
           </div>
           ` : ''}
+
+          <!-- Director notes -->
+          ${supervision.dir_score && supervision.dir_score > 0 && (supervision.dir_observation_notes || supervision.dir_strengths || supervision.dir_improvements) ? `
+          <div class="bg-gradient-to-r from-sky-50 to-indigo-50 p-4 rounded-lg">
+            <h4 class="font-bold text-indigo-700 mb-2">บันทึกจากผู้บริหาร</h4>
+            ${supervision.dir_observation_notes ? `<div class="mb-3"><strong class="text-gray-700">การสังเกต:</strong><p class="text-sm text-gray-600 mt-1">${supervision.dir_observation_notes}</p></div>` : ''}
+            ${supervision.dir_strengths ? `<div class="mb-3"><strong class="text-green-700">จุดเด่น:</strong><p class="text-sm text-gray-600 mt-1">${supervision.dir_strengths}</p></div>` : ''}
+            ${supervision.dir_improvements ? `<div class="mb-3"><strong class="text-red-700">ข้อเสนอแนะ:</strong><p class="text-sm text-gray-600 mt-1">${supervision.dir_improvements}</p></div>` : ''}
+          </div>
+          ` : ''}
+
+          <!-- Detailed breakdowns for each role -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Teacher details -->
+            <div class="p-4 rounded-lg bg-white/90 border">
+              <h4 class="font-bold text-blue-700 mb-3">รายละเอียดการประเมิน (ครู)</h4>
+              <div class="text-sm space-y-2">
+                <strong>ด้านที่ 1: แผนการจัดการเรียนรู้</strong>
+                <div>การวางแผน: ${val(supervision.plan_effective)}</div>
+                <div>ความถูกต้องของแผน: ${val(supervision.plan_correct)}</div>
+                <div>กิจกรรม: ${val(supervision.plan_activities)}</div>
+                <div>สื่อ: ${val(supervision.plan_media)}</div>
+                <div>การประเมินผล: ${val(supervision.plan_assessment)}</div>
+
+                <strong class="mt-2">ด้านที่ 2: การจัดการเรียนรู้</strong>
+                <div>เทคนิค: ${val(supervision.teach_techniques)}</div>
+                <div>สื่อการสอน: ${val(supervision.teach_media)}</div>
+                <div>การประเมินระหว่างเรียน: ${val(supervision.teach_assessment)}</div>
+                <div>การอธิบาย: ${val(supervision.teach_explanation)}</div>
+                <div>การควบคุมชั้น: ${val(supervision.teach_control)}</div>
+                <div>การคิด: ${val(supervision.teach_thinking)}</div>
+                <div>การปรับ: ${val(supervision.teach_adaptation)}</div>
+                <div>การบูรณาการ: ${val(supervision.teach_integration)}</div>
+                <div>ภาษา: ${val(supervision.teach_language)}</div>
+
+                <strong class="mt-2">ด้านที่ 3: การประเมินผล</strong>
+                <div>ความหลากหลาย: ${val(supervision.eval_variety)}</div>
+                <div>สอดคล้อง: ${val(supervision.eval_standards)}</div>
+                <div>เกณฑ์: ${val(supervision.eval_criteria)}</div>
+                <div>ข้อเสนอแนะ: ${val(supervision.eval_feedback)}</div>
+                <div>ผลงาน/หลักฐาน: ${val(supervision.eval_evidence)}</div>
+
+                <strong class="mt-2">ด้านที่ 4: สภาพแวดล้อม</strong>
+                <div>ห้องเรียน: ${val(supervision.env_classroom)}</div>
+                <div>ปฏิสัมพันธ์: ${val(supervision.env_interaction)}</div>
+                <div>ความปลอดภัย: ${val(supervision.env_safety)}</div>
+                <div>การจัดการ: ${val(supervision.env_management)}</div>
+                <div>กฎกติกา: ${val(supervision.env_rules)}</div>
+                <div>การดูแลพฤติกรรม: ${val(supervision.env_behavior)}</div>
+              </div>
+            </div>
+
+            <!-- Department details -->
+            <div class="p-4 rounded-lg bg-white/90 border">
+              <h4 class="font-bold text-purple-700 mb-3">รายละเอียดการประเมิน (หัวหน้ากลุ่มสาระ)</h4>
+              <div class="text-sm space-y-2">
+                <strong>ด้านที่ 1: แผนการจัดการเรียนรู้</strong>
+                <div>การวางแผน: ${val(supervision.dept_plan_effective)}</div>
+                <div>ความถูกต้องของแผน: ${val(supervision.dept_plan_correct)}</div>
+                <div>กิจกรรม: ${val(supervision.dept_plan_activities)}</div>
+                <div>สื่อ: ${val(supervision.dept_plan_media)}</div>
+                <div>การประเมินผล: ${val(supervision.dept_plan_assessment)}</div>
+
+                <strong class="mt-2">ด้านที่ 2: การจัดการเรียนรู้</strong>
+                <div>เทคนิค: ${val(supervision.dept_teach_techniques)}</div>
+                <div>สื่อการสอน: ${val(supervision.dept_teach_media)}</div>
+                <div>การประเมินระหว่างเรียน: ${val(supervision.dept_teach_assessment)}</div>
+                <div>การอธิบาย: ${val(supervision.dept_teach_explanation)}</div>
+                <div>การควบคุมชั้น: ${val(supervision.dept_teach_control)}</div>
+                <div>การคิด: ${val(supervision.dept_teach_thinking)}</div>
+                <div>การปรับ: ${val(supervision.dept_teach_adaptation)}</div>
+                <div>การบูรณาการ: ${val(supervision.dept_teach_integration)}</div>
+                <div>ภาษา: ${val(supervision.dept_teach_language)}</div>
+
+                <strong class="mt-2">ด้านที่ 3: การประเมินผล</strong>
+                <div>ความหลากหลาย: ${val(supervision.dept_eval_variety)}</div>
+                <div>สอดคล้อง: ${val(supervision.dept_eval_standards)}</div>
+                <div>เกณฑ์: ${val(supervision.dept_eval_criteria)}</div>
+                <div>ข้อเสนอแนะ: ${val(supervision.dept_eval_feedback)}</div>
+                <div>ผลงาน/หลักฐาน: ${val(supervision.dept_eval_evidence)}</div>
+
+                <strong class="mt-2">ด้านที่ 4: สภาพแวดล้อม</strong>
+                <div>ห้องเรียน: ${val(supervision.dept_env_classroom)}</div>
+                <div>ปฏิสัมพันธ์: ${val(supervision.dept_env_interaction)}</div>
+                <div>ความปลอดภัย: ${val(supervision.dept_env_safety)}</div>
+                <div>การจัดการ: ${val(supervision.dept_env_management)}</div>
+                <div>กฎกติกา: ${val(supervision.dept_env_rules)}</div>
+                <div>การดูแลพฤติกรรม: ${val(supervision.dept_env_behavior)}</div>
+              </div>
+            </div>
+
+            <!-- Director details -->
+            <div class="p-4 rounded-lg bg-white/90 border">
+              <h4 class="font-bold text-indigo-700 mb-3">รายละเอียดการประเมิน (ผู้บริหาร)</h4>
+              <div class="text-sm space-y-2">
+                <strong>ด้านที่ 1: แผนการจัดการเรียนรู้</strong>
+                <div>การวางแผน: ${val(supervision.dir_plan_effective)}</div>
+                <div>ความถูกต้องของแผน: ${val(supervision.dir_plan_correct)}</div>
+                <div>กิจกรรม: ${val(supervision.dir_plan_activities)}</div>
+                <div>สื่อ: ${val(supervision.dir_plan_media)}</div>
+                <div>การประเมินผล: ${val(supervision.dir_plan_assessment)}</div>
+
+                <strong class="mt-2">ด้านที่ 2: การจัดการเรียนรู้</strong>
+                <div>เทคนิค: ${val(supervision.dir_teach_techniques)}</div>
+                <div>สื่อการสอน: ${val(supervision.dir_teach_media)}</div>
+                <div>การประเมินระหว่างเรียน: ${val(supervision.dir_teach_assessment)}</div>
+                <div>การอธิบาย: ${val(supervision.dir_teach_explanation)}</div>
+                <div>การควบคุมชั้น: ${val(supervision.dir_teach_control)}</div>
+                <div>การคิด: ${val(supervision.dir_teach_thinking)}</div>
+                <div>การปรับ: ${val(supervision.dir_teach_adaptation)}</div>
+                <div>การบูรณาการ: ${val(supervision.dir_teach_integration)}</div>
+                <div>ภาษา: ${val(supervision.dir_teach_language)}</div>
+
+                <strong class="mt-2">ด้านที่ 3: การประเมินผล</strong>
+                <div>ความหลากหลาย: ${val(supervision.dir_eval_variety)}</div>
+                <div>สอดคล้อง: ${val(supervision.dir_eval_standards)}</div>
+                <div>เกณฑ์: ${val(supervision.dir_eval_criteria)}</div>
+                <div>ข้อเสนอแนะ: ${val(supervision.dir_eval_feedback)}</div>
+                <div>ผลงาน/หลักฐาน: ${val(supervision.dir_eval_evidence)}</div>
+
+                <strong class="mt-2">ด้านที่ 4: สภาพแวดล้อม</strong>
+                <div>ห้องเรียน: ${val(supervision.dir_env_classroom)}</div>
+                <div>ปฏิสัมพันธ์: ${val(supervision.dir_env_interaction)}</div>
+                <div>ความปลอดภัย: ${val(supervision.dir_env_safety)}</div>
+                <div>การจัดการ: ${val(supervision.dir_env_management)}</div>
+                <div>กฎกติกา: ${val(supervision.dir_env_rules)}</div>
+                <div>การดูแลพฤติกรรม: ${val(supervision.dir_env_behavior)}</div>
+              </div>
+            </div>
+          </div>
         </div>
       `,
-      width: '800px',
+      width: '1100px',
       confirmButtonText: '✅ ปิด',
       confirmButtonColor: '#059669'
     });
