@@ -13,7 +13,6 @@ class Supervision {
     public function __construct() {
         $this->db = new DatabaseTeachingReport();
         $this->pdo = $this->db->getPDO();
-        $this->createTable();
     }
 
     public function create($data) {
@@ -77,19 +76,34 @@ class Supervision {
             $supervisions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             // Always enrich with teacher data for better filtering and display
-            require_once __DIR__ . '/../classes/DatabaseUsers.php';
-            $dbUsers = new \App\DatabaseUsers();
-            $usersPdo = $dbUsers->getPDO();
-            
-            foreach ($supervisions as &$supervision) {
-                $teacherSql = "SELECT Teach_name, Teach_major FROM teacher WHERE Teach_id = ?";
-                $teacherStmt = $usersPdo->prepare($teacherSql);
-                $teacherStmt->execute([$supervision['teacher_id']]);
-                $teacherData = $teacherStmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($teacherData) {
-                    $supervision['teacher_full_name'] = $teacherData['Teach_name'];
-                    $supervision['teacher_subject_group'] = $teacherData['Teach_major'];
+            // Batch fetch teacher info to avoid N+1 queries
+            if (!empty($supervisions)) {
+                require_once __DIR__ . '/../classes/DatabaseUsers.php';
+                $dbUsers = new \App\DatabaseUsers();
+                $usersPdo = $dbUsers->getPDO();
+
+                $teacherIds = array_values(array_unique(array_filter(array_map(function($s) { return $s['teacher_id'] ?? null; }, $supervisions))));
+
+                if (!empty($teacherIds)) {
+                    // Build placeholders and fetch in one query
+                    $placeholders = rtrim(str_repeat('?,', count($teacherIds)), ',');
+                    $teacherSql = "SELECT Teach_id, Teach_name, Teach_major FROM teacher WHERE Teach_id IN ($placeholders)";
+                    $teacherStmt = $usersPdo->prepare($teacherSql);
+                    $teacherStmt->execute($teacherIds);
+                    $teachers = $teacherStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    $teacherMap = [];
+                    foreach ($teachers as $t) {
+                        $teacherMap[$t['Teach_id']] = $t;
+                    }
+
+                    foreach ($supervisions as &$supervision) {
+                        $tid = $supervision['teacher_id'] ?? null;
+                        if ($tid && isset($teacherMap[$tid])) {
+                            $supervision['teacher_full_name'] = $teacherMap[$tid]['Teach_name'];
+                            $supervision['teacher_subject_group'] = $teacherMap[$tid]['Teach_major'];
+                        }
+                    }
                 }
             }
             
@@ -774,40 +788,38 @@ class Supervision {
             if (empty($teachers)) {
                 return [];
             }
-            
-            // Create placeholders for the IN clause
-            $placeholders = str_repeat('?,', count($teachers) - 1) . '?';
-            
-            // Get supervisions for these teachers
-            $sql = "SELECT s.*, t.Teach_name as teacher_full_name, t.Teach_major as teacher_subject_group 
-                    FROM supervisions s
-                    LEFT JOIN (SELECT ? as teacher_id, ? as Teach_name, ? as Teach_major) t 
-                    ON s.teacher_id = t.teacher_id
-                    WHERE s.teacher_id IN ($placeholders) 
-                    ORDER BY s.supervision_date DESC, s.created_at DESC";
-            
-            // Actually, let's simplify this since we can't easily do cross-database JOINs
-            // We'll get supervisions and then enrich them with teacher data
+
+            // Get supervisions for these teachers in one query
+            $placeholders = rtrim(str_repeat('?,', count($teachers)), ',');
             $sql = "SELECT * FROM supervisions WHERE teacher_id IN ($placeholders) 
                     ORDER BY supervision_date DESC, created_at DESC";
-            
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($teachers);
             $supervisions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Enrich with teacher data
-            foreach ($supervisions as &$supervision) {
-                $teacherSql = "SELECT Teach_name, Teach_major FROM teacher WHERE Teach_id = ?";
-                $teacherStmt = $usersPdo->prepare($teacherSql);
-                $teacherStmt->execute([$supervision['teacher_id']]);
-                $teacherData = $teacherStmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($teacherData) {
-                    $supervision['teacher_full_name'] = $teacherData['Teach_name'];
-                    $supervision['teacher_subject_group'] = $teacherData['Teach_major'];
+
+            // Batch fetch teacher info to enrich results
+            if (!empty($supervisions)) {
+                $teacherIds = array_values(array_unique(array_filter(array_map(function($s) { return $s['teacher_id'] ?? null; }, $supervisions))));
+                if (!empty($teacherIds)) {
+                    $placeholders2 = rtrim(str_repeat('?,', count($teacherIds)), ',');
+                    $teacherSql = "SELECT Teach_id, Teach_name, Teach_major FROM teacher WHERE Teach_id IN ($placeholders2)";
+                    $teacherStmt = $usersPdo->prepare($teacherSql);
+                    $teacherStmt->execute($teacherIds);
+                    $teachersInfo = $teacherStmt->fetchAll(PDO::FETCH_ASSOC);
+                    $teacherMap = [];
+                    foreach ($teachersInfo as $t) {
+                        $teacherMap[$t['Teach_id']] = $t;
+                    }
+                    foreach ($supervisions as &$supervision) {
+                        $tid = $supervision['teacher_id'] ?? null;
+                        if ($tid && isset($teacherMap[$tid])) {
+                            $supervision['teacher_full_name'] = $teacherMap[$tid]['Teach_name'];
+                            $supervision['teacher_subject_group'] = $teacherMap[$tid]['Teach_major'];
+                        }
+                    }
                 }
             }
-            
+
             return $supervisions;
             
         } catch (Exception $e) {
