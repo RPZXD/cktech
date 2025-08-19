@@ -266,6 +266,7 @@ require_once('header.php');
                     <th class="py-4 px-4 text-center font-semibold">📅 ภาคเรียน/ปีการศึกษา</th>
                     <th class="py-4 px-4 text-center font-semibold">📊 คะแนนครู</th>
                     <th class="py-4 px-4 text-center font-semibold">📊 คะแนนหัวหน้า</th>
+                    <th class="py-4 px-4 text-center font-semibold">📊 คะแนนผู้บริหาร</th>
                     <th class="py-4 px-4 text-center font-semibold">🏆 ระดับคุณภาพ</th>
                     <th class="py-4 px-4 text-center font-semibold">🔍 จัดการ</th>
                   </tr>
@@ -1233,6 +1234,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const deptScoreDisplay = isDeptEvaluated ? 
       `<span class="score-display text-purple-600">${supervision.dept_score}</span>` : 
       '<span class="text-gray-400 italic">รอประเมิน</span>';
+    const isDirEvaluated = supervision.dir_score && supervision.dir_score > 0;
+    const dirScoreDisplay = isDirEvaluated ?
+      `<span class="score-display text-indigo-600">${supervision.dir_score}</span>` :
+      '<span class="text-gray-400 italic">รอประเมิน</span>';
     
     // Create action buttons
     let actionButtons = `
@@ -1260,6 +1265,9 @@ document.addEventListener('DOMContentLoaded', function() {
       </td>
       <td class="py-4 px-4 text-center border-b border-gray-100">
         ${deptScoreDisplay}
+      </td>
+      <td class="py-4 px-4 text-center border-b border-gray-100">
+        ${dirScoreDisplay}
       </td>
       <td class="py-4 px-4 text-center border-b border-gray-100">
         ${qualityBadge}
