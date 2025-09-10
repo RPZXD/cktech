@@ -328,6 +328,7 @@ require_once('header.php');
                     <option value="ศิลปะ">ศิลปะ</option>
                     <option value="การงานอาชีพ">การงานอาชีพ</option>
                     <option value="ภาษาต่างประเทศ">ภาษาต่างประเทศ</option>
+                    <option value="กิจกรรมพัฒนาผู้เรียน">กิจกรรมพัฒนาผู้เรียน</option>
                   </select>
                 </div>
                 
