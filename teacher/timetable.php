@@ -19,7 +19,7 @@ $stmt = $pdo->prepare("
     SELECT s.name AS subject_name, s.code, s.level, sc.class_room, sc.day_of_week, sc.period_start, sc.period_end, s.subject_type
     FROM subjects s
     JOIN subject_classes sc ON s.id = sc.subject_id
-    WHERE s.created_by = ?
+    WHERE s.created_by = ? AND s.status = 1
     ORDER BY sc.day_of_week, sc.period_start, sc.class_room
 ");
 $stmt->execute([$teacherId]);
