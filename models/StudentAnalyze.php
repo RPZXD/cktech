@@ -45,8 +45,16 @@ class StudentAnalyze
 
     public function getBySubject($subject_id)
     {
-        $stmt = $this->pdo->prepare("SELECT * FROM student_analyze WHERE subject_id = ? ORDER BY student_no");
+        // เลือก * (รวมถึง id)
+        $stmt = $this->pdo->prepare("SELECT * FROM student_analyze WHERE subject_id = ? ORDER BY student_level_room, student_no");
         $stmt->execute([$subject_id]);
         return $stmt->fetchAll();
+    }
+
+    // ⭐️ ADDED: ฟังก์ชันสำหรับลบข้อมูล
+    public function delete($id)
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM student_analyze WHERE id = ?");
+        return $stmt->execute([$id]);
     }
 }

@@ -13,7 +13,24 @@ $model = new StudentAnalyze($pdo);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // ตรวจสอบข้อมูลที่จำเป็น
+    // ⭐️ ADDED: ตรวจสอบการลบข้อมูลก่อน
+    if (isset($data['action']) && $data['action'] === 'delete') {
+        if (!isset($data['id'])) {
+            echo json_encode(['success' => false, 'error' => 'ไม่พบ ID สำหรับลบ']);
+            exit;
+        }
+        
+        $result = $model->delete($data['id']);
+        if ($result) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'ลบข้อมูลไม่สำเร็จ']);
+        }
+        exit;
+    }
+    // ⭐️ END: ตรวจสอบการลบข้อมูล
+
+    // ตรวจสอบข้อมูลที่จำเป็น (สำหรับการสร้าง)
     $required = [
         'subject_id', 'student_level_room', 'student_no', 'prefix', 'student_firstname', 'student_lastname',
         'student_phone', 'weight', 'height', 'disease', 'parent_name', 'live_with', 'address', 'parent_phone',

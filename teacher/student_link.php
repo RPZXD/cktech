@@ -42,7 +42,6 @@ require_once('header.php');
 
     <?php require_once('wrapper.php');?>
 
-  <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper bg-gray-50 min-h-screen p-4">
     <div class="max-w-8xl mx-auto bg-white rounded-xl shadow-lg p-6">
         <h1 class="text-2xl font-bold text-blue-700 mb-4 flex items-center gap-2">🔗 ลิงก์สำหรับนักเรียนกรอกแบบวิเคราะห์ผู้เรียนรายบุคคล</h1>
@@ -50,7 +49,6 @@ require_once('header.php');
             <span class="inline-block rounded-full bg-blue-100 px-3 py-1 text-blue-700 font-semibold shadow-sm">👨‍🏫 <?= htmlspecialchars($_SESSION['user']['Teach_name'] ?? '') ?></span>
         </div>
 
-        <!-- Tabs -->
         <div class="mb-6">
             <ul class="flex border-b" id="studentTabs">
                 <li><button class="tab-btn px-4 py-2 font-semibold text-blue-700 border-b-2 border-blue-700 bg-blue-50" data-tab="tab-link">🔗 ลิงก์สำหรับนักเรียน</button></li>
@@ -59,7 +57,6 @@ require_once('header.php');
             </ul>
         </div>
 
-        <!-- Tab: ลิงก์สำหรับนักเรียน -->
         <div id="tab-link" class="tab-content">
             <?php if (empty($subjects)): ?>
                 <div class="text-gray-500 text-center py-10 text-xl">ไม่พบรายวิชาของคุณ</div>
@@ -100,7 +97,6 @@ require_once('header.php');
             <?php endif; ?>
         </div>
 
-        <!-- Tab: รายงานผล -->
         <div id="tab-report" class="tab-content hidden">
             <div class="mb-4 flex items-center gap-2">
                 <label class="font-semibold">เลือกวิชา:</label>
@@ -122,7 +118,6 @@ require_once('header.php');
             </div>
         </div>
 
-        <!-- Tab: ข้อมูลทั้งหมด -->
         <div id="tab-all" class="tab-content hidden">
             <div class="mb-4 flex items-center gap-2">
                 <label class="font-semibold">เลือกวิชา:</label>
@@ -146,10 +141,8 @@ require_once('header.php');
         </div>
     </div>
 </div>
-  <!-- /.content-wrapper -->
-    <?php require_once('../footer.php');?>
+  <?php require_once('../footer.php');?>
 </div>
-<!-- ./wrapper -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -296,7 +289,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             $('#reportContent').html(`
                 <div class="grid grid-cols-2 gap-8">
-                    <!-- Chart 1: สัดส่วนเพศ -->
                     <div class="flex flex-col h-full">
                         <div class="font-bold mb-2">สัดส่วนเพศ</div>
                         <div class="flex-1 flex items-center justify-center h-[220px]">
@@ -308,7 +300,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${other > 0 ? `<div>อื่นๆ: ${other} คน (${((other/totalStudents)*100).toFixed(1)}%)</div>` : ''}
                         </div>
                     </div>
-                    <!-- Chart 2: วิชาที่นักเรียนชอบ (Top 5) -->
                     <div class="flex flex-col h-full">
                         <div class="font-bold mb-2">วิชาที่นักเรียนชอบ (Top 5)</div>
                         <div class="flex-1 flex items-center justify-center h-[220px]">
@@ -320,9 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
 
-                <!-- แถวใหม่สำหรับกราฟเกรด -->
                 <div class="mt-8 grid grid-cols-2 gap-8">
-                    <!-- Chart 3: การแจกแจงเกรดเฉลี่ย (GPA) -->
                     <div class="flex flex-col h-full">
                         <div class="font-bold mb-2">การแจกแจงเกรดเฉลี่ย (GPA)</div>
                         <div class="flex-1 flex items-center justify-center h-[220px]">
@@ -334,7 +323,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="text-red-600">อ่อน (0.00-1.99): ${gpaWeak} คน (${gpaArr.length ? ((gpaWeak/gpaArr.length)*100).toFixed(1) : 0}%)</div>
                         </div>
                     </div>
-                    <!-- Chart 4: การแจกแจงเกรดวิชา${teacherMajor || ''} -->
                     <div class="flex flex-col h-full">
                         <div class="font-bold mb-2">การแจกแจงเกรดวิชา${teacherMajor || ''}</div>
                         <div class="flex-1 flex items-center justify-center h-[220px]">
@@ -533,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <th class="border px-2 py-1">เกรดคอม</th>
                             <th class="border px-2 py-1">วิชาที่ชอบ</th>
                             <th class="border px-2 py-1">วิชาที่ไม่ชอบ</th>
-                        </tr>
+                            <th class="border px-2 py-1">จัดการ</th> </tr>
                     </thead>
                     <tbody>
             `;
@@ -562,6 +550,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td class="border px-2 py-1 text-center">${row.last_com_grade}</td>
                         <td class="border px-2 py-1">${row.like_subjects}</td>
                         <td class="border px-2 py-1">${row.dislike_subjects}</td>
+                        <td class="border px-2 py-1 text-center">
+                            <button class="delete-btn bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" 
+                                    data-id="${row.id}" 
+                                    data-name="${row.prefix} ${row.student_firstname} ${row.student_lastname}">
+                                ลบ
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
@@ -569,6 +564,56 @@ document.addEventListener('DOMContentLoaded', function() {
             $('#allContent').html(html);
         });
     }
+
+    // ⭐️ ADDED: Delete student handler
+    $('#allContent').on('click', '.delete-btn', function() {
+        const studentId = $(this).data('id');
+        const studentName = $(this).data('name');
+
+        Swal.fire({
+            title: 'ยืนยันการลบ',
+            text: `คุณต้องการลบข้อมูลของ ${studentName} ใช่หรือไม่?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'ใช่, ลบเลย!',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '../controllers/StudentAnalyzeController.php',
+                    type: 'POST', // ใช้ POST แต่ส่ง action: 'delete'
+                    contentType: 'application/json',
+                    data: JSON.stringify({ action: 'delete', id: studentId }),
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire(
+                                'ลบแล้ว!',
+                                'ข้อมูลนักเรียนถูกลบแล้ว',
+                                'success'
+                            );
+                            loadAllStudents(); // โหลดตารางใหม่
+                        } else {
+                            Swal.fire(
+                                'เกิดข้อผิดพลาด!',
+                                response.error || 'ลบข้อมูลไม่สำเร็จ',
+                                'error'
+                            );
+                        }
+                    },
+                    error: function() {
+                        Swal.fire(
+                            'เกิดข้อผิดพลาด!',
+                            'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้',
+                            'error'
+                        );
+                    }
+                });
+            }
+        });
+    });
 
     // Print buttons
     $('#printReportBtn').on('click', function() {
