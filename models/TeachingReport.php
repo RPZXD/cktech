@@ -50,15 +50,16 @@ class TeachingReport
             'เข้าร่วมกิจกรรม' => ['label' => 'กิจกรรม', 'emoji' => '🎉']
         ];
 
-        // ดึง absent_students, sick_students, personal_students จาก teaching_attendance_logs
+        // ดึง absent_students, sick_students, personal_students และโดดเรียน จาก teaching_attendance_logs
         foreach ($reports as &$report) {
             $statuses = [
                 'ขาดเรียน' => [],
                 'ลาป่วย' => [],
                 'ลากิจ' => [],
-                'เข้าร่วมกิจกรรม' => []
+                'เข้าร่วมกิจกรรม' => [],
+                'โดดเรียน' => []
             ];
-            $sql2 = "SELECT student_id, status FROM teaching_attendance_logs WHERE report_id = ? AND status IN ('ขาดเรียน','ลาป่วย','ลากิจ','เข้าร่วมกิจกรรม')";
+            $sql2 = "SELECT student_id, status FROM teaching_attendance_logs WHERE report_id = ? AND status IN ('ขาดเรียน','ลาป่วย','ลากิจ','เข้าร่วมกิจกรรม','โดดเรียน')";
             $stmt2 = $this->pdo->prepare($sql2);
             $stmt2->execute([$report['id']]);
             $logs = $stmt2->fetchAll();
@@ -67,13 +68,12 @@ class TeachingReport
             foreach ($logs as $log) {
                 $stuId = $log['student_id'];
                 // ดึงชื่อจริงและเลขที่ (Stu_no) จากฐาน student
-                $stmtStu = $pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_id = ? ORder by Stu_no ASC");
+                $stmtStu = $pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_id = ? ORDER BY Stu_no ASC");
                 $stmtStu->execute([$stuId]);
                 $stu = $stmtStu->fetch();
                 $stu_no = $stu && isset($stu['Stu_no']) ? (int)$stu['Stu_no'] : 0;
                 $label = isset($statusLabelMap[$log['status']]) ? $statusLabelMap[$log['status']]['label'] : $log['status'];
                 $emoji = isset($statusLabelMap[$log['status']]) ? $statusLabelMap[$log['status']]['emoji'] : '';
-                // แสดง: [Stu_no][Stu_id]fullname [emoji label] (ถ้ามี), ถ้าไม่มีให้แสดง Stu_id [emoji label]
                 $display = $stu
                     ? (
                         '<span style="display:inline-block;margin-right:4px;">[' . ($stu['Stu_no'] ?? '-') . '][' . $stu['Stu_id'] . ']' . htmlspecialchars($stu['fullname']) . '</span> <span style="font-weight:bold;">' . $emoji . ' ' . $label . '</span>'
@@ -94,18 +94,25 @@ class TeachingReport
                 'ขาดเรียน' => [],
                 'ลาป่วย' => [],
                 'ลากิจ' => [],
-                'เข้าร่วมกิจกรรม' => []
+                'เข้าร่วมกิจกรรม' => [],
+                'โดดเรียน' => []
             ];
             foreach ($studentsInfo as $info) {
                 if (isset($statuses[$info['status']])) {
                     $statuses[$info['status']][] = $info['display'];
                 }
             }
-            // ใช้ tailwind css แทน style
+            // สร้าง HTML และจำนวนสำหรับแต่ละกลุ่ม
             $report['absent_students'] = $statuses['ขาดเรียน'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-red-100 text-red-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ขาดเรียน'])) . '</div>' : '';
             $report['sick_students'] = $statuses['ลาป่วย'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ลาป่วย'])) . '</div>' : '';
             $report['personal_students'] = $statuses['ลากิจ'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ลากิจ'])) . '</div>' : '';
             $report['activity_students'] = $statuses['เข้าร่วมกิจกรรม'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['เข้าร่วมกิจกรรม'])) . '</div>' : '';
+            $report['truant_students'] = $statuses['โดดเรียน'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['โดดเรียน'])) . '</div>' : '';
+            $report['absent_count'] = is_array($statuses['ขาดเรียน']) ? count($statuses['ขาดเรียน']) : 0;
+            $report['sick_count'] = is_array($statuses['ลาป่วย']) ? count($statuses['ลาป่วย']) : 0;
+            $report['personal_count'] = is_array($statuses['ลากิจ']) ? count($statuses['ลากิจ']) : 0;
+            $report['activity_count'] = is_array($statuses['เข้าร่วมกิจกรรม']) ? count($statuses['เข้าร่วมกิจกรรม']) : 0;
+            $report['truant_count'] = is_array($statuses['โดดเรียน']) ? count($statuses['โดดเรียน']) : 0;
         }
         return $reports;
     }
@@ -118,7 +125,90 @@ class TeachingReport
                 WHERE r.id = ?";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$id]);
-        return $stmt->fetch();
+        $report = $stmt->fetch();
+
+        if ($report) {
+            // เตรียมเชื่อมต่อฐานข้อมูล student
+            if (!$this->dbUsers) {
+                throw new \Exception('ไม่สามารถเชื่อมต่อฐานข้อมูล Users');
+            }
+            $pdoUsers = $this->dbUsers->getPDO();
+
+            // กำหนด mapping สำหรับ label ภาษาไทย
+            $statusLabelMap = [
+                'ขาดเรียน' => ['label' => 'ขาด', 'emoji' => '❌'],
+                'ลาป่วย' => ['label' => 'ป่วย', 'emoji' => '🤒'],
+                'ลากิจ' => ['label' => 'ลากิจ', 'emoji' => '📝'],
+                'มาเรียน' => ['label' => 'มา', 'emoji' => '✅'],
+                'มาสาย' => ['label' => 'สาย', 'emoji' => '⏰'],
+                'เข้าร่วมกิจกรรม' => ['label' => 'กิจกรรม', 'emoji' => '🎉']
+            ];
+
+            // ดึง absent_students, sick_students, personal_students และโดดเรียน จาก teaching_attendance_logs
+            $statuses = [
+                'ขาดเรียน' => [],
+                'ลาป่วย' => [],
+                'ลากิจ' => [],
+                'เข้าร่วมกิจกรรม' => [],
+                'โดดเรียน' => []
+            ];
+            $sql2 = "SELECT student_id, status FROM teaching_attendance_logs WHERE report_id = ? AND status IN ('ขาดเรียน','ลาป่วย','ลากิจ','เข้าร่วมกิจกรรม','โดดเรียน')";
+            $stmt2 = $this->pdo->prepare($sql2);
+            $stmt2->execute([$report['id']]);
+            $logs = $stmt2->fetchAll();
+
+            $studentsInfo = [];
+            foreach ($logs as $log) {
+                $stuId = $log['student_id'];
+                // ดึงชื่อจริงและเลขที่ (Stu_no) จากฐาน student
+                $stmtStu = $pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_id = ? ORDER BY Stu_no ASC");
+                $stmtStu->execute([$stuId]);
+                $stu = $stmtStu->fetch();
+                $stu_no = $stu && isset($stu['Stu_no']) ? (int)$stu['Stu_no'] : 0;
+                $label = isset($statusLabelMap[$log['status']]) ? $statusLabelMap[$log['status']]['label'] : $log['status'];
+                $emoji = isset($statusLabelMap[$log['status']]) ? $statusLabelMap[$log['status']]['emoji'] : '';
+                $display = $stu
+                    ? (
+                        '<span style="display:inline-block;margin-right:4px;">[' . ($stu['Stu_no'] ?? '-') . '][' . $stu['Stu_id'] . ']' . htmlspecialchars($stu['fullname']) . '</span> <span style="font-weight:bold;">' . $emoji . ' ' . $label . '</span>'
+                    )
+                    : '<span>' . $stuId . '</span> <span style="font-weight:bold;">' . $emoji . ' ' . $label . '</span>';
+                $studentsInfo[] = [
+                    'stu_no' => $stu_no,
+                    'status' => $log['status'],
+                    'display' => $display
+                ];
+            }
+            // เรียงตาม Stu_no
+            usort($studentsInfo, function($a, $b) {
+                return $a['stu_no'] <=> $b['stu_no'];
+            });
+            // แยกแต่ละ status
+            $statuses = [
+                'ขาดเรียน' => [],
+                'ลาป่วย' => [],
+                'ลากิจ' => [],
+                'เข้าร่วมกิจกรรม' => [],
+                'โดดเรียน' => []
+            ];
+            foreach ($studentsInfo as $info) {
+                if (isset($statuses[$info['status']])) {
+                    $statuses[$info['status']][] = $info['display'];
+                }
+            }
+            // สร้าง HTML และจำนวนสำหรับแต่ละกลุ่ม
+            $report['absent_students'] = $statuses['ขาดเรียน'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-red-100 text-red-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ขาดเรียน'])) . '</div>' : '';
+            $report['sick_students'] = $statuses['ลาป่วย'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ลาป่วย'])) . '</div>' : '';
+            $report['personal_students'] = $statuses['ลากิจ'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ลากิจ'])) . '</div>' : '';
+            $report['activity_students'] = $statuses['เข้าร่วมกิจกรรม'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['เข้าร่วมกิจกรรม'])) . '</div>' : '';
+            $report['truant_students'] = $statuses['โดดเรียน'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['โดดเรียน'])) . '</div>' : '';
+            $report['absent_count'] = is_array($statuses['ขาดเรียน']) ? count($statuses['ขาดเรียน']) : 0;
+            $report['sick_count'] = is_array($statuses['ลาป่วย']) ? count($statuses['ลาป่วย']) : 0;
+            $report['personal_count'] = is_array($statuses['ลากิจ']) ? count($statuses['ลากิจ']) : 0;
+            $report['activity_count'] = is_array($statuses['เข้าร่วมกิจกรรม']) ? count($statuses['เข้าร่วมกิจกรรม']) : 0;
+            $report['truant_count'] = is_array($statuses['โดดเรียน']) ? count($statuses['โดดเรียน']) : 0;
+        }
+
+        return $report;
     }
 
     public function createMultiple($rows, $attendanceLogs)
@@ -127,12 +217,22 @@ class TeachingReport
             $this->pdo->beginTransaction();
             $reportIds = [];
             $invalidRows = [];
-            // ปรับ allowedStatuses ให้ตรงกับ ENUM ในฐานข้อมูล
+            // ปรับ allowedStatuses ให้ตรงกับ ENUM ในฐานข้อมูล (รวม 'เข้าร่วมกิจกรรม' และ 'โดดเรียน')
             $allowedStatuses = [
-                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน'
+                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน', 'เข้าร่วมกิจกรรม', 'โดดเรียน'
             ];
             // เก็บ mapping class_room => report_id
             $classRoomToReportId = [];
+            // helper: normalize room representation (รองรับ 'ห้อง 12' และ '12')
+            $normalizeRoom = function($r) {
+                if ($r === null) return '';
+                $r = trim($r);
+                // ถ้าเริ่มต้นด้วย 'ห้อง ' ให้ตัดออก
+                if (mb_stripos($r, 'ห้อง ') === 0) {
+                    $r = trim(mb_substr($r, mb_strlen('ห้อง ')));
+                }
+                return $r;
+            };
             foreach ($rows as $row) {
                 // ตรวจสอบข้อมูลจำเป็น
                 if (
@@ -177,7 +277,15 @@ class TeachingReport
                 ]);
                 $reportId = $this->pdo->lastInsertId();
                 $reportIds[] = $reportId;
-                $classRoomToReportId[trim($row['class_room'])] = $reportId;
+                $rawRoom = isset($row['class_room']) ? $row['class_room'] : '';
+                $norm = $normalizeRoom($rawRoom);
+                // เก็บทั้งรูปแบบตัวเลขและรูปแบบมีคำว่า 'ห้อง ' เพื่อให้การแม็ปยืดหยุ่น
+                if ($norm !== '') {
+                    $classRoomToReportId[$norm] = $reportId;
+                    $classRoomToReportId['ห้อง ' . $norm] = $reportId;
+                } else {
+                    $classRoomToReportId[$rawRoom] = $reportId;
+                }
             }
             if (empty($reportIds)) {
                 $this->pdo->rollBack();
@@ -195,6 +303,15 @@ class TeachingReport
                 }
             }
             if (!empty($attendanceLogs) && !empty($classRoomToReportId)) {
+                // ตรวจสอบว่าตาราง teaching_attendance_logs มีคอลัมน์ class_room หรือไม่
+                $hasClassRoomColumn = false;
+                try {
+                    $stmtCol = $this->pdo->query("SHOW COLUMNS FROM teaching_attendance_logs LIKE 'class_room'");
+                    if ($stmtCol && $stmtCol->fetch()) $hasClassRoomColumn = true;
+                } catch (\Exception $e) {
+                    // ignore
+                }
+
                 foreach ($attendanceLogs as $log) {
                     // ตรวจสอบ student_id, status และ whitelist
                     if (
@@ -204,25 +321,59 @@ class TeachingReport
                     ) continue;
                     if (!is_numeric($log['student_id'])) continue;
                     $log['status'] = trim($log['status']);
+
                     if ($hasClassRoom) {
                         if (!isset($log['class_room']) || $log['class_room'] === '') continue;
-                        $logClassRoom = trim($log['class_room']);
-                        if (!isset($classRoomToReportId[$logClassRoom])) continue;
-                        $reportId = $classRoomToReportId[$logClassRoom];
-                        $stmt = $this->pdo->prepare("INSERT INTO teaching_attendance_logs (report_id, student_id, status) VALUES (?, ?, ?)");
-                        $stmt->execute([
-                            $reportId,
-                            $log['student_id'],
-                            $log['status']
-                        ]);
-                    } else {
-                        foreach ($classRoomToReportId as $reportId) {
+                        // Normalize class_room for matching
+                        $logClassRoom = $normalizeRoom($log['class_room']);
+                        // try both normalized forms
+                        $candidateKeys = [$logClassRoom, 'ห้อง ' . $logClassRoom, trim($log['class_room'])];
+                        $found = false;
+                        foreach ($candidateKeys as $ck) {
+                            if ($ck === null || $ck === '') continue;
+                            if (isset($classRoomToReportId[$ck])) {
+                                $reportId = $classRoomToReportId[$ck];
+                                $found = true;
+                                break;
+                            }
+                        }
+                        if (!$found) continue;
+
+                        if ($hasClassRoomColumn) {
+                            $stmt = $this->pdo->prepare("INSERT INTO teaching_attendance_logs (report_id, student_id, status, class_room) VALUES (?, ?, ?, ?)");
+                            $stmt->execute([
+                                $reportId,
+                                $log['student_id'],
+                                $log['status'],
+                                $log['class_room']
+                            ]);
+                        } else {
                             $stmt = $this->pdo->prepare("INSERT INTO teaching_attendance_logs (report_id, student_id, status) VALUES (?, ?, ?)");
                             $stmt->execute([
                                 $reportId,
                                 $log['student_id'],
                                 $log['status']
                             ]);
+                        }
+                    } else {
+                        // map ไปยังทุกรายงานที่สร้างใน session เดียวกัน
+                        foreach ($classRoomToReportId as $reportId) {
+                            if ($hasClassRoomColumn) {
+                                $stmt = $this->pdo->prepare("INSERT INTO teaching_attendance_logs (report_id, student_id, status, class_room) VALUES (?, ?, ?, ?)");
+                                $stmt->execute([
+                                    $reportId,
+                                    $log['student_id'],
+                                    $log['status'],
+                                    ''
+                                ]);
+                            } else {
+                                $stmt = $this->pdo->prepare("INSERT INTO teaching_attendance_logs (report_id, student_id, status) VALUES (?, ?, ?)");
+                                $stmt->execute([
+                                    $reportId,
+                                    $log['student_id'],
+                                    $log['status']
+                                ]);
+                            }
                         }
                     }
                 }
@@ -311,6 +462,34 @@ class TeachingReport
             $stmt = $this->pdo->prepare("SELECT student_id, status, comment FROM teaching_attendance_logs WHERE report_id=?");
         }
         $stmt->execute([$reportId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $logs = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // ถ้ามี DatabaseUsers ให้ต่อไปดึงชื่อ-สกุล นักเรียน เพื่อให้ frontend แสดงรายชื่อได้สะดวก
+        $result = [];
+        try {
+            if ($this->dbUsers) {
+                $pdoUsers = $this->dbUsers->getPDO();
+                $stmtStu = $pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_id = ?");
+                foreach ($logs as $log) {
+                    $stuName = null;
+                    $stmtStu->execute([$log['student_id']]);
+                    $stu = $stmtStu->fetch();
+                    if ($stu) $stuName = $stu['fullname'];
+                    $entry = [
+                        'student_id' => $log['student_id'],
+                        'student_name' => $stuName,
+                        'status' => $log['status'] ?? '',
+                        'comment' => $log['comment'] ?? null
+                    ];
+                    if ($hasClassRoom) $entry['class_room'] = $log['class_room'];
+                    $result[] = $entry;
+                }
+                return $result;
+            }
+        } catch (\Exception $e) {
+            // ถ้ามีปัญหา ให้ fallback ส่งข้อมูลเดิม
+        }
+
+        return $logs;
     }
 }

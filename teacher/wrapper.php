@@ -1,17 +1,17 @@
 <div class="wrapper">
 
   <!-- Preloader -->
-  <div class="preloader flex flex-col justify-center items-center h-screen w-full fixed top-0 left-0 bg-gray-100 z-50">
-      <img class="animate-shake h-36 w-36" src="../dist/img/logo-phicha.png" alt="AdminLTE Logo">
-      <h3 class="mt-4 text-center"><?php echo $global['pageTitle']; ?></h3>
-  </div>
+    <div class="preloader flex flex-col justify-center items-center h-screen w-full fixed top-0 left-0 bg-gray-100 dark:bg-gray-900 z-50" role="status" aria-live="polite" aria-label="Loading">
+      <img class="animate-shake h-36 w-36 rounded-full shadow-lg" src="../dist/img/logo-phicha.png" alt="AdminLTE Logo">
+      <h3 class="mt-4 text-center text-gray-700 dark:text-gray-200"><?php echo $global['pageTitle']; ?></h3>
+    </div>
 
   <!-- Navbar -->
-  <nav class="main-header navbar navbar-expand bg-white">
+  <nav class="main-header navbar navbar-expand">
     <!-- Left navbar links -->
     <ul class="navbar-nav">
       <li class="nav-item">
-        <a class="nav-link" data-widget="pushmenu" href="#" role="button">
+        <a id="pushmenuToggle" class="nav-link hover:bg-gray-200 hover:text-gray-800 transition-all duration-300 transform hover:scale-105" data-widget="pushmenu" href="#" role="button" aria-controls="main-sidebar" aria-expanded="true" aria-label="Toggle sidebar" >
           <i class="bi bi-list"></i>
         </a>
       </li>
@@ -23,11 +23,11 @@
     </ul>
 
     <div class="switch ml-auto">
-      <label class="switch-label">
-        <input type="checkbox" id="theme-toggle">
+      <label class="switch-label" for="theme-toggle">
+        <input type="checkbox" id="theme-toggle" aria-label="Toggle color theme" role="switch" aria-checked="false">
         <span class="slider flex items-center justify-between px-1">
-          <i class="bi bi-brightness-high icon-light"></i>
-          <i class="bi bi-moon icon-dark"></i>
+          <i class="bi bi-brightness-high icon-light" aria-hidden="true"></i>
+          <i class="bi bi-moon icon-dark" aria-hidden="true"></i>
         </span>
       </label>
     </div>
@@ -35,7 +35,7 @@
   <!-- /.navbar -->
 
   <!-- Main Sidebar Container -->
-  <aside class="main-sidebar bg-gray-900 text-white">
+  <aside id="main-sidebar" class="main-sidebar" role="navigation" aria-label="Main Sidebar">
     <!-- Brand Logo -->
     <a href="index.php" class="brand-link flex items-center">
       <img src="../dist/img/logo-phicha.png" alt="AdminLTE Logo" class="brand-image rounded-full opacity-80">

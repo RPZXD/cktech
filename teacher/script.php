@@ -2,24 +2,99 @@
   document.addEventListener('DOMContentLoaded', function() {
     const themeToggle = document.getElementById('theme-toggle');
     const body = document.body;
+    const htmlEl = document.documentElement;
     const navbar = document.querySelector('.main-header.navbar');
+    const sidebar = document.querySelector('.main-sidebar');
+
+    // Hide preloader smoothly
+    const preloader = document.querySelector('.preloader');
+    if (preloader) {
+      setTimeout(() => {
+        preloader.style.transition = 'opacity 400ms ease';
+        preloader.style.opacity = '0';
+        setTimeout(() => {
+          preloader.remove();
+        }, 450);
+      }, 300);
+    }
+
+    
+
+    // Initialize AOS if available
+    if (window.AOS) {
+      AOS.init({ duration: 800, once: true });
+    }
 
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'light-mode';
     body.classList.remove('light-mode', 'dark-mode');
     body.classList.add(savedTheme);
-    navbar.classList.toggle('bg-white', savedTheme === 'light-mode');
-    navbar.classList.toggle('bg-gray-900', savedTheme === 'dark-mode');
-    themeToggle.checked = savedTheme === 'dark-mode';
+    htmlEl.classList.toggle('dark', savedTheme === 'dark-mode');
+    if (navbar) {
+      navbar.classList.toggle('bg-white', savedTheme === 'light-mode');
+      navbar.classList.toggle('bg-gray-900', savedTheme === 'dark-mode');
+    }
+    if (sidebar) {
+      sidebar.classList.toggle('bg-white', savedTheme === 'light-mode');
+      sidebar.classList.toggle('bg-gray-900', savedTheme === 'dark-mode');
+    }
+    const contentWrapper = document.querySelector('.content-wrapper');
+    if (contentWrapper) {
+      contentWrapper.classList.toggle('bg-gray-50', savedTheme === 'light-mode');
+      contentWrapper.classList.toggle('bg-gray-900', savedTheme === 'dark-mode');
+    }
+    if (themeToggle) themeToggle.checked = savedTheme === 'dark-mode';
 
     // Add event listener for the switch
-    themeToggle.addEventListener('change', function() {
-      const isDarkMode = themeToggle.checked;
-      body.classList.toggle('light-mode', !isDarkMode);
-      body.classList.toggle('dark-mode', isDarkMode);
-      navbar.classList.toggle('bg-white', !isDarkMode);
-      navbar.classList.toggle('bg-gray-900', isDarkMode);
-      localStorage.setItem('theme', isDarkMode ? 'dark-mode' : 'light-mode');
+    if (themeToggle) {
+      themeToggle.addEventListener('change', function() {
+        const isDarkMode = themeToggle.checked;
+        body.classList.toggle('light-mode', !isDarkMode);
+        body.classList.toggle('dark-mode', isDarkMode);
+        htmlEl.classList.toggle('dark', isDarkMode);
+        if (navbar) {
+          navbar.classList.toggle('bg-white', !isDarkMode);
+          navbar.classList.toggle('bg-gray-900', isDarkMode);
+        }
+        if (sidebar) {
+          sidebar.classList.toggle('bg-white', !isDarkMode);
+          sidebar.classList.toggle('bg-gray-900', isDarkMode);
+        }
+        const contentWrapper = document.querySelector('.content-wrapper');
+        if (contentWrapper) {
+          contentWrapper.classList.toggle('bg-gray-50', !isDarkMode);
+          contentWrapper.classList.toggle('bg-gray-900', isDarkMode);
+        }
+        // update ARIA attribute for assistive tech
+        themeToggle.setAttribute('aria-checked', isDarkMode ? 'true' : 'false');
+        localStorage.setItem('theme', isDarkMode ? 'dark-mode' : 'light-mode');
+      });
+    }
+
+    // Sidebar link active handling (adds 'active' class on click)
+    const navLinks = document.querySelectorAll('.main-sidebar .nav-link');
+    navLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        navLinks.forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Pushmenu ARIA toggle handling
+    const pushToggles = document.querySelectorAll('[data-widget="pushmenu"]');
+    pushToggles.forEach(btn => {
+      // ensure aria-controls set
+      if (!btn.hasAttribute('aria-controls')) btn.setAttribute('aria-controls', 'main-sidebar');
+      const updateAria = () => {
+        const expanded = document.body.classList.contains('sidebar-collapse') ? 'false' : 'true';
+        btn.setAttribute('aria-expanded', expanded);
+      };
+      // initial
+      updateAria();
+      btn.addEventListener('click', () => {
+        // small delay to allow AdminLTE to toggle classes
+        setTimeout(updateAria, 120);
+      });
     });
   });
 </script>

@@ -52,26 +52,44 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
 
 
     <style>
-    body {
-        font-family: 'Mali', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        transition: background-color 0.5s, color 0.5s;
-    }
-
-    body.light-mode {
-        background-color: #ffffff;
-        color: #000000;
+    /* Theme tokens (WCAG-friendly choices) */
+    :root {
+        --bg: #ffffff;
+        --text: #0f172a; /* slate-900 */
+        --muted: #64748b; /* slate-500 */
+        --primary: #4f46e5; /* indigo-600 */
+        --primary-600: #4338ca;
+        --accent: #06b6d4; /* cyan-500 */
+        --sidebar-bg: #111827; /* gray-900 for contrast */
+        --sidebar-text: #e6eef8;
+        --focus-ring: rgba(79,70,229,0.24);
     }
 
     body.dark-mode {
-        background-color: #121212;
-        color: #ffffff;
+        --bg: #071029; /* darker navy */
+        --text: #e6eef8;
+        --muted: #94a3b8;
+        --primary: #8b5cf6; /* lighter indigo for dark */
+        --primary-600: #7c3aed;
+        --accent: #34d399;
+        --sidebar-bg: #0b1220;
+        --sidebar-text: #cbd5e1;
+        --focus-ring: rgba(139,92,246,0.18);
+    }
+
+    body {
+        font-family: 'Mali', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        transition: background-color 0.35s ease, color 0.35s ease;
     }
 
     .navbar-light.light-mode {
@@ -110,7 +128,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: #ccc;
+        background-color: #e6e9ee;
         transition: 0.4s;
         border-radius: 34px;
         display: flex;
@@ -139,15 +157,15 @@
     }
 
     .slider .icon-light {
-        color: #fbc02d;
+        color: #f59e0b;
     }
 
     .slider .icon-dark {
-        color: #2196F3;
+        color: var(--primary);
     }
 
     input:checked + .slider {
-        background-color: #2196F3;
+        background-color: var(--primary-600);
     }
 
     input:checked + .slider .icon-light {
@@ -179,7 +197,7 @@
         position: fixed;
         top: 0;
         left: 0;
-        background-color: #f4f6f9;
+        background-color: var(--bg);
         z-index: 9999;
         transition: opacity 0.5s;
     }
@@ -227,6 +245,117 @@
         table.dataTable tbody {
             display: table-row-group;
         }
+    }
+
+    /* Dark Mode Styles for Content */
+    body.dark-mode section.content {
+        background: linear-gradient(to bottom right, #1a1a1a, #2d2d2d, #4a4a4a) !important;
+    }
+
+    body.dark-mode section.content h2 {
+        color: #ffffff !important;
+    }
+
+    body.dark-mode section.content p {
+        color: #cccccc !important;
+    }
+
+    body.dark-mode section.content ul li {
+        color: #cccccc !important;
+    }
+
+    body.dark-mode section.content ul li:hover {
+        color: #ffffff !important;
+    }
+
+    body.dark-mode section.content .bg-white\/80 {
+        background-color: rgba(31, 41, 55, 0.8) !important;
+        border-color: #4a5568 !important;
+    }
+
+    body.dark-mode section.content .text-indigo-700 {
+        color: #a78bfa !important;
+    }
+
+    body.dark-mode section.content .text-gray-600 {
+        color: #cccccc !important;
+    }
+
+    body.dark-mode section.content .text-green-500,
+    body.dark-mode section.content .text-blue-500,
+    body.dark-mode section.content .text-purple-500,
+    body.dark-mode section.content .text-orange-500,
+    body.dark-mode section.content .text-pink-500,
+    body.dark-mode section.content .text-teal-500 {
+        filter: brightness(1.2);
+    }
+
+    /* Dark Mode for Sidebar */
+    body.dark-mode .main-sidebar {
+        background-color: #1a1a1a !important;
+    }
+
+    body.dark-mode .nav-link {
+        color: #cccccc !important;
+    }
+
+    body.dark-mode .nav-link:hover {
+        color: #ffffff !important;
+        background-color: #374151 !important;
+    }
+
+    /* Sidebar nav styles and active indicator */
+    .main-sidebar {
+        background-color: var(--sidebar-bg) !important;
+        color: var(--sidebar-text) !important;
+    }
+
+    .main-sidebar .nav-link {
+        position: relative;
+        transition: background-color 200ms ease, color 200ms ease, transform 150ms ease;
+        border-radius: 0.5rem;
+        padding-left: 0.75rem;
+    }
+
+    .main-sidebar .nav-link .bi {
+        margin-right: 0.6rem;
+        transition: transform 200ms ease, color 200ms ease;
+    }
+
+    .main-sidebar .nav-link:hover {
+        transform: translateX(3px);
+    }
+
+    /* Left indicator bar */
+    .main-sidebar .nav-link::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 0;
+        border-radius: 4px;
+        background: linear-gradient(180deg, #6ee7b7, #60a5fa);
+        transition: height 220ms ease;
+        opacity: 0;
+    }
+
+    .main-sidebar .nav-link:hover::before,
+    .main-sidebar .nav-link.active::before {
+        height: 60%;
+        opacity: 1;
+    }
+
+    .main-sidebar .nav-link.active {
+        background-color: rgba(255,255,255,0.06);
+        color: #fff !important;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+
+    /* Dark mode adjustments for indicator */
+    body.dark-mode .main-sidebar .nav-link::before {
+        background: linear-gradient(180deg, #34d399, #7c3aed);
     }
 </style>
 

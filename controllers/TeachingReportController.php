@@ -46,6 +46,16 @@ try {
         case 'detail':
             $id = $_GET['id'] ?? 0;
             $report = $reportModel->getById($id);
+            // เพิ่มชื่อครูในผลลัพธ์เพื่อให้ frontend แสดงชื่อผู้รายงานได้
+            if ($report && isset($report['teacher_id']) && $report['teacher_id'] !== '') {
+                // ใช้ DatabaseUsers เพื่อดึงข้อมูลครู (ตาราง teacher)
+                require_once __DIR__ . '/../classes/DatabaseUsers.php';
+                $dbUsers = new \App\DatabaseUsers();
+                $teacher = $dbUsers->getTeacherById($report['teacher_id']);
+                $report['teacher_name'] = $teacher && isset($teacher['Teach_name']) ? $teacher['Teach_name'] : '';
+            } else {
+                $report['teacher_name'] = '';
+            }
             echo json_encode($report);
             break;
         case 'attendance_log':

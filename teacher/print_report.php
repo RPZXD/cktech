@@ -24,7 +24,8 @@ $statusLabelMap = [
     'ลากิจ' => ['label' => 'ลากิจ', 'emoji' => '📝'],
     'มาเรียน' => ['label' => 'มา', 'emoji' => '✅'],
     'มาสาย' => ['label' => 'สาย', 'emoji' => '⏰'],
-    'เข้าร่วมกิจกรรม' => ['label' => 'กิจกรรม', 'emoji' => '🎉']
+    'เข้าร่วมกิจกรรม' => ['label' => 'กิจกรรม', 'emoji' => '🎉'],
+    'โดดเรียน' => ['label' => 'โดดเรียน', 'emoji' => '🚫']
 ];
 
 // ดึง absent_students, sick_students, personal_students จาก teaching_attendance_logs (แบบเดียวกับในรายงาน)
@@ -36,9 +37,10 @@ $statuses = [
     'ขาดเรียน' => [],
     'ลาป่วย' => [],
     'ลากิจ' => [],
-    'เข้าร่วมกิจกรรม' => []
+    'เข้าร่วมกิจกรรม' => [],
+    'โดดเรียน' => []
 ];
-$sql2 = "SELECT student_id, status FROM teaching_attendance_logs WHERE report_id = ? AND status IN ('ขาดเรียน','ลาป่วย','ลากิจ','เข้าร่วมกิจกรรม')";
+$sql2 = "SELECT student_id, status FROM teaching_attendance_logs WHERE report_id = ? AND status IN ('ขาดเรียน','ลาป่วย','ลากิจ','เข้าร่วมกิจกรรม','โดดเรียน')";
 $stmt2 = $pdoTeaching->prepare($sql2);
 $stmt2->execute([$id]);
 $logs = $stmt2->fetchAll();
@@ -70,17 +72,30 @@ $statuses = [
     'ขาดเรียน' => [],
     'ลาป่วย' => [],
     'ลากิจ' => [],
-    'เข้าร่วมกิจกรรม' => []
+    'เข้าร่วมกิจกรรม' => [],
+    'โดดเรียน' => []
 ];
 foreach ($studentsInfo as $info) {
     if (isset($statuses[$info['status']])) {
         $statuses[$info['status']][] = $info['display'];
     }
 }
-$absent = $statuses['ขาดเรียน'] ? '<div class="flex flex-wrap gap-2">'.implode('', array_map(function($s){return '<span class="bg-red-100 text-red-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ขาดเรียน'])).'</div>' : '';
-$sick = $statuses['ลาป่วย'] ? '<div class="flex flex-wrap gap-2">'.implode('', array_map(function($s){return '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ลาป่วย'])).'</div>' : '';
-$personal = $statuses['ลากิจ'] ? '<div class="flex flex-wrap gap-2">'.implode('', array_map(function($s){return '<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ลากิจ'])).'</div>' : '';
-$activity = $statuses['เข้าร่วมกิจกรรม'] ? '<div class="flex flex-wrap gap-2">'.implode('', array_map(function($s){return '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['เข้าร่วมกิจกรรม'])).'</div>' : '';
+// Helper to render ordered list for print (sorted by Stu_no already)
+function buildOrderedList($items) {
+    if (empty($items)) return '';
+    $html = '<ol class="list-decimal ml-6 space-y-1">';
+    foreach ($items as $it) {
+        $html .= '<li class="text-sm">' . $it . '</li>';
+    }
+    $html .= '</ol>';
+    return $html;
+}
+
+$absent = $statuses['ขาดเรียน'] ? '<div class="mb-2">' . buildOrderedList($statuses['ขาดเรียน']) . '</div>' : '';
+$sick = $statuses['ลาป่วย'] ? '<div class="mb-2">' . buildOrderedList($statuses['ลาป่วย']) . '</div>' : '';
+$personal = $statuses['ลากิจ'] ? '<div class="mb-2">' . buildOrderedList($statuses['ลากิจ']) . '</div>' : '';
+$activity = $statuses['เข้าร่วมกิจกรรม'] ? '<div class="mb-2">' . buildOrderedList($statuses['เข้าร่วมกิจกรรม']) . '</div>' : '';
+$truant = $statuses['โดดเรียน'] ? '<div class="mb-2">' . buildOrderedList($statuses['โดดเรียน']) . '</div>' : '';
 
 if (!$report) {
     echo "ไม่พบข้อมูลรายงาน";
@@ -123,10 +138,17 @@ if (!empty($report['teacher_id'])) {
             font-family: 'Sarabun', 'Tahoma', 'sans-serif';
             background: #fff;
         }
+        /* Remove default printer margins and ensure backgrounds print where supported */
+        @page { margin: 0; }
+        html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         @media print {
-            html, body { background: #fff; font-family: 'Sarabun', 'Tahoma', 'sans-serif'; }
+            html, body { background: #fff; font-family: 'Sarabun', 'Tahoma', 'sans-serif'; margin: 0; padding: 0; }
             .no-print { display: none !important; }
             .print-block { page-break-inside: avoid; }
+            /* Make print container use full page when printing (reserve a right margin of 0.5cm) */
+            .print-block { width: calc(100vw - 1.5cm); max-width: calc(100vw - 1.5cm); margin: 0 1.5cm 0 0; padding: 18px; border: none; box-shadow: none !important; }
+            /* Ensure header background/gradients are preserved when possible */
+            .print-block, .print-block * { -webkit-print-color-adjust: exact; color-adjust: exact; print-color-adjust: exact; }
         }
         .print-block { page-break-inside: avoid; }
         .line-space { margin-bottom: 1.1em; }
@@ -136,83 +158,131 @@ if (!empty($report['teacher_id'])) {
         .signature-area { margin-top: 2.5rem; text-align: right; }
         .signature-box { display: inline-block; text-align: center; width: 320px; }
         .img-preview { max-height: 7rem; max-width: 10rem; object-fit: contain; border-radius: 0.5rem; border: 1px solid #e5e7eb; background: #f9fafb; }
+        .img-preview-large { max-height: 10rem; max-width: 12rem; object-fit: contain; border-radius: 0.5rem; border: 1px solid #e5e7eb; background: #f9fafb; }
         .flex-wrap { flex-wrap: wrap; }
         .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .max-h-report { max-height: 96vh; overflow: hidden; }
+        .print-header { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1rem; }
+        .school-name { font-weight:700; font-size:1.05rem; color:#0f172a; }
+        .print-meta { text-align:right; font-size:0.95rem; color:#374151; }
     </style>
 </head>
 <body class="p-6 text-base bg-white max-h-report">
-    <div class="max-w-3xl mx-auto print-block bg-white rounded-lg shadow border border-gray-200 px-8 py-6" style="box-shadow:0 2px 8px #0001;">
-        <h1 class="text-xl font-bold text-blue-700 text-center mb-4">📘 รายงานการสอน</h1>
-        <div class="flex flex-row justify-between items-start mb-2 gap-4">
-            <div class="w-1/2 text-left">
-                <div class="line-space"><span class="font-semibold">📖 วิชา:</span> <span class="truncate"><?= htmlspecialchars($report['subject_name'] ?? '-') ?></span></div>
-                <div class="line-space"><span class="font-semibold">🏫 ระดับชั้น:</span> ม.<?= htmlspecialchars($report['level'].'/' .$report['class_room']) ?></div>
-                <div class="line-space"><span class="font-semibold">📝 แผน / หัวข้อ:</span> <span class="truncate"><?= htmlspecialchars($report['plan_topic'] ?? '-') ?></span></div>
-            </div>
-            <div class="w-1/2 text-left">
-                <div class="line-space"><span class="font-semibold">📅 วันที่:</span> <?= formatThaiDate($report['report_date']) ?></div>
-                <div class="line-space"><span class="font-semibold">⏰ คาบ:</span> <?= htmlspecialchars($report['period_start']) ?> - <?= htmlspecialchars($report['period_end']) ?></div>
-            </div>
-        </div>
-        <div class="line-space">
-            <div class="section-title">👨‍🏫 กิจกรรมการเรียนรู้</div>
-            <div class="ml-4 text-gray-800"><?= nl2br(htmlspecialchars($report['activity'] ?? '-')) ?></div>
-        </div>
-        <div class="line-space">
-            <div class="section-title">🙋‍♂️ สรุปการเข้าชั้นเรียน</div>
-            <div class="ml-4 attendance-block">
-                <div class="mb-1 flex items-start gap-2">
-                    <span class="attendance-label font-medium text-red-700">❌ ขาดเรียน:</span>
-                    <span><?= $absent ?: '<span class="text-gray-400">-</span>' ?></span>
+    <div class="no-print" style="text-align:center;padding:8px;background:#fff7ed;border:1px solid #fee2b3;margin-bottom:8px;border-radius:8px;font-size:0.95rem;color:#92400e;">
+        หมายเหตุ: หากสีพื้นหลัง/กราฟิกไม่แสดงในหน้าต่างการพิมพ์ ให้ทำเครื่องหมายที่ "Background graphics" (หรือ "Print backgrounds") ในตัวเลือกการพิมพ์ของเบราว์เซอร์
+    </div>
+    <?php
+        // counts for attendance summary
+        $count_absent = count($statuses['ขาดเรียน']);
+        $count_sick = count($statuses['ลาป่วย']);
+        $count_personal = count($statuses['ลากิจ']);
+        $count_activity = count($statuses['เข้าร่วมกิจกรรม']);
+        $count_truant = isset($statuses['โดดเรียน']) ? count($statuses['โดดเรียน']) : 0;
+        $count_total = $count_absent + $count_sick + $count_personal + $count_activity + $count_truant;
+    ?>
+
+    <div class="max-w-4xl mx-auto print-block bg-white rounded-xl shadow-lg border border-gray-200 px-6 py-6" style="box-shadow:0 4px 18px rgba(2,6,23,0.08);">
+        <div style="background: linear-gradient(90deg, #ef4444, #f59e0b);padding:18px;border-radius:12px;color:#fff;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;gap:12px;align-items:center;">
+                
+                <div style="width:56px;height:56px;background:rgba(255,255,255,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px; box-shadow: 0 0 15px rgba(255, 255, 255, 0.7);">
+                    <img src="../dist/img/logo-phicha.png" alt="">
                 </div>
-                <div class="mb-1 flex items-start gap-2">
-                    <span class="attendance-label font-medium text-blue-700">🤒 ป่วย:</span>
-                    <span><?= $sick ?: '<span class="text-gray-400">-</span>' ?></span>
-                </div>
-                <div class="mb-1 flex items-start gap-2">
-                    <span class="attendance-label font-medium text-indigo-700">📝 ลากิจ:</span>
-                    <span><?= $personal ?: '<span class="text-gray-400">-</span>' ?></span>
-                </div>
-                <div class="mb-1 flex items-start gap-2">
-                    <span class="attendance-label font-medium text-purple-700">🎉 กิจกรรม:</span>
-                    <span><?= $activity ?: '<span class="text-gray-400">-</span>' ?></span>
+                
+                <div>
+                    <div style="font-weight:700;font-size:1.15rem;">โรงเรียนพิชัย</div>
+                    <div style="opacity:0.95">📘 รายงานการสอน </div>
                 </div>
             </div>
-        </div>
-        <div class="line-space">
-            <div class="section-title">💡 สะท้อนผลการสอน</div>
-            <div class="ml-4">
-                <div class="mb-1"><strong>K:</strong> <?= htmlspecialchars($report['reflection_k'] ?? '-') ?></div>
-                <div class="mb-1"><strong>P:</strong> <?= htmlspecialchars($report['reflection_p'] ?? '-') ?></div>
-                <div class="mb-1"><strong>A:</strong> <?= htmlspecialchars($report['reflection_a'] ?? '-') ?></div>
+            
+            <div style="text-align:right;font-size:0.95rem;">
+                <div>ผู้สอน: <strong><?= htmlspecialchars($teacherName ?: '-') ?></strong></div>
+                <div>วันที่พิมพ์: <strong><?= formatThaiDate(date('Y-m-d')) ?></strong></div>
             </div>
         </div>
-        <div class="line-space">
-            <div class="section-title">❗ ปัญหาที่พบ</div>
-            <div class="ml-4"><?= nl2br(htmlspecialchars($report['problems'] ?? '-')) ?></div>
-        </div>
-        <div class="line-space">
-            <div class="section-title">📝 ข้อเสนอแนะ</div>
-            <div class="ml-4"><?= nl2br(htmlspecialchars($report['suggestions'] ?? '-')) ?></div>
-        </div>
-        <div class="section-title mb-2">📸 รูปภาพประกอบการสอน</div>
-        <div class="flex flex-row gap-8 mb-8 items-center justify-center">
-            <?php if ($report['image1']): ?>
-                <img src="<?= htmlspecialchars('../' . $report['image1']) ?>" class="img-preview" alt="รูปภาพ 1">
-            <?php endif; ?>
-            <?php if ($report['image2']): ?>
-                <img src="<?= htmlspecialchars('../' . $report['image2']) ?>" class="img-preview" alt="รูปภาพ 2">
-            <?php endif; ?>
-            <?php if (!$report['image1'] && !$report['image2']): ?>
-                <div class="text-gray-400">-</div>
-            <?php endif; ?>
-        </div>
-        <div class="signature-area">
-            <div class="signature-box">
-                ลงชื่อ......................................................<br>
-                (<?= htmlspecialchars($teacherName) ?>)<br>
+
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start;">
+            <!-- Left: Main content -->
+            <div>
+                <div style="background:#fff;border-radius:10px;padding:14px;border:1px solid #eef2ff;margin-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <div style="font-weight:700;font-size:1rem;color:#111827;">📖 วิชา: <?= htmlspecialchars($report['subject_name'] ?? '-') ?></div>
+                        <div style="font-size:0.95rem;color:#6b7280;">ม.<?= htmlspecialchars($report['level'].'/' .$report['class_room']) ?> • <?= formatThaiDate($report['report_date']) ?></div>
+                    </div>
+                    <div style="color:#374151;">📝 หัวข้อ/แผน: <strong><?= htmlspecialchars($report['plan_topic'] ?? '-') ?></strong></div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div style="background:linear-gradient(180deg,#f8fafc,#eef2ff);padding:12px;border-radius:10px;border:1px solid #e6ecff;">
+                        <div style="font-weight:700;color:#1e40af;margin-bottom:6px;">👨‍🏫 กิจกรรมการเรียนรู้</div>
+                        <div style="color:#374151;"><?= nl2br(htmlspecialchars($report['activity'] ?? '-')) ?></div>
+                    </div>
+                    <div style="background:linear-gradient(180deg,#fff7ed,#fff1f2);padding:12px;border-radius:10px;border:1px solid #ffe7e6;">
+                        <div style="font-weight:700;color:#b45309;margin-bottom:6px;">💡 สะท้อนผลการสอน (K/P/A)</div>
+                        <div style="color:#374151;"><strong>K:</strong> <?= htmlspecialchars($report['reflection_k'] ?? '-') ?><br><strong>P:</strong> <?= htmlspecialchars($report['reflection_p'] ?? '-') ?><br><strong>A:</strong> <?= htmlspecialchars($report['reflection_a'] ?? '-') ?></div>
+                    </div>
+                </div>
+
+                <div style="background:#ffffff;padding:12px;border-radius:10px;border:1px solid #eef2ff;margin-bottom:12px;">
+                    <div style="font-weight:700;color:#111827;margin-bottom:6px;">❗ ปัญหา / ข้อเสนอแนะ</div>
+                    <div style="color:#374151;"><?= nl2br(htmlspecialchars(($report['problems'] ?? '-') . "\n\n" . ($report['suggestions'] ?? '-'))) ?></div>
+                </div>
+
+                <div style="background:#fff;padding:12px;border-radius:10px;border:1px solid #eef2ff;">
+                    <div style="font-weight:700;color:#111827;margin-bottom:8px;">📸 รูปภาพประกอบการสอน</div>
+                    <div style="display:flex;gap:12px;align-items:center;justify-content:flex-start;flex-wrap:wrap;">
+                        <?php if ($report['image1']): ?>
+                            <img src="<?= htmlspecialchars('../' . $report['image1']) ?>" class="img-preview-large" alt="รูปภาพ 1">
+                        <?php endif; ?>
+                        <?php if ($report['image2']): ?>
+                            <img src="<?= htmlspecialchars('../' . $report['image2']) ?>" class="img-preview-large" alt="รูปภาพ 2">
+                        <?php endif; ?>
+                        <?php if (!$report['image1'] && !$report['image2']): ?>
+                            <div class="text-gray-400">-</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
+
+            <!-- Right: Summary / Infographic cards -->
+            <div>
+                <div style="background:linear-gradient(180deg,#ffffff,#f8fafc);padding:12px;border-radius:10px;border:1px solid #eef2ff;margin-bottom:12px;">
+                    <div style="font-weight:700;color:#111827;margin-bottom:8px;">📊 สรุปการเข้าเรียน</div>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;padding:10px;border-radius:8px;border:1px solid #eef2ff;">
+                            <div style="display:flex;align-items:center;gap:8px;"><div style="font-size:18px;">❌</div><div>ขาดเรียน</div></div>
+                            <div style="font-weight:700;color:#dc2626;"><?= $count_absent ?></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;padding:10px;border-radius:8px;border:1px solid #eef2ff;">
+                            <div style="display:flex;align-items:center;gap:8px;"><div style="font-size:18px;">🤒</div><div>ป่วย</div></div>
+                            <div style="font-weight:700;color:#2563eb;"><?= $count_sick ?></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;padding:10px;border-radius:8px;border:1px solid #eef2ff;">
+                            <div style="display:flex;align-items:center;gap:8px;"><div style="font-size:18px;">📝</div><div>ลากิจ</div></div>
+                            <div style="font-weight:700;color:#7c3aed;"><?= $count_personal ?></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;padding:10px;border-radius:8px;border:1px solid #eef2ff;">
+                            <div style="display:flex;align-items:center;gap:8px;"><div style="font-size:18px;">🎉</div><div>กิจกรรม</div></div>
+                            <div style="font-weight:700;color:#6b21a8;"><?= $count_activity ?></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;padding:10px;border-radius:8px;border:1px solid #eef2ff;">
+                            <div style="display:flex;align-items:center;gap:8px;"><div style="font-size:18px;">🚫</div><div>โดดเรียน</div></div>
+                            <div style="font-weight:700;color:#374151;"><?= $count_truant ?></div>
+                        </div>
+                        <div style="margin-top:6px;padding:8px;background:linear-gradient(90deg,#eef2ff,#f8fafc);border-radius:8px;text-align:center;font-weight:700;">รวม: <?= $count_total ?></div>
+                    </div>
+                </div>
+
+                <div style="background:#fff;padding:12px;border-radius:10px;border:1px solid #eef2ff;">
+                    <div style="font-weight:700;color:#111827;margin-bottom:8px;">รายละเอียดผู้สอน</div>
+                    <div style="color:#374151;">ชื่อ: <strong><?= htmlspecialchars($teacherName ?: '-') ?></strong></div>
+                    <div style="color:#374151;">วิชา: <strong><?= htmlspecialchars($report['subject_name'] ?? '-') ?></strong></div>
+                    <div style="color:#374151;">คาบ: <strong><?= htmlspecialchars($report['period_start']) ?> - <?= htmlspecialchars($report['period_end']) ?></strong></div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:18px;text-align:right;">
+            <div class="signature-box">ลงชื่อ..............................................<br>(<?= htmlspecialchars($teacherName) ?>)</div>
         </div>
     </div>
     <script>
