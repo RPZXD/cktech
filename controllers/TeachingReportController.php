@@ -68,6 +68,32 @@ try {
             $logs = $reportModel->getAttendanceLogByReportId($id);
             echo json_encode($logs);
             break;
+        case 'attendance_by_day':
+            // params: subject_id, class_room, date, optional teacher_id
+            $subjectId = $_GET['subject_id'] ?? ($_POST['subject_id'] ?? 0);
+            $classRoom = $_GET['class_room'] ?? ($_POST['class_room'] ?? '');
+            $date = $_GET['date'] ?? ($_POST['date'] ?? '');
+            $teacherId = $_GET['teacher_id'] ?? ($_POST['teacher_id'] ?? null);
+            if (!$subjectId || !$classRoom || !$date) {
+                echo json_encode(['reports' => [], 'students' => []]);
+                exit;
+            }
+            $data = $reportModel->getAttendanceByDay($subjectId, $classRoom, $date, $teacherId);
+            echo json_encode($data);
+            break;
+        case 'attendance_by_room':
+            // params: subject_id, class_room, optional teacher_id, optional limit
+            $subjectId = $_GET['subject_id'] ?? ($_POST['subject_id'] ?? 0);
+            $classRoom = $_GET['class_room'] ?? ($_POST['class_room'] ?? '');
+            $teacherId = $_GET['teacher_id'] ?? ($_POST['teacher_id'] ?? null);
+            $limit = isset($_GET['limit']) ? intval($_GET['limit']) : (isset($_POST['limit']) ? intval($_POST['limit']) : 14);
+            if (!$subjectId || !$classRoom) {
+                echo json_encode(['reports'=>[],'students'=>[]]);
+                exit;
+            }
+            $data = $reportModel->getAttendanceByRoom($subjectId, $classRoom, $teacherId, $limit);
+            echo json_encode($data);
+            break;
         case 'upload_images':
             $result = ['image1' => '', 'image2' => ''];
             foreach (['image1', 'image2'] as $imgKey) {

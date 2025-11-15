@@ -83,7 +83,7 @@ require_once('header.php');
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1 class="m-0 text-3xl font-bold text-white flex items-center gap-3 animate-pulse">
+            <h1 class="m-0 text-3xl font-bold bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 bg-clip-text text-transparent flex items-center gap-3 animate-pulse">
               📑 <span class="drop-shadow-lg">รายงานการสอน</span>
             </h1>
           </div>
@@ -107,7 +107,7 @@ require_once('header.php');
                   </h2>
                   <p class="text-gray-600 dark:text-gray-400 text-base md:text-lg flex items-center gap-2">
                     <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span></span>
-                    อัปเดตข้อมูลเรียลไทม์ พร้อมลูกเล่นเอฟเฟกต์สุดโมเดิร์น ✨
+                    อัปเดตข้อมูลเรียลไทม์ ✨
                   </p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -144,7 +144,7 @@ require_once('header.php');
 
               <div class="overflow-x-auto rounded-2xl border border-white/60 dark:border-white/10 backdrop-blur-xl shadow-inner">
                 <table class="min-w-full border-collapse overflow-hidden">
-                  <thead class="bg-gradient-to-r from-blue-500/90 via-indigo-500/90 to-purple-600/90 ">
+                  <thead class="bg-gradient-to-r from-blue-500/90 via-indigo-500/90 to-purple-600/90 text-white">
                     <tr>
                       <th class="py-4 px-4 border-b border-white/30 text-center font-semibold tracking-wide">📅 วันที่</th>
                       <th class="py-4 px-4 border-b border-white/30 text-center font-semibold tracking-wide">📖 วิชา</th>
@@ -292,16 +292,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function renderDetailBtn(reportId) {
     return `
-      <button class="tt bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 py-1 rounded-md shadow-sm transition-all duration-200 btn-report-detail flex items-center justify-center gap-2 text-xs hover:scale-105 transform" data-id="${reportId}" data-title="ดูรายละเอียด">
+      <button class=" tt bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 py-1 rounded-md shadow-sm transition-all duration-200 btn-report-detail flex items-center justify-center gap-2 text-xs hover:scale-105 transform" data-id="${reportId}" data-title="ดูรายละเอียด">
         <i class="bi bi-eye"></i> <span class="hidden md:inline">ดู</span>
       </button>
-      <button class="tt bg-yellow-400 hover:bg-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white px-3 py-1 rounded-md shadow-sm transition-all duration-200 btn-edit-report flex items-center justify-center gap-2 text-xs hover:scale-105 transform" data-id="${reportId}" data-title="แก้ไข">
+      <button class=" tt bg-yellow-400 hover:bg-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white px-3 py-1 rounded-md shadow-sm transition-all duration-200 btn-edit-report flex items-center justify-center gap-2 text-xs hover:scale-105 transform" data-id="${reportId}" data-title="แก้ไข">
         <i class="bi bi-pencil"></i> <span class="hidden md:inline">แก้ไข</span>
       </button>
-      <button class="tt bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white px-3 py-1 rounded-md shadow-sm transition-all duration-200 btn-delete-report flex items-center justify-center gap-2 text-xs hover:scale-105 transform" data-id="${reportId}" data-title="ลบ">
+      <button class=" tt bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white px-3 py-1 rounded-md shadow-sm transition-all duration-200 btn-delete-report flex items-center justify-center gap-2 text-xs hover:scale-105 transform" data-id="${reportId}" data-title="ลบ">
         <i class="bi bi-trash"></i> <span class="hidden md:inline">ลบ</span>
       </button>
-      <button class="tt bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-800 text-white px-3 py-1 rounded-md shadow-sm transition-all duration-200 btn-print-report flex items-center justify-center gap-2 text-xs hover:scale-105 transform" data-id="${reportId}" data-title="พิมพ์">
+      <button class=" tt bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-800 text-white px-3 py-1 rounded-md shadow-sm transition-all duration-200 btn-print-report flex items-center justify-center gap-2 text-xs hover:scale-105 transform" data-id="${reportId}" data-title="พิมพ์">
         <i class="bi bi-printer"></i> <span class="hidden md:inline">พิมพ์</span>
       </button>
     `;
@@ -1065,7 +1065,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
 
         const cards = categories.map(cat => `
-          <div class="glow-card rounded-2xl p-5 bg-white/80 dark:bg-gray-800/60 border">
+          <div class="glow-card rounded-2xl p-5 bg-gradient-to-r from-${cat.accent.replace('text-', '')}/10 via-${cat.accent.replace('text-', '')}/20 to-${cat.accent.replace('text-', '')}/10 border">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2 font-semibold ${cat.accent}">${cat.emoji} ${cat.title}</div>
               <div class="text-2xl font-black ${cat.accent}">${cat.list.length}</div>
@@ -1086,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Attendance Detail</p>
                   <h3 class="text-2xl font-extrabold">📋 รายชื่อนักเรียน</h3>
                 </div>
-                <div class="text-sm text-slate-600">รวมเหตุการณ์พิเศษ: <strong class="text-indigo-600">${anyIssues}</strong></div>
+                <div class="text-sm text-slate-600">ยอดทั้งหมด : <strong class="text-indigo-600">${anyIssues}</strong></div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1094,7 +1094,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
 
               <div class="text-right">
-                <button class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700" id="closeAttendanceInner">ปิด</button>
+                <button class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-white dark:text-white" id="closeAttendanceInner">ปิด</button>
               </div>
             </div>
           </div>

@@ -59,7 +59,7 @@ class TeachingReport
                 'เข้าร่วมกิจกรรม' => [],
                 'โดดเรียน' => []
             ];
-            $sql2 = "SELECT student_id, status FROM teaching_attendance_logs WHERE report_id = ? AND status IN ('ขาดเรียน','ลาป่วย','ลากิจ','เข้าร่วมกิจกรรม','โดดเรียน')";
+            $sql2 = "SELECT student_id, status FROM teaching_attendance_logs WHERE report_id = ? AND status IN ('ขาดเรียน','ลาป่วย','ลากิจ','มาเรียน','มาสาย','เข้าร่วมกิจกรรม','โดดเรียน')";
             $stmt2 = $this->pdo->prepare($sql2);
             $stmt2->execute([$report['id']]);
             $logs = $stmt2->fetchAll();
@@ -94,6 +94,8 @@ class TeachingReport
                 'ขาดเรียน' => [],
                 'ลาป่วย' => [],
                 'ลากิจ' => [],
+                'มาเรียน' => [],
+                'มาสาย' => [],
                 'เข้าร่วมกิจกรรม' => [],
                 'โดดเรียน' => []
             ];
@@ -106,11 +108,19 @@ class TeachingReport
             $report['absent_students'] = $statuses['ขาดเรียน'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-red-100 text-red-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ขาดเรียน'])) . '</div>' : '';
             $report['sick_students'] = $statuses['ลาป่วย'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ลาป่วย'])) . '</div>' : '';
             $report['personal_students'] = $statuses['ลากิจ'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ลากิจ'])) . '</div>' : '';
+            $report['present_students'] = $statuses['มาเรียน'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['มาเรียน'])) . '</div>' : '';
+            $report['late_students'] = $statuses['มาสาย'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['มาสาย'])) . '</div>' : '';
             $report['activity_students'] = $statuses['เข้าร่วมกิจกรรม'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['เข้าร่วมกิจกรรม'])) . '</div>' : '';
             $report['truant_students'] = $statuses['โดดเรียน'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['โดดเรียน'])) . '</div>' : '';
             $report['absent_count'] = is_array($statuses['ขาดเรียน']) ? count($statuses['ขาดเรียน']) : 0;
             $report['sick_count'] = is_array($statuses['ลาป่วย']) ? count($statuses['ลาป่วย']) : 0;
             $report['personal_count'] = is_array($statuses['ลากิจ']) ? count($statuses['ลากิจ']) : 0;
+            $report['present_count'] = is_array($statuses['มาเรียน']) ? count($statuses['มาเรียน']) : 0;
+            $report['late_count'] = is_array($statuses['มาสาย']) ? count($statuses['มาสาย']) : 0;
+            $report['activity_count'] = is_array($statuses['เข้าร่วมกิจกรรม']) ? count($statuses['เข้าร่วมกิจกรรม']) : 0;
+            $report['truant_count'] = is_array($statuses['โดดเรียน']) ? count($statuses['โดดเรียน']) : 0;
+            $report['present_count'] = is_array($statuses['มาเรียน']) ? count($statuses['มาเรียน']) : 0;
+            $report['late_count'] = is_array($statuses['มาสาย']) ? count($statuses['มาสาย']) : 0;
             $report['activity_count'] = is_array($statuses['เข้าร่วมกิจกรรม']) ? count($statuses['เข้าร่วมกิจกรรม']) : 0;
             $report['truant_count'] = is_array($statuses['โดดเรียน']) ? count($statuses['โดดเรียน']) : 0;
         }
@@ -152,7 +162,7 @@ class TeachingReport
                 'เข้าร่วมกิจกรรม' => [],
                 'โดดเรียน' => []
             ];
-            $sql2 = "SELECT student_id, status FROM teaching_attendance_logs WHERE report_id = ? AND status IN ('ขาดเรียน','ลาป่วย','ลากิจ','เข้าร่วมกิจกรรม','โดดเรียน')";
+            $sql2 = "SELECT student_id, status FROM teaching_attendance_logs WHERE report_id = ? AND status IN ('ขาดเรียน','ลาป่วย','ลากิจ','มาเรียน','มาสาย','เข้าร่วมกิจกรรม','โดดเรียน')";
             $stmt2 = $this->pdo->prepare($sql2);
             $stmt2->execute([$report['id']]);
             $logs = $stmt2->fetchAll();
@@ -187,6 +197,8 @@ class TeachingReport
                 'ขาดเรียน' => [],
                 'ลาป่วย' => [],
                 'ลากิจ' => [],
+                'มาเรียน' => [],
+                'มาสาย' => [],
                 'เข้าร่วมกิจกรรม' => [],
                 'โดดเรียน' => []
             ];
@@ -199,11 +211,15 @@ class TeachingReport
             $report['absent_students'] = $statuses['ขาดเรียน'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-red-100 text-red-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ขาดเรียน'])) . '</div>' : '';
             $report['sick_students'] = $statuses['ลาป่วย'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ลาป่วย'])) . '</div>' : '';
             $report['personal_students'] = $statuses['ลากิจ'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['ลากิจ'])) . '</div>' : '';
+            $report['present_students'] = $statuses['มาเรียน'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['มาเรียน'])) . '</div>' : '';
+            $report['late_students'] = $statuses['มาสาย'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['มาสาย'])) . '</div>' : '';
             $report['activity_students'] = $statuses['เข้าร่วมกิจกรรม'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['เข้าร่วมกิจกรรม'])) . '</div>' : '';
             $report['truant_students'] = $statuses['โดดเรียน'] ? '<div class="flex flex-wrap gap-2">' . implode('', array_map(function($s){return '<span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-sm">'.$s.'</span>';}, $statuses['โดดเรียน'])) . '</div>' : '';
             $report['absent_count'] = is_array($statuses['ขาดเรียน']) ? count($statuses['ขาดเรียน']) : 0;
             $report['sick_count'] = is_array($statuses['ลาป่วย']) ? count($statuses['ลาป่วย']) : 0;
             $report['personal_count'] = is_array($statuses['ลากิจ']) ? count($statuses['ลากิจ']) : 0;
+            $report['present_count'] = is_array($statuses['มาเรียน']) ? count($statuses['มาเรียน']) : 0;
+            $report['late_count'] = is_array($statuses['มาสาย']) ? count($statuses['มาสาย']) : 0;
             $report['activity_count'] = is_array($statuses['เข้าร่วมกิจกรรม']) ? count($statuses['เข้าร่วมกิจกรรม']) : 0;
             $report['truant_count'] = is_array($statuses['โดดเรียน']) ? count($statuses['โดดเรียน']) : 0;
         }
@@ -219,7 +235,7 @@ class TeachingReport
             $invalidRows = [];
             // ปรับ allowedStatuses ให้ตรงกับ ENUM ในฐานข้อมูล (รวม 'เข้าร่วมกิจกรรม' และ 'โดดเรียน')
             $allowedStatuses = [
-                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน', 'เข้าร่วมกิจกรรม', 'โดดเรียน'
+                'ขาดเรียน', 'ลาป่วย', 'ลากิจ', 'มาเรียน', 'มาสาย', 'เข้าร่วมกิจกรรม', 'โดดเรียน'
             ];
             // เก็บ mapping class_room => report_id
             $classRoomToReportId = [];
@@ -491,5 +507,163 @@ class TeachingReport
         }
 
         return $logs;
+    }
+
+    /**
+     * ดึงตารางการเช็คชื่อสำหรับวันที่หนึ่ง ๆ โดยรับ subject, class_room และวันที่
+     * คืนค่าโครงสร้าง: [ 'reports' => [ {id, period_start, period_end} ], 'students' => [ {Stu_id, Stu_no, fullname, statuses: {reportId: status}} ] ]
+     */
+    public function getAttendanceByDay($subjectId, $classRoom, $date, $teacherId = null)
+    {
+        $result = ['reports' => [], 'students' => []];
+        if (!$subjectId || !$classRoom || !$date) return $result;
+
+        // Normalize class room and match normalized value to avoid cross-room matches
+        $normalize = function($r) {
+            $r = trim($r);
+            if (mb_stripos($r, 'ห้อง ') === 0) $r = trim(mb_substr($r, mb_strlen('ห้อง ')));
+            return $r;
+        };
+        $norm = $normalize($classRoom);
+
+        $sql = "SELECT id, period_start, period_end, class_room, teacher_id FROM teaching_reports 
+                WHERE subject_id = ? AND report_date = ? AND TRIM(REPLACE(class_room, 'ห้อง ', '')) = ?";
+        $params = [$subjectId, $date, $norm];
+        if ($teacherId) { $sql .= ' AND teacher_id = ?'; $params[] = $teacherId; }
+        $sql .= ' ORDER BY period_start, period_end';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $reports = $stmt->fetchAll();
+        if (!$reports) return $result;
+
+        $reportIds = array_column($reports, 'id');
+        $result['reports'] = array_map(function($r){ return ['id' => $r['id'], 'report_date' => $r['report_date'], 'period_start' => $r['period_start'], 'period_end' => $r['period_end'], 'class_room' => $r['class_room']]; }, $reports);
+
+        // ดึงรายชื่อนักเรียนจากฐาน student โดยใช้ Stu_room = normalized room (หรือ fallback)
+        $students = [];
+        try {
+            if ($this->dbUsers) {
+                $pdoUsers = $this->dbUsers->getPDO();
+                // compare normalized Stu_room to handle values like 'ห้อง 11' or '11'
+                $stmtStu = $pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE TRIM(REPLACE(Stu_room, 'ห้อง ', '')) = ? OR TRIM(Stu_room) = ? ORDER BY Stu_no ASC");
+                $stmtStu->execute([$norm, $classRoom]);
+                $students = $stmtStu->fetchAll();
+            }
+        } catch (\Exception $e) {
+            $students = [];
+        }
+
+        // Prepare a map studentId => student info
+        $studentMap = [];
+        foreach ($students as $s) {
+            $studentMap[$s['Stu_id']] = [
+                'Stu_id' => $s['Stu_id'],
+                'Stu_no' => $s['Stu_no'],
+                'fullname' => $s['fullname'],
+                'statuses' => []
+            ];
+        }
+
+        // For each report, fetch attendance logs and map statuses
+        foreach ($reportIds as $rid) {
+            $logs = $this->getAttendanceLogByReportId($rid);
+            foreach ($logs as $log) {
+                $stuId = $log['student_id'];
+                $status = $log['status'] ?? '';
+                if (!isset($studentMap[$stuId])) {
+                    // add missing students (in case attendance has entries for students not in student table)
+                    $studentMap[$stuId] = [
+                        'Stu_id' => $stuId,
+                        'Stu_no' => 0,
+                        'fullname' => $log['student_name'] ?? $stuId,
+                        'statuses' => []
+                    ];
+                }
+                $studentMap[$stuId]['statuses'][$rid] = $status;
+            }
+        }
+
+        // Convert map to array sorted by Stu_no
+        $arr = array_values($studentMap);
+        usort($arr, function($a, $b){ return ($a['Stu_no'] ?? 0) <=> ($b['Stu_no'] ?? 0); });
+        $result['students'] = $arr;
+        return $result;
+    }
+
+    /**
+     * ดึงตารางการเช็คชื่อสำหรับ subject+classRoom หลายๆ วัน (ล่าสุดก่อน)
+     * คืนค่าโครงสร้าง: [ 'reports' => [ {id, report_date, period_start, period_end} ], 'students' => [ {Stu_id, Stu_no, fullname, statuses: {reportId: status}} ] ]
+     */
+    public function getAttendanceByRoom($subjectId, $classRoom, $teacherId = null, $limit = 14)
+    {
+        $result = ['reports' => [], 'students' => []];
+        if (!$subjectId || !$classRoom) return $result;
+
+        // Normalize class room and match normalized value in SQL to avoid matching other rooms
+        $normalize = function($r) {
+            $r = trim($r);
+            if (mb_stripos($r, 'ห้อง ') === 0) $r = trim(mb_substr($r, mb_strlen('ห้อง ')));
+            return $r;
+        };
+        $norm = $normalize($classRoom);
+
+        // Use SQL normalization: remove 'ห้อง ' prefix before comparison so storage format variations are handled,
+        // but restrict to the normalized room value to avoid matching other rooms unintentionally.
+        $sql = "SELECT id, report_date, period_start, period_end, class_room FROM teaching_reports 
+                WHERE subject_id = ? AND TRIM(REPLACE(class_room, 'ห้อง ', '')) = ?";
+        $params = [$subjectId, $norm];
+        if ($teacherId) { $sql .= ' AND teacher_id = ?'; $params[] = $teacherId; }
+        $sql .= ' ORDER BY report_date DESC, period_start LIMIT ' . (int)$limit;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $reports = $stmt->fetchAll();
+        if (!$reports) return $result;
+
+        // reverse to show oldest -> newest in columns (optional). Keep as returned (newest first)
+        $reportIds = array_column($reports, 'id');
+        $result['reports'] = array_map(function($r){ return ['id'=>$r['id'],'report_date'=>$r['report_date'],'period_start'=>$r['period_start'],'period_end'=>$r['period_end'],'class_room'=>$r['class_room']]; }, $reports);
+
+        // collect students for the room (use normalized room)
+        $students = [];
+        try {
+            if ($this->dbUsers) {
+                $pdoUsers = $this->dbUsers->getPDO();
+                // compare normalized Stu_room to handle values like 'ห้อง 11' or '11'
+                $stmtStu = $pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE TRIM(REPLACE(Stu_room, 'ห้อง ', '')) = ? OR TRIM(Stu_room) = ? ORDER BY Stu_no ASC");
+                $stmtStu->execute([$norm, $classRoom]);
+                $students = $stmtStu->fetchAll();
+            }
+        } catch (\Exception $e) {
+            $students = [];
+        }
+
+        $studentMap = [];
+        foreach ($students as $s) {
+            $studentMap[$s['Stu_id']] = ['Stu_id'=>$s['Stu_id'],'Stu_no'=>$s['Stu_no'],'fullname'=>$s['fullname'],'statuses'=>[]];
+        }
+
+        // Fetch attendance logs for all reportIds
+        if (!empty($reportIds)) {
+            $in = implode(',', array_fill(0, count($reportIds), '?'));
+            $stmtLogs = $this->pdo->prepare("SELECT report_id, student_id, status, comment FROM teaching_attendance_logs WHERE report_id IN ($in)");
+            $stmtLogs->execute($reportIds);
+            $logs = $stmtLogs->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($logs as $log) {
+                $rid = $log['report_id'];
+                $stuId = $log['student_id'];
+                $status = $log['status'] ?? '';
+                if (!isset($studentMap[$stuId])) {
+                    $studentMap[$stuId] = ['Stu_id'=>$stuId,'Stu_no'=>0,'fullname'=>$log['student_name'] ?? $stuId,'statuses'=>[]];
+                }
+                $studentMap[$stuId]['statuses'][$rid] = $status;
+            }
+        }
+
+        $arr = array_values($studentMap);
+        usort($arr, function($a,$b){ return ($a['Stu_no'] ?? 0) <=> ($b['Stu_no'] ?? 0); });
+        $result['students'] = $arr;
+        return $result;
     }
 }

@@ -104,6 +104,11 @@ body.modal-open {
 #modalAddCertificate .bg-white::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+/* Button gradient utility */
+.btn-gradient { background-image: linear-gradient(90deg,#2563eb,#7c3aed); }
+.btn-ghost:hover { background-color: rgba(255,255,255,0.06); }
+.badge-award { padding: 0.25rem .6rem; border-radius: 9999px; font-weight:600; font-size:0.85rem }
+.skeleton-line { height: 12px; width: 100%; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: loading 1.4s infinite; border-radius: 6px }
 </style>
 <body class="hold-transition sidebar-mini layout-fixed light-mode bg-gradient-to-br from-blue-50 to-indigo-100">
 <div class="wrapper">
@@ -194,15 +199,15 @@ body.modal-open {
             
             <!-- Action Buttons -->
             <div class="mb-6 flex flex-wrap gap-3">
-              <button class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-2" id="btnAddCertificate">
+              <button id="btnAddCertificate" class="btn-gradient text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-2 tt" data-tt="เพิ่มเกียรติบัตรใหม่">
                 <i class="fas fa-plus"></i>
                 เพิ่มเกียรติบัตร
               </button>
-              <button class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-2" id="btnExport">
+              <button id="btnExport" class="bg-yellow-500 border border-white/10 text-white px-6 py-3 rounded-lg shadow-sm transition-all duration-300 hover:scale-105 flex items-center gap-2 tt" data-tt="ส่งออกเป็น CSV, Excel หรือ PDF">
                 <i class="fas fa-download"></i>
                 ส่งออกข้อมูล
               </button>
-              <button class="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-2" id="btnRefresh">
+              <button id="btnRefresh" class="bg-blue-500 border border-white/10 text-white px-6 py-3 rounded-lg shadow-sm transition-all duration-300 hover:scale-105 flex items-center gap-2 tt" data-tt="รีเฟรชตาราง">
                 <i class="fas fa-sync-alt"></i>
                 รีเฟรช
               </button>
@@ -305,12 +310,29 @@ body.modal-open {
                   </tr>
                 </thead>
                 <tbody>
-                  <!-- Loading skeleton -->
+                  <!-- Loading skeleton: multiple rows for better UX -->
                   <tr class="loading-row">
-                    <td colspan="12" class="py-8 text-center">
-                      <div class="flex justify-center items-center">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span class="ml-3 text-gray-600">กำลังโหลดข้อมูล...</span>
+                    <td colspan="12" class="py-6">
+                      <div class="space-y-3">
+                        <div class="flex items-center gap-4">
+                          <div class="w-10 h-10 rounded-full bg-gray-200"></div>
+                          <div class="flex-1">
+                            <div class="skeleton-line w-2/5"></div>
+                            <div class="skeleton-line w-1/3 mt-2"></div>
+                          </div>
+                          <div class="w-24">
+                            <div class="skeleton-line"></div>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                          <div class="w-10 h-10 rounded-full bg-gray-200"></div>
+                          <div class="flex-1">
+                            <div class="skeleton-line w-3/5"></div>
+                          </div>
+                          <div class="w-24">
+                            <div class="skeleton-line"></div>
+                          </div>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -453,6 +475,125 @@ body.modal-open {
 </script>
 
 <!-- Load Certificate Management JavaScript Modules -->
+<!-- Inline UI enhancements: modal, dynamic students, filters, tooltips, and row animations -->
+<script>
+(function(){
+  // helper selector returning array
+  const $ = (s, root=document) => Array.from(root.querySelectorAll(s));
+
+  // Modal controls
+  const modal = document.getElementById('modalAddCertificate');
+  const modalContent = modal?.querySelector('.bg-white');
+  const openBtn = document.getElementById('btnAddCertificate');
+  const closeBtn = document.getElementById('closeModalAddCertificate');
+  const cancelBtn = document.getElementById('cancelAddCertificate');
+
+  function openModal(){
+    if(!modal) return;
+    modal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    modalContent?.classList.add('modal-fade','show');
+    setTimeout(()=>{ const first = modal.querySelector('input,select,textarea'); if(first) first.focus(); }, 180);
+  }
+  function closeModal(){
+    if(!modal) return;
+    modal.classList.add('hidden');
+    document.body.classList.remove('modal-open');
+    modalContent?.classList.remove('modal-fade','show');
+  }
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', (e)=> { if(e.target === modal) closeModal(); });
+
+  // Dynamic student list (clone template)
+  const studentsContainer = document.getElementById('studentsContainer');
+  const addStudentBtn = document.getElementById('addStudentBtn');
+  function updateStudentLabels(){
+    studentsContainer && $(".student-item", studentsContainer).forEach((el, i)=>{
+      const label = el.querySelector('.font-medium.text-sm');
+      if(label) label.textContent = `👤 นักเรียนคนที่ ${i+1}`;
+      const removeBtn = el.querySelector('.remove-student');
+      if(removeBtn) removeBtn.classList.toggle('hidden', i===0);
+    });
+  }
+  if(addStudentBtn && studentsContainer){
+    addStudentBtn.addEventListener('click', ()=>{
+      const items = $(".student-item", studentsContainer);
+      if(items.length === 0) return;
+      const idx = items.length;
+      const template = items[0];
+      const clone = template.cloneNode(true);
+      // update inputs/select names inside clone
+      const inputs = clone.querySelectorAll('input[name], select[name], textarea[name]');
+      inputs.forEach(inp => {
+        const name = inp.getAttribute('name') || '';
+        const newName = name.replace(/students\[\d+\]/, `students[${idx}]`);
+        inp.setAttribute('name', newName);
+        if(inp.type !== 'file') inp.value = '';
+      });
+      // wire remove button
+      const removeBtn = clone.querySelector('.remove-student');
+      if(removeBtn){
+        removeBtn.classList.remove('hidden');
+        removeBtn.addEventListener('click', ()=>{ clone.remove(); updateStudentLabels(); });
+      }
+      studentsContainer.appendChild(clone);
+      updateStudentLabels();
+      // smooth scroll to new student
+      clone.scrollIntoView({behavior:'smooth', block:'center'});
+    });
+    // initial remove wiring for template (if user removes later)
+    $(".remove-student", studentsContainer).forEach(btn => {
+      btn.addEventListener('click', (e)=>{ e.target.closest('.student-item')?.remove(); updateStudentLabels(); });
+    });
+  }
+
+  // Populate term and year selects with friendly defaults
+  function populateTermYear(){
+    const termEl = document.getElementById('filterTerm');
+    const yearEl = document.getElementById('filterYear');
+    const termInput = document.getElementById('termInput');
+    const yearInput = document.getElementById('yearInput');
+    if(termEl){
+      termEl.innerHTML = '<option value="">ทุกภาคเรียน</option>' + [1,2,3].map(t=>`<option value="${t}">${t}</option>`).join('');
+    }
+    const now = new Date();
+    const buddhist = now.getFullYear() + 543;
+    const years = [];
+    for(let y = buddhist+1; y >= buddhist-5; y--){ years.push(y); }
+    if(yearEl){ yearEl.innerHTML = '<option value="">ทุกปี</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join(''); }
+    if(termInput) termInput.setAttribute('max', '3');
+    if(yearInput){ yearInput.setAttribute('min', (buddhist-10).toString()); yearInput.setAttribute('max', (buddhist+5).toString()); }
+  }
+  populateTermYear();
+
+  // Small tooltip hook: copy data-tt into data-title to use CSS tooltip in header
+  document.addEventListener('DOMContentLoaded', ()=>{
+    $(".tt").forEach(el=>{ const v = el.getAttribute('data-tt'); if(v) el.setAttribute('data-title', v); });
+  });
+
+  // Animate newly added table rows: observe tbody for content changes
+  const tbody = document.querySelector('#certificateTable tbody');
+  if(tbody){
+    const obs = new MutationObserver((mutations)=>{
+      mutations.forEach(m=>{
+        m.addedNodes && Array.from(m.addedNodes).forEach((n, i)=>{
+          if(n.nodeType===1 && n.tagName === 'TR'){
+            n.classList.add('animate-fade-in');
+            n.style.animationDelay = `${i*50}ms`;
+            setTimeout(()=> n.style.animationDelay = '', 600);
+          }
+        });
+      });
+    });
+    obs.observe(tbody, { childList: true, subtree: false });
+  }
+
+})();
+</script>
+
 <script src="js/certificate/certificate-main.js"></script>
 <script src="js/certificate/certificate-form.js"></script>
 <script src="js/certificate/certificate-table.js"></script>
