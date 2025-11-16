@@ -1,6 +1,9 @@
 <?php
 namespace App\Models;
 
+use DateInterval;
+use DatePeriod;
+use DateTime;
 use PDO;
 
 class Attendance
@@ -38,7 +41,7 @@ class Attendance
         // helper to resolve Stu_no -> Stu_id
         $resolveStudentId = function($studentNo) {
             if (!$studentNo) return null;
-            $stmt = $this->pdoUsers->prepare('SELECT Stu_id FROM student WHERE Stu_no = ? LIMIT 1');
+            $stmt = $this->pdoUsers->prepare('SELECT Stu_id FROM student WHERE Stu_no = ? AND Stu_status = 1 LIMIT 1');
             $stmt->execute([$studentNo]);
             $r = $stmt->fetch(PDO::FETCH_ASSOC);
             return $r ? $r['Stu_id'] : null;
@@ -227,7 +230,7 @@ class Attendance
             $studentsMapByNo = [];
             if (!empty($allStuNos)) {
                 $placeholders = implode(',', array_fill(0, count($allStuNos), '?'));
-                $stmtStu = $this->pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_no IN ($placeholders)");
+                $stmtStu = $this->pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_no IN ($placeholders) AND Stu_status = 1");
                 $stmtStu->execute(array_values($allStuNos));
                 $rows = $stmtStu->fetchAll(PDO::FETCH_ASSOC);
                 foreach ($rows as $r) {
@@ -275,7 +278,7 @@ class Attendance
         $students = [];
         if (!empty($studentIds)) {
             $in2 = implode(',', array_fill(0, count($studentIds), '?'));
-            $stmtStu = $this->pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_id IN ($in2)");
+            $stmtStu = $this->pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_id IN ($in2) AND Stu_status = 1");
             $stmtStu->execute($studentIds);
             $rows = $stmtStu->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rows as $r) {
@@ -312,5 +315,396 @@ class Attendance
 
         // Return reports (as fetched) and students grouped by room
         return ['reports' => $reports, 'studentsByRoom' => $studentsByRoom];
+    }
+
+    /**
+     * สร้างข้อมูลตารางรายเดือน (subject + class_room + month)
+     * คืนค่าเป็นโครงสร้าง { days: [...], students: [...], meta: {...}, summary: {...} }
+     */
+    public function getMonthlyGrid($subjectId, $classRoom, $month, $teacherId = null)
+    {
+        $statusMeta = $this->getStatusMeta();
+        $summaryColumns = $this->getSummaryColumns();
+        $totalsTemplate = [];
+        foreach ($summaryColumns as $col) {
+            $totalsTemplate[$col['key']] = 0;
+        }
+        $totalsTemplate['other'] = 0;
+
+        $result = [
+            'days' => [],
+            'students' => [],
+            'meta' => [
+                'class_room' => $classRoom,
+                'subject_id' => $subjectId,
+                'month' => $month,
+                'report_dates' => []
+            ],
+            'summary' => [
+                'status_meta' => $statusMeta,
+                'columns' => $summaryColumns,
+                'totals_template' => $totalsTemplate
+            ]
+        ];
+
+        if (!$subjectId || !$classRoom || !$month) {
+            return $result;
+        }
+
+        try {
+            $start = new DateTime($month . '-01');
+        } catch (\Exception $e) {
+            return $result;
+        }
+        $end = (clone $start)->modify('last day of this month');
+
+        $period = new DatePeriod($start, new DateInterval('P1D'), (clone $end)->modify('+1 day'));
+        foreach ($period as $day) {
+            $result['days'][] = [
+                'day' => (int) $day->format('j'),
+                'date' => $day->format('Y-m-d'),
+                'weekday' => $day->format('D'),
+                'weekday_th' => $this->weekdayShortTh($day)
+            ];
+        }
+
+        $roomTokens = $this->extractRoomTokens($classRoom);
+        $normRoom = $roomTokens['normalized'];
+
+        $subjectMeta = $this->getSubjectMeta($subjectId);
+        $subjectLevel = $subjectMeta['level'] ?? null;
+        if ($subjectLevel !== null) {
+            $result['meta']['level'] = $subjectLevel;
+        }
+
+        $sql = "SELECT id, report_date, class_room, period_start, period_end FROM teaching_reports " .
+               "WHERE subject_id = ? AND report_date BETWEEN ? AND ?";
+        $params = [$subjectId, $start->format('Y-m-d'), $end->format('Y-m-d')];
+        if ($normRoom !== '') {
+            $sql .= " AND (" .
+                "TRIM(REPLACE(COALESCE(class_room,''), 'ห้อง ', '')) = ? OR " .
+                "TRIM(COALESCE(class_room,'')) = ? OR " .
+                "TRIM(SUBSTRING_INDEX(COALESCE(class_room,''), '/', -1)) = ?" .
+            ")";
+            $params[] = $normRoom;
+            $params[] = $roomTokens['clean'] !== '' ? $roomTokens['clean'] : $classRoom;
+            $params[] = $roomTokens['number'] ?? $normRoom;
+        }
+        if ($teacherId) {
+            $sql .= ' AND teacher_id = ?';
+            $params[] = $teacherId;
+        }
+        $sql .= ' ORDER BY report_date ASC, period_start ASC';
+
+        $stmt = $this->pdoTeaching->prepare($sql);
+        $stmt->execute($params);
+        $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $reportIds = [];
+        $reportDateMap = [];
+        $reportDates = [];
+        foreach ($reports as $rep) {
+            $reportIds[] = $rep['id'];
+            $reportDateMap[$rep['id']] = $rep['report_date'];
+            $reportDates[$rep['report_date']] = true;
+        }
+        $result['meta']['report_dates'] = array_keys($reportDates);
+
+        // roster จากฐาน student
+        $studentRoster = $this->loadStudentRoster($roomTokens, $subjectLevel, $classRoom);
+
+        $studentMap = [];
+        foreach ($studentRoster as $stu) {
+            $studentMap[$stu['Stu_id']] = [
+                'student_id' => $stu['Stu_id'],
+                'student_no' => $stu['Stu_no'],
+                'student_name' => $stu['fullname'],
+                'statuses' => [],
+                'totals' => $totalsTemplate
+            ];
+        }
+
+        $studentStatuses = [];
+        if (!empty($reportIds)) {
+            $in = implode(',', array_fill(0, count($reportIds), '?'));
+            $stmtLogs = $this->pdoTeaching->prepare("SELECT report_id, student_id, status FROM teaching_attendance_logs WHERE report_id IN ($in)");
+            $stmtLogs->execute($reportIds);
+            $logs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($logs as $log) {
+                $rid = $log['report_id'];
+                $date = $reportDateMap[$rid] ?? null;
+                if (!$date) continue;
+                $sid = $log['student_id'];
+                $status = $log['status'] ?? '';
+                if (!isset($statusMeta[$status])) {
+                    $statusMeta[$status] = [
+                        'label' => $status ?: 'ไม่ระบุ',
+                        'emoji' => '❔',
+                        'summary_key' => 'other',
+                        'priority' => 5,
+                        'cell_class' => 'status-other'
+                    ];
+                }
+                $current = $studentStatuses[$sid][$date] ?? null;
+                if (!$current) {
+                    $studentStatuses[$sid][$date] = $status;
+                } else {
+                    $currPriority = $statusMeta[$current]['priority'] ?? 0;
+                    $incoming = $statusMeta[$status]['priority'] ?? 0;
+                    if ($incoming > $currPriority) {
+                        $studentStatuses[$sid][$date] = $status;
+                    }
+                }
+            }
+        }
+
+        // เติมนักเรียนที่อยู่ใน log แต่ไม่มีใน roster
+        $missing = [];
+        foreach ($studentStatuses as $sid => $dates) {
+            if (!isset($studentMap[$sid])) {
+                $missing[$sid] = $sid;
+            }
+        }
+        if (!empty($missing)) {
+            try {
+                $placeholders = implode(',', array_fill(0, count($missing), '?'));
+                $stmtMissing = $this->pdoUsers->prepare("SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE Stu_id IN ($placeholders) AND Stu_status = 1");
+                $stmtMissing->execute(array_values($missing));
+                $rows = $stmtMissing->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($rows as $stu) {
+                    $studentMap[$stu['Stu_id']] = [
+                        'student_id' => $stu['Stu_id'],
+                        'student_no' => $stu['Stu_no'],
+                        'student_name' => $stu['fullname'],
+                        'statuses' => [],
+                        'totals' => $totalsTemplate
+                    ];
+                    unset($missing[$stu['Stu_id']]);
+                }
+            } catch (\Exception $e) {
+                // ignore
+            }
+            foreach ($missing as $sid) {
+                $studentMap[$sid] = [
+                    'student_id' => $sid,
+                    'student_no' => null,
+                    'student_name' => 'ID ' . $sid,
+                    'statuses' => [],
+                    'totals' => $totalsTemplate
+                ];
+            }
+        }
+
+        foreach ($studentMap as $sid => &$info) {
+            $info['statuses'] = $studentStatuses[$sid] ?? [];
+            $totals = $totalsTemplate;
+            foreach ($info['statuses'] as $date => $status) {
+                $key = $statusMeta[$status]['summary_key'] ?? 'other';
+                if (!isset($totals[$key])) {
+                    $totals[$key] = 0;
+                }
+                $totals[$key]++;
+            }
+            $info['totals'] = $totals;
+        }
+        unset($info);
+
+        $students = array_values($studentMap);
+        usort($students, function($a, $b) {
+            $aNo = is_numeric($a['student_no']) ? (int) $a['student_no'] : 9999;
+            $bNo = is_numeric($b['student_no']) ? (int) $b['student_no'] : 9999;
+            if ($aNo === $bNo) {
+                return strcmp($a['student_name'] ?? '', $b['student_name'] ?? '');
+            }
+            return $aNo <=> $bNo;
+        });
+
+        $result['students'] = $students;
+        $result['meta']['student_count'] = count($students);
+        $result['meta']['month_label'] = $start->format('F Y');
+        return $result;
+    }
+
+    protected function normalizeRoomLabel($room)
+    {
+        $tokens = $this->extractRoomTokens($room);
+        return $tokens['normalized'];
+    }
+
+    protected function extractRoomTokens($room)
+    {
+        $raw = trim((string) $room);
+        $clean = $raw;
+        if ($clean !== '') {
+            $clean = preg_replace('/^(ห้องเรียน|ห้อง)\s*/u', '', $clean);
+            $clean = preg_replace('/^room\s*/i', '', $clean);
+            $clean = trim($clean);
+        }
+
+        $number = null;
+        if ($clean !== '' && preg_match('/(\d{1,2})$/u', $clean, $match)) {
+            $number = ltrim($match[1], '0');
+            if ($number === '') {
+                $number = $match[1];
+            }
+        }
+
+        $normalized = $number ?? $clean;
+
+        return [
+            'raw' => $raw,
+            'clean' => $clean,
+            'normalized' => $normalized ?? '',
+            'number' => $number,
+        ];
+    }
+
+    protected function loadStudentRoster(array $roomTokens, $subjectLevel, $classRoom)
+    {
+        $conditions = ['Stu_status = 1'];
+        $params = [];
+        $hasRoomConstraint = false;
+
+        if ($roomTokens['number'] !== null) {
+            $conditions[] = 'Stu_room = ?';
+            $params[] = (int) $roomTokens['number'];
+            $hasRoomConstraint = true;
+        } elseif ($roomTokens['normalized'] !== '') {
+            $conditions[] = "(TRIM(REPLACE(COALESCE(Stu_room,''), 'ห้อง ', '')) = ? OR TRIM(COALESCE(Stu_room,'')) = ?)";
+            $params[] = $roomTokens['normalized'];
+            $params[] = $roomTokens['clean'] !== '' ? $roomTokens['clean'] : $classRoom;
+            $hasRoomConstraint = true;
+        }
+
+        $levelDigit = $this->normalizeLevelDigit($subjectLevel, $roomTokens['raw']);
+        if ($levelDigit !== null) {
+            $conditions[] = '(CAST(Stu_major AS CHAR) = ? OR CAST(Stu_major AS CHAR) LIKE ?)';
+            $params[] = $levelDigit;
+            $params[] = $levelDigit . '%';
+        }
+
+        if (!$hasRoomConstraint) {
+            return [];
+        }
+
+        $sql = "SELECT Stu_id, Stu_no, CONCAT(Stu_pre,Stu_name,' ',Stu_sur) AS fullname FROM student WHERE " . implode(' AND ', $conditions) . " ORDER BY Stu_no ASC, Stu_id DESC";
+        try {
+            $stmt = $this->pdoUsers->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    protected function normalizeLevelDigit($level, $roomLabel)
+    {
+        if ($level !== null && $level !== '') {
+            $digits = preg_replace('/\D+/', '', (string) $level);
+            if ($digits !== '') {
+                return (string) (int) $digits;
+            }
+        }
+        if ($roomLabel !== null && $roomLabel !== '') {
+            if (preg_match('/ม\.?\s*(\d)/u', $roomLabel, $match)) {
+                return (string) (int) $match[1];
+            }
+        }
+        return null;
+    }
+
+    protected function getSubjectMeta($subjectId)
+    {
+        static $cache = [];
+        if (isset($cache[$subjectId])) {
+            return $cache[$subjectId];
+        }
+        $stmt = $this->pdoTeaching->prepare('SELECT id, level FROM subjects WHERE id = ? LIMIT 1');
+        $stmt->execute([$subjectId]);
+        $cache[$subjectId] = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        return $cache[$subjectId];
+    }
+
+    protected function weekdayShortTh(DateTime $date)
+    {
+        $map = [
+            'Mon' => 'จ',
+            'Tue' => 'อ',
+            'Wed' => 'พ',
+            'Thu' => 'พฤ',
+            'Fri' => 'ศ',
+            'Sat' => 'ส',
+            'Sun' => 'อา'
+        ];
+        return $map[$date->format('D')] ?? $date->format('D');
+    }
+
+    protected function getStatusMeta()
+    {
+        return [
+            'ขาดเรียน' => [
+                'label' => 'ขาดเรียน',
+                'emoji' => '❌',
+                'summary_key' => 'absent',
+                'priority' => 120,
+                'cell_class' => 'status-absent'
+            ],
+            'โดดเรียน' => [
+                'label' => 'โดดเรียน',
+                'emoji' => '⚠️',
+                'summary_key' => 'truant',
+                'priority' => 110,
+                'cell_class' => 'status-truant'
+            ],
+            'ลาป่วย' => [
+                'label' => 'ลาป่วย',
+                'emoji' => '🤒',
+                'summary_key' => 'sick',
+                'priority' => 100,
+                'cell_class' => 'status-sick'
+            ],
+            'ลากิจ' => [
+                'label' => 'ลากิจ',
+                'emoji' => '📝',
+                'summary_key' => 'personal',
+                'priority' => 90,
+                'cell_class' => 'status-personal'
+            ],
+            'เข้าร่วมกิจกรรม' => [
+                'label' => 'เข้าร่วมกิจกรรม',
+                'emoji' => '🎉',
+                'summary_key' => 'activity',
+                'priority' => 80,
+                'cell_class' => 'status-activity'
+            ],
+            'มาสาย' => [
+                'label' => 'มาสาย',
+                'emoji' => '⏰',
+                'summary_key' => 'late',
+                'priority' => 70,
+                'cell_class' => 'status-late'
+            ],
+            'มาเรียน' => [
+                'label' => 'มาเรียน',
+                'emoji' => '✅',
+                'summary_key' => 'present',
+                'priority' => 60,
+                'cell_class' => 'status-present'
+            ]
+        ];
+    }
+
+    protected function getSummaryColumns()
+    {
+        return [
+            ['key' => 'present', 'label' => 'มาเรียน', 'emoji' => '✅'],
+            ['key' => 'absent', 'label' => 'ขาดเรียน', 'emoji' => '❌'],
+            ['key' => 'late', 'label' => 'มาสาย', 'emoji' => '⏰'],
+            ['key' => 'sick', 'label' => 'ลาป่วย', 'emoji' => '🤒'],
+            ['key' => 'personal', 'label' => 'ลากิจ', 'emoji' => '📝'],
+            ['key' => 'activity', 'label' => 'กิจกรรม', 'emoji' => '🎉'],
+            ['key' => 'truant', 'label' => 'โดดเรียน', 'emoji' => '⚠️']
+        ];
     }
 }

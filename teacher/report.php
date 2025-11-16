@@ -632,21 +632,32 @@ document.addEventListener('DOMContentLoaded', function() {
   let subjectClassRooms = {}; // {subject_id: [{class_room, period_start, period_end, day_of_week}, ...]}
 
   function loadSubjectsForReport() {
-    // เรียกเฉพาะวิชาที่เปิดสอนสำหรับ dropdown
-    fetch('../controllers/SubjectController.php?action=list&teacherId=' + encodeURIComponent(<?php echo json_encode($_SESSION['user']['Teach_id']); ?>) + '&onlyOpen=1')
+    // เรียกเฉพาะวิชาที่เปิดสอนสำหรับ dropdown (แบบเดียวกับ attendance_by_day)
+    const __teacherIdForRequest = <?php echo isset($_SESSION['user']['Teach_id']) ? json_encode($_SESSION['user']['Teach_id']) : 'null'; ?>;
+    const params = new URLSearchParams({ action: 'list', onlyOpen: 1 });
+    if (__teacherIdForRequest) params.append('teacherId', __teacherIdForRequest);
+    fetch('../controllers/SubjectController.php?' + params.toString(), { credentials: 'same-origin' })
       .then(res => res.json())
       .then(data => {
         const select = document.getElementById('subjectSelect');
         if (!select) return;
         select.innerHTML = `<option value="">-- เลือกวิชา --</option>`;
-        data.forEach(subject => {
-          // ใส่ data-class เป็น level ของวิชา
-          select.innerHTML += `<option value="${subject.id}" data-class="${subject.level}">${subject.name}</option>`;
-          // เก็บ class_rooms สำหรับแต่ละวิชา
-          if (subject.class_periods) {
-            subjectClassRooms[subject.id] = subject.class_periods;
-          }
+        subjectClassRooms = {};
+        (Array.isArray(data) ? data : []).forEach(subject => {
+          // store class_periods for later use
+          subjectClassRooms[String(subject.id)] = Array.isArray(subject.class_periods) ? subject.class_periods : [];
+          const code = subject.code ? (subject.code + ' ') : '';
+          const name = subject.name || subject.subject_name || '';
+          const level = subject.level || '';
+          const opt = document.createElement('option');
+          opt.value = subject.id;
+          opt.textContent = `${code}${name}`;
+          if (level) opt.setAttribute('data-class', level);
+          select.appendChild(opt);
         });
+      })
+      .catch(err => {
+        console.error('loadSubjectsForReport error', err);
       });
   }
 

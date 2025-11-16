@@ -31,6 +31,7 @@ function createTreeNav($title, $iconClass, $items) {
     echo createTreeNav('รายงานการสอน', 'bi-journal-text', array(
         array('href' => 'report.php', 'icon' => 'bi-journal-text', 'text' => 'บันทึกรายงาน'),
         array('href' => 'reportindate.php', 'icon' => 'bi-calendar3', 'text' => 'ปฏิทินการบันทึก'),
+        array('href' => 'attendance_by_day.php', 'icon' => 'bi-calendar-check', 'text' => 'สมุดเช็คชื่อรายเดือน'),
         array('href' => 'subject.php', 'icon' => 'bi-book', 'text' => 'จัดการรายวิชา'),
     ));
     echo createNavItem('supervision.php', 'bi-eye', 'บันทึกนิเทศการสอน');

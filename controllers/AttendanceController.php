@@ -50,6 +50,24 @@ try {
             echo json_encode(['success' => true, 'data' => $data]);
             break;
 
+        case 'calendar_grid':
+            // params: subject_id, class_room, month (YYYY-MM), optional teacher_id
+            $subjectId = $_GET['subject_id'] ?? ($_POST['subject_id'] ?? 0);
+            $classRoom = $_GET['class_room'] ?? ($_POST['class_room'] ?? '');
+            $month = $_GET['month'] ?? ($_POST['month'] ?? '');
+            $teacherId = $_GET['teacher_id'] ?? ($_POST['teacher_id'] ?? null);
+            $month = trim($month);
+            if ($month && !preg_match('/^\d{4}-\d{2}$/', $month)) {
+                $month = '';
+            }
+            if (!$subjectId || !$classRoom || !$month) {
+                echo json_encode(['success' => false, 'error' => 'กรุณาเลือกวิชา ห้อง และเดือนให้ครบถ้วน']);
+                exit;
+            }
+            $data = $model->getMonthlyGrid($subjectId, $classRoom, $month, $teacherId);
+            echo json_encode(['success' => true, 'data' => $data]);
+            break;
+
         case 'save_attendance':
             // Accept JSON body with: subject_id, date, teacher_id, rows: [{ student_id?, student_no?, status, class_room, report_id? }]
             $raw = file_get_contents('php://input');
