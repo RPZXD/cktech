@@ -289,7 +289,7 @@ function showReportDetail(reportId) {
                 const emoji = rpt.activity && rpt.activity.toLowerCase().includes('สอบ') ? '📝' : '📘';
                 const html = ` <div class="flex items-center gap-2 px-2 py-1">
                         <span class="event-dot" style="background:${color}"></span>
-                        <div class="truncate text-sm"><strong class="block">${emoji} ${subj}</strong><span class="text-xs text-slate-500">ห้อง ${room}</span></div>
+                        <div class="truncate text-sm"><strong class="block">${emoji} ${subj}</strong><span class="text-xs text-white">ห้อง ${room}</span></div>
                     </div>`;
                 return { html: html };
             },
