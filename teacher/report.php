@@ -381,19 +381,19 @@ document.addEventListener('DOMContentLoaded', function() {
           tbody.innerHTML += `
             <tr class="group hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all duration-300 border-b border-gray-200/70 dark:border-gray-800">
               <td class="py-4 px-4 text-center">
-                <div class="font-semibold text-blue-700 dark:text-blue-300 text-base">${formatThaiDate(report.report_date)}</div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">${getThaiDayOfWeek(report.report_date)}</div>
+                <div class="font-semibold text-red-700 dark:text-red-300 text-base">${formatThaiDate(report.report_date)}</div>
+                <div class="text-xs text-indigo-500 dark:text-indigo-400">${getThaiDayOfWeek(report.report_date)}</div>
               </td>
-              <td class="py-4 px-4 text-center text-blue-900 dark:text-blue-300 font-medium">
+              <td class="py-4 px-4 text-center text-indigo-900 dark:text-indigo-500 font-medium">
                 ${report.subject_name || '-'}
               </td>
               <td class="py-4 px-4 text-center">
-                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-blue-900/30 text-blue-200 dark:bg-blue-100/80 dark:text-blue-700 shadow-sm">
+                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-blue-900 dark:bg-blue-500 text-white dark:text-white shadow-sm">
                   ม.${report.level}/${report.class_room}
                 </span>
               </td>
               <td class="py-4 px-4 text-center">
-                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-blue-900/30 text-blue-200 dark:bg-blue-100/80 dark:text-blue-700 shadow-sm">
+                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-blue-900 dark:bg-blue-500 text-white dark:text-white shadow-sm">
                   ${report.period_start}-${report.period_end}
                 </span>
               </td>
