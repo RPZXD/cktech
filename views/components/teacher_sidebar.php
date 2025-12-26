@@ -1,0 +1,188 @@
+<?php 
+/**
+ * Teacher Sidebar Component
+ * MVC Pattern - Sidebar navigation for teacher pages
+ */
+
+$configPath = __DIR__ . '/../../config.json';
+$config = file_exists($configPath) ? json_decode(file_get_contents($configPath), true) : [];
+$global = $config['global'] ?? ['logoLink' => 'logo-phicha.png', 'nameTitle' => 'Vichakan', 'nameschool' => 'โรงเรียน'];
+
+// Get current user info
+$userName = $_SESSION['teacher_name'] ?? $_SESSION['user']['Teach_name'] ?? 'ครู';
+$userPhoto = $_SESSION['user']['Teach_photo'] ?? '';
+
+// Menu configuration for Teacher
+$menuItems = [
+    [
+        'key' => 'home',
+        'name' => 'หน้าหลัก',
+        'url' => 'index.php',
+        'icon' => 'fa-home',
+        'gradient' => ['from' => 'emerald-500', 'to' => 'green-600'],
+    ],
+    [
+        'key' => 'report',
+        'name' => 'บันทึกรายงานการสอน',
+        'url' => 'teaching-report.php',
+        'icon' => 'fa-file-alt',
+        'gradient' => ['from' => 'blue-500', 'to' => 'indigo-600'],
+        'submenu' => [
+            ['name' => 'บันทึกรายงาน', 'url' => 'teaching-report.php', 'icon' => 'fa-edit'],
+            ['name' => 'ปฏิทินการบันทึก', 'url' => 'calendar.php', 'icon' => 'fa-calendar'],
+            ['name' => 'สมุดเช็คชื่อรายเดือน', 'url' => 'attendance.php', 'icon' => 'fa-clipboard-check'],
+            ['name' => 'จัดการรายวิชา', 'url' => 'subject.php', 'icon' => 'fa-book'],
+        ]
+    ],
+    [
+        'key' => 'supervision',
+        'name' => 'บันทึกนิเทศการสอน',
+        'url' => 'supervision.php',
+        'icon' => 'fa-chalkboard-teacher',
+        'gradient' => ['from' => 'purple-500', 'to' => 'violet-600'],
+    ],
+    [
+        'key' => 'certificate',
+        'name' => 'บันทึกเกียรติบัตรนักเรียน',
+        'url' => 'certificate.php',
+        'icon' => 'fa-award',
+        'gradient' => ['from' => 'orange-500', 'to' => 'amber-600'],
+    ],
+    [
+        'key' => 'timetable',
+        'name' => 'ตารางสอน',
+        'url' => 'timetable.php',
+        'icon' => 'fa-calendar-alt',
+        'gradient' => ['from' => 'pink-500', 'to' => 'rose-600'],
+    ],
+];
+?>
+
+<!-- Sidebar Overlay (Mobile) -->
+<div id="sidebar-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden hidden transition-opacity duration-300" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar" class="fixed top-0 left-0 z-40 w-72 sm:w-64 h-screen transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0">
+    <div class="h-full overflow-y-auto bg-gradient-to-b from-emerald-800 via-emerald-900 to-slate-900">
+        
+        <!-- Logo Section -->
+        <div class="px-6 py-8 border-b border-white/5">
+            <div class="flex items-center justify-between">
+                <a href="index.php" class="flex items-center space-x-4 group flex-1">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full blur-lg opacity-40 group-hover:opacity-70 transition-opacity"></div>
+                        <img src="../dist/img/<?php echo $global['logoLink'] ?? 'logo-phicha.png'; ?>" class="relative w-12 h-12 rounded-full ring-2 ring-white/10 group-hover:ring-emerald-400/50 transition-all" alt="Logo">
+                    </div>
+                    <div>
+                        <span class="text-xl font-black text-white tracking-tight uppercase"><?php echo $global['nameTitle'] ?? 'ระบบครู'; ?></span>
+                        <p class="text-[10px] font-bold text-emerald-300 tracking-[0.2em] uppercase">Teacher Portal</p>
+                    </div>
+                </a>
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 text-gray-400 hover:text-white rounded-xl hover:bg-white/5">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- User Info -->
+        <div class="px-6 py-4 border-b border-white/5">
+            <div class="flex items-center space-x-3">
+                <?php if (!empty($userPhoto)): ?>
+                <img src="https://std.phichai.ac.th/teacher/uploads/phototeach/<?php echo htmlspecialchars($userPhoto); ?>" class="w-10 h-10 rounded-full object-cover ring-2 ring-emerald-400/50" alt="Profile">
+                <?php else: ?>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center">
+                    <i class="fas fa-user text-white"></i>
+                </div>
+                <?php endif; ?>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-white truncate"><?php echo htmlspecialchars($userName); ?></p>
+                    <p class="text-xs text-emerald-300"><?php echo htmlspecialchars($_SESSION['role'] ?? 'ครู'); ?></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="mt-2 px-3 pb-24">
+            <div class="mb-4 px-4">
+                <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">เมนูหลัก</p>
+            </div>
+            <ul class="space-y-1.5">
+                <?php foreach ($menuItems as $menu): 
+                    $fromColor = $menu['gradient']['from'];
+                    $toColor = $menu['gradient']['to'];
+                    $isActive = basename($_SERVER['PHP_SELF']) == basename($menu['url']);
+                    $colorName = explode('-', $fromColor)[0];
+                    $hasSubmenu = isset($menu['submenu']) && !empty($menu['submenu']);
+                ?>
+                <?php if ($hasSubmenu): ?>
+                <li x-data="{ open: false }">
+                    <button @click="open = !open" class="w-full sidebar-item flex items-center justify-between px-4 py-3 text-gray-400 rounded-2xl hover:bg-white/5 hover:text-white group">
+                        <div class="flex items-center">
+                            <span class="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-<?php echo $fromColor; ?> to-<?php echo $toColor; ?> rounded-xl shadow-lg shadow-<?php echo $colorName; ?>-500/20">
+                                <i class="fas <?php echo $menu['icon']; ?> text-white text-base"></i>
+                            </span>
+                            <span class="ml-4 font-bold text-sm tracking-tight"><?php echo htmlspecialchars($menu['name']); ?></span>
+                        </div>
+                        <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
+                    </button>
+                    <ul x-show="open" x-collapse class="mt-2 ml-14 space-y-1">
+                        <?php foreach ($menu['submenu'] as $sub): ?>
+                        <li>
+                            <a href="<?php echo htmlspecialchars($sub['url']); ?>" class="flex items-center px-3 py-2 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-white/5">
+                                <i class="fas <?php echo $sub['icon']; ?> text-xs mr-2"></i>
+                                <?php echo htmlspecialchars($sub['name']); ?>
+                            </a>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </li>
+                <?php else: ?>
+                <li>
+                    <a href="<?php echo htmlspecialchars($menu['url']); ?>" 
+                       onclick="closeSidebarOnMobile()"
+                       class="sidebar-item flex items-center px-4 py-3 rounded-2xl transition-all group active:scale-[0.98] <?php echo $isActive ? 'bg-white/10 text-white border border-white/5 shadow-xl shadow-black/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'; ?>">
+                        <span class="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-<?php echo $fromColor; ?> to-<?php echo $toColor; ?> rounded-xl shadow-lg shadow-<?php echo $colorName; ?>-500/20 group-hover:shadow-<?php echo $colorName; ?>-500/40 transition-shadow">
+                            <i class="fas <?php echo $menu['icon']; ?> text-white text-base"></i>
+                        </span>
+                        <span class="ml-4 font-bold text-sm tracking-tight"><?php echo htmlspecialchars($menu['name']); ?></span>
+                        <?php if($isActive): ?>
+                            <div class="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"></div>
+                        <?php endif; ?>
+                    </a>
+                </li>
+                <?php endif; ?>
+                <?php endforeach; ?>
+                
+                <!-- System Divider -->
+                <li class="my-6 px-4">
+                    <div class="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                </li>
+                
+                <!-- Back to Main -->
+                
+                <!-- Logout -->
+                <li>
+                    <a href="../logout.php" class="sidebar-item flex items-center px-4 py-3 text-gray-400 rounded-2xl hover:bg-rose-500/10 hover:text-rose-400 group">
+                        <span class="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-rose-500 to-red-600 rounded-xl shadow-lg shadow-rose-500/20 group-hover:shadow-rose-500/40 transition-shadow">
+                            <i class="fas fa-sign-out-alt text-white"></i>
+                        </span>
+                        <span class="ml-4 font-bold text-sm tracking-tight">ออกจากระบบ</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <!-- Bottom Credits -->
+        <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-slate-900 to-transparent">
+            <div class="text-center">
+                <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest"><?php echo $global['nameschool'] ?? 'โรงเรียน'; ?></p>
+                <p class="text-[8px] text-gray-700 mt-1 font-bold italic opacity-50 uppercase tracking-tighter">Teacher System v2.0</p>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- Alpine.js Collapse Plugin + Core (plugin must load first) -->
+<script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+

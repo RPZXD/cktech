@@ -14,6 +14,14 @@ class CertificateController {
         $this->certificateModel = new Certificate();
     }
 
+    private function getTeacherId() {
+        $teacherId = $_GET['teacherId'] ?? null;
+        if ($teacherId === 'null' || $teacherId === '') {
+            return null;
+        }
+        return $teacherId;
+    }
+
     public function create() {
         try {
             $input = json_decode(file_get_contents('php://input'), true);
@@ -68,7 +76,7 @@ class CertificateController {
         $debug = true;
         $debugInfo = [];
         $isOutputBufferingActiveByThisFunction = false;
-        $teacherIdInput = $_GET['teacherId'] ?? null; // Store for logging
+        $teacherIdInput = $this->getTeacherId();
 
         try {
             // Log environment info
@@ -78,12 +86,18 @@ class CertificateController {
             error_log('[CERT_DEBUG] Max Execution Time: ' . ini_get('max_execution_time'));
             error_log('[CERT_DEBUG] Teacher ID Input: ' . var_export($teacherIdInput, true));
             
-            if (!$teacherIdInput) {
-                throw new Exception('Teacher ID is required.');
+            // Allow admin to see everything if teacherId is missing
+            $role = $_SESSION['role'] ?? '';
+            $isAdmin = in_array($role, ['admin', 'ผู้บริหาร']);
+            
+            if (!$teacherIdInput && !$isAdmin) {
+                // If not admin and no ID, we can't show anything
+                $this->sendResponse(['success' => true, 'data' => [], 'message' => 'No Teacher ID provided.']);
+                return;
             }
 
-            // Validate teacher ID
-            if (!is_numeric($teacherIdInput)) {
+            // Validate teacher ID if provided
+            if ($teacherIdInput && !is_numeric($teacherIdInput)) {
                 throw new Exception('Teacher ID must be numeric.');
             }
 
@@ -243,16 +257,12 @@ class CertificateController {
                 'award_organization' => $input['award_organization'] ?? null
             ];
 
-            $success = $this->certificateModel->update($id, $data);
+            $this->certificateModel->update($id, $data);
 
-            if ($success) {
-                $this->sendResponse([
-                    'success' => true,
-                    'message' => 'แก้ไขเกียรติบัตรเรียบร้อยแล้ว'
-                ]);
-            } else {
-                throw new Exception('ไม่สามารถแก้ไขเกียรติบัตรได้');
-            }
+            $this->sendResponse([
+                'success' => true,
+                'message' => 'แก้ไขเกียรติบัตรเรียบร้อยแล้ว'
+            ]);
 
         } catch (Exception $e) {
             $this->sendResponse([
@@ -314,7 +324,7 @@ class CertificateController {
 
     public function statistics() {
         try {
-            $teacherId = $_GET['teacherId'] ?? null;
+            $teacherId = $this->getTeacherId();
             $stats = $this->certificateModel->getStatistics($teacherId);
 
             $this->sendResponse([
@@ -333,7 +343,7 @@ class CertificateController {
     public function search() {
         try {
             $searchTerm = $_GET['term'] ?? '';
-            $teacherId = $_GET['teacherId'] ?? null;
+            $teacherId = $this->getTeacherId();
             $termFilter = $_GET['termFilter'] ?? null;
             $yearFilter = $_GET['yearFilter'] ?? null;
             $classFilter = $_GET['classFilter'] ?? null;
@@ -364,7 +374,7 @@ class CertificateController {
 
     public function topStudents() {
         try {
-            $teacherId = $_GET['teacherId'] ?? null;
+            $teacherId = $this->getTeacherId();
             $limit = $_GET['limit'] ?? 10;
             
             $students = $this->certificateModel->getTopStudents($teacherId, $limit);
@@ -384,7 +394,7 @@ class CertificateController {
 
     public function recent() {
         try {
-            $teacherId = $_GET['teacherId'] ?? null;
+            $teacherId = $this->getTeacherId();
             $limit = $_GET['limit'] ?? 5;
             
             $certificates = $this->certificateModel->getRecentCertificates($teacherId, $limit);
@@ -404,7 +414,7 @@ class CertificateController {
 
     public function export() {
         try {
-            $teacherId = $_GET['teacherId'] ?? null;
+            $teacherId = $this->getTeacherId();
             $format = $_GET['format'] ?? 'csv';
 
             $certificates = $this->certificateModel->getAll($teacherId);
@@ -452,7 +462,7 @@ class CertificateController {
 
     public function availableTerms() {
         try {
-            $teacherId = $_GET['teacherId'] ?? null;
+            $teacherId = $this->getTeacherId();
             $terms = $this->certificateModel->getAvailableTermsAndYears($teacherId);
             
             $this->sendResponse([

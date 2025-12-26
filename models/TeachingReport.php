@@ -127,6 +127,91 @@ class TeachingReport
         return $reports;
     }
 
+    /**
+     * Get all reports for admin with optional filters
+     * @param string $teacher Teacher ID filter
+     * @param string $department Department filter
+     * @param string $level Level filter (ม.1-6)
+     * @param string $dateStart Start date filter
+     * @param string $dateEnd End date filter
+     * @return array
+     */
+    public function getAllReportsForAdmin($teacher = '', $department = '', $level = '', $dateStart = '', $dateEnd = '')
+    {
+        $params = [];
+        $where = [];
+
+        $sql = "SELECT r.*, s.name AS subject_name, s.level
+                FROM teaching_reports r
+                LEFT JOIN subjects s ON r.subject_id = s.id";
+
+        // Filter by teacher
+        if (!empty($teacher)) {
+            $where[] = "r.teacher_id = ?";
+            $params[] = $teacher;
+        }
+
+        // Filter by level
+        if (!empty($level)) {
+            $where[] = "s.level = ?";
+            $params[] = $level;
+        }
+
+        // Filter by date range
+        if (!empty($dateStart)) {
+            $where[] = "r.report_date >= ?";
+            $params[] = $dateStart;
+        }
+        if (!empty($dateEnd)) {
+            $where[] = "r.report_date <= ?";
+            $params[] = $dateEnd;
+        }
+
+        if (!empty($where)) {
+            $sql .= " WHERE " . implode(" AND ", $where);
+        }
+
+        $sql .= " ORDER BY r.report_date DESC, r.id DESC LIMIT 500";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $reports = $stmt->fetchAll();
+
+        // Get teacher names and absent counts
+        $pdoUsers = $this->dbUsers->getPDO();
+        
+        foreach ($reports as &$report) {
+            // Get teacher name
+            if (!empty($report['teacher_id'])) {
+                $stmtTeacher = $pdoUsers->prepare("SELECT Teach_name, Teach_major FROM teacher WHERE Teach_id = ?");
+                $stmtTeacher->execute([$report['teacher_id']]);
+                $teacher = $stmtTeacher->fetch();
+                $report['teacher_name'] = $teacher['Teach_name'] ?? '-';
+                $report['teacher_department'] = $teacher['Teach_major'] ?? '-';
+                
+                // Filter by department if provided (after fetch since it's in different DB)
+                if (!empty($department) && $report['teacher_department'] !== $department) {
+                    $report = null;
+                    continue;
+                }
+            } else {
+                $report['teacher_name'] = '-';
+                $report['teacher_department'] = '-';
+            }
+
+            // Get absent count
+            $stmtAbsent = $this->pdo->prepare("SELECT COUNT(*) as cnt FROM teaching_attendance_logs WHERE report_id = ? AND status = 'ขาดเรียน'");
+            $stmtAbsent->execute([$report['id']]);
+            $report['absent_count'] = $stmtAbsent->fetch()['cnt'] ?? 0;
+        }
+
+        // Remove null entries (filtered by department)
+        $reports = array_filter($reports, function($r) { return $r !== null; });
+        $reports = array_values($reports);
+
+        return $reports;
+    }
+
     public function getById($id)
     {
         $sql = "SELECT r.*, s.name AS subject_name, s.level

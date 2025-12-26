@@ -142,8 +142,8 @@ require_once('header.php');
                 </div>
               </div>
 
-              <div class="overflow-x-auto rounded-2xl border border-white/60 dark:border-white/10 backdrop-blur-xl shadow-inner">
-                <table class="min-w-full border-collapse overflow-hidden">
+              <div class="overflow-x-auto rounded-2xl border border-white/60 dark:border-white/10 backdrop-blur-xl shadow-inner ">
+                <table class="min-w-full border-collapse overflow-hidden ">
                   <thead class="bg-gradient-to-r from-blue-500/90 via-indigo-500/90 to-purple-600/90 text-white">
                     <tr>
                       <th class="py-4 px-4 border-b border-white/30 text-center font-semibold tracking-wide">📅 วันที่</th>
@@ -379,8 +379,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         sortedData.forEach(report => {
           tbody.innerHTML += `
-            <tr class="group hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all duration-300 border-b border-gray-200/70 dark:border-gray-800">
-              <td class="py-4 px-4 text-center">
+            <tr class="group transition-all duration-300 border-b border-gray-200/70 dark:border-gray-800">
+              <td class="py-4 px-4 text-center ">
                 <div class="font-semibold text-red-700 dark:text-red-300 text-base">${formatThaiDate(report.report_date)}</div>
                 <div class="text-xs text-indigo-500 dark:text-indigo-400">${getThaiDayOfWeek(report.report_date)}</div>
               </td>
@@ -398,12 +398,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 </span>
               </td>
               <td class="py-4 px-4 text-center">
-                <div class="max-w-xs truncate text-dark dark:text-white" title="${report.plan_topic || '-'}">
+                <div class="max-w-xs truncate text-dark " title="${report.plan_topic || '-'}">
                   ${report.plan_topic ? (report.plan_topic.length > 30 ? report.plan_topic.substring(0, 30) + '...' : report.plan_topic) : '-'}
                 </div>
               </td>
               <td class="py-4 px-4 text-center">
-                <div class="max-w-xs truncate text-dark dark:text-white" title="${report.activity || '-'}">
+                <div class="max-w-xs truncate text-dark " title="${report.activity || '-'}">
                   ${report.activity ? (report.activity.length > 30 ? report.activity.substring(0, 30) + '...' : report.activity) : '-'}
                 </div>
               </td>

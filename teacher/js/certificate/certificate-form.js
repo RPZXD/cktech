@@ -9,7 +9,7 @@ class CertificateFormHandler {
     this.studentCount = 1;
     this.modal = document.getElementById('modalAddCertificate');
     this.form = document.getElementById('formAddCertificate');
-    
+
     this.init();
   }
 
@@ -20,12 +20,9 @@ class CertificateFormHandler {
   }
 
   initStudentManagement() {
-    const addStudentBtn = document.getElementById('addStudentBtn');
+    // NOTE: addStudentBtn is now handled in the view (views/teacher/certificate.php)
+    // with the Simple Student Search Script - do not add listener here
     const studentsContainer = document.getElementById('studentsContainer');
-
-    addStudentBtn?.addEventListener('click', () => {
-      this.addStudentItem();
-    });
 
     // Event delegation for remove buttons
     studentsContainer?.addEventListener('click', (e) => {
@@ -43,7 +40,7 @@ class CertificateFormHandler {
     const studentsContainer = document.getElementById('studentsContainer');
     const studentItem = document.createElement('div');
     studentItem.className = 'student-item bg-gray-50 p-3 rounded border mb-2';
-    
+
     studentItem.innerHTML = `
       <div class="flex justify-between items-center mb-2">
         <span class="font-medium text-sm">👤 นักเรียนคนที่ ${this.studentCount + 1}</span>
@@ -77,7 +74,7 @@ class CertificateFormHandler {
         <p class="text-xs text-gray-500 mt-1">รองรับไฟล์รูปภาพ (JPG, PNG, GIF) ขนาดไม่เกิน 5MB</p>
       </div>
     `;
-    
+
     studentsContainer.appendChild(studentItem);
     this.studentCount++;
     this.updateRemoveButtons();
@@ -86,7 +83,7 @@ class CertificateFormHandler {
   updateRemoveButtons() {
     const studentsContainer = document.getElementById('studentsContainer');
     const studentItems = studentsContainer?.querySelectorAll('.student-item') || [];
-    
+
     studentItems.forEach((item) => {
       const removeBtn = item.querySelector('.remove-student');
       if (studentItems.length === 1) {
@@ -100,7 +97,7 @@ class CertificateFormHandler {
   updateStudentNumbers() {
     const studentsContainer = document.getElementById('studentsContainer');
     const studentItems = studentsContainer?.querySelectorAll('.student-item') || [];
-    
+
     studentItems.forEach((item, index) => {
       const label = item.querySelector('span');
       if (label) {
@@ -134,7 +131,7 @@ class CertificateFormHandler {
   // เพิ่มการยืนยันก่อนปิด modal
   confirmCloseModal() {
     const hasData = this.checkFormData();
-    
+
     if (hasData) {
       Swal.fire({
         title: 'ยืนยันการออก',
@@ -159,7 +156,7 @@ class CertificateFormHandler {
   checkFormData() {
     const inputs = this.form?.querySelectorAll('input[type="text"], input[type="date"], select, textarea');
     if (!inputs) return false;
-    
+
     for (let input of inputs) {
       if (input.value.trim() !== '') {
         return true;
@@ -178,10 +175,10 @@ class CertificateFormHandler {
   async handleFormSubmit() {
     const formData = new FormData(this.form);
     const mode = this.form.getAttribute('data-mode');
-    
+
     // Collect student data
     const students = this.collectStudentData();
-    
+
     // Validate students
     if (!this.validateStudents(students, mode)) {
       return;
@@ -194,11 +191,11 @@ class CertificateFormHandler {
       // Upload images for each student
       const studentsWithImages = await this.uploadStudentImages(students);
       certificateData.students = studentsWithImages;
-      
+
       // Save certificate
       await this.saveCertificate(certificateData);
     } catch (error) {
-    //   console.error('Form submission error:', error);
+      //   console.error('Form submission error:', error);
       this.manager.showError('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     }
   }
@@ -206,23 +203,29 @@ class CertificateFormHandler {
   collectStudentData() {
     const students = [];
     const studentItems = document.querySelectorAll('.student-item');
-    
+
     studentItems.forEach((item, index) => {
-      const nameInput = item.querySelector(`input[name="students[${index}][name]"]`);
-      const classSelect = item.querySelector(`select[name="students[${index}][class]"]`);
-      const roomInput = item.querySelector(`input[name="students[${index}][room]"]`);
-      const imageInput = item.querySelector(`input[name="students[${index}][image]"]`);
-      
-      if (nameInput?.value && classSelect?.value && roomInput?.value) {
+      const idInput = item.querySelector('.student-id-hidden');
+      const nameInput = item.querySelector('.student-name-input');
+      const classInput = item.querySelector('.student-class-input');
+      const roomInput = item.querySelector('.student-room-input');
+      const imageInput = item.querySelector('.student-file-input');
+
+      const name = nameInput?.value?.trim();
+      const studentClass = classInput?.value?.trim();
+      const room = roomInput?.value?.trim();
+
+      if (name && studentClass && room) {
         students.push({
-          name: nameInput.value,
-          class: classSelect.value,
-          room: roomInput.value,
-          image: imageInput?.files[0] || null
+          student_id: idInput?.value || null,
+          name: name,
+          class: studentClass,
+          room: room,
+          image: imageInput?.files && imageInput.files[0] ? imageInput.files[0] : null
         });
       }
     });
-    
+
     return students;
   }
 
@@ -258,22 +261,22 @@ class CertificateFormHandler {
 
   async uploadStudentImages(students) {
     const studentsWithImages = [];
-    
+
     for (let student of students) {
       let imageFilename = null;
-      
+
       if (student.image && student.image.size > 0) {
         try {
           const uploadData = new FormData();
           uploadData.append('certificate_image', student.image);
-          
+
           const response = await fetch('../controllers/CertificateController.php?action=upload', {
             method: 'POST',
             body: uploadData
           });
-          
+
           const uploadResult = await response.json();
-          
+
           if (uploadResult.success) {
             imageFilename = uploadResult.filename;
           } else {
@@ -283,24 +286,25 @@ class CertificateFormHandler {
           throw new Error(`เกิดข้อผิดพลาดในการอัพโหลดรูปของ ${student.name}: ${error.message}`);
         }
       }
-      
+
       studentsWithImages.push({
+        student_id: student.student_id,
         name: student.name,
         class: student.class,
         room: student.room,
         certificate_image: imageFilename
       });
     }
-    
+
     return studentsWithImages;
   }
 
   async saveCertificate(certificateData) {
     const mode = this.form.getAttribute('data-mode');
     const certId = this.form.getAttribute('data-id');
-    
+
     let url = '../controllers/CertificateController.php?action=create';
-    
+
     if (mode === 'edit' && certId) {
       url = '../controllers/CertificateController.php?action=update';
       certificateData.id = certId;
@@ -314,20 +318,20 @@ class CertificateFormHandler {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(certificateData)
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         let successMessage = mode === 'edit' ? 'แก้ไขเกียรติบัตรเรียบร้อยแล้ว' : result.message;
-        
+
         if (mode !== 'edit' && result.term_info) {
           successMessage += `<br><small class="text-gray-600">บันทึกในภาคเรียนที่ ${result.term_info.term} ปีการศึกษา ${result.term_info.year}</small>`;
         }
-        
+
         this.manager.showSuccess(successMessage);
         this.hideModal();
         this.resetForm();
-        
+
         // Reload data
         await Promise.all([
           this.manager.loadCertificates(),
@@ -337,8 +341,8 @@ class CertificateFormHandler {
         this.manager.showError(result.message);
       }
     } catch (error) {
-    //   console.error('Save error:', error);
-    //   this.manager.showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      //   console.error('Save error:', error);
+      //   this.manager.showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
     } finally {
       this.manager.closeLoading();
     }
@@ -348,7 +352,7 @@ class CertificateFormHandler {
     try {
       const response = await fetch(`../controllers/CertificateController.php?action=detail&id=${encodeURIComponent(certId)}`);
       const cert = await response.json();
-      
+
       if (cert.success === false) {
         this.manager.showError(cert.message);
         return;
@@ -359,34 +363,34 @@ class CertificateFormHandler {
       this.populateForm(cert);
       this.showModal();
     } catch (error) {
-    //   console.error('Edit error:', error);
-    //   this.manager.showError('ไม่สามารถโหลดข้อมูลได้');
+      //   console.error('Edit error:', error);
+      //   this.manager.showError('ไม่สามารถโหลดข้อมูลได้');
     }
   }
 
   setupEditMode(cert) {
     // Change modal title
-    const modalTitle = document.querySelector('#modalAddCertificate h2');
+    const modalTitle = document.getElementById('modalTitleText');
     if (modalTitle) {
-      modalTitle.innerHTML = '✏️ แก้ไขเกียรติบัตร';
+      modalTitle.textContent = 'แก้ไขเกียรติบัตร';
     }
-    
+
     // Hide add student button
     const addStudentBtn = document.getElementById('addStudentBtn');
     if (addStudentBtn) {
       addStudentBtn.style.display = 'none';
     }
-    
+
     // Hide remove button for first student
     const firstStudentRemoveBtn = document.querySelector('.student-item .remove-student');
     if (firstStudentRemoveBtn) {
-      firstStudentRemoveBtn.style.display = 'none';
+      firstStudentRemoveBtn.classList.add('hidden');
     }
-    
+
     // Remove other students
     const otherStudents = document.querySelectorAll('.student-item:not(:first-child)');
     otherStudents.forEach(item => item.remove());
-    
+
     // Set form mode
     this.form.setAttribute('data-mode', 'edit');
     this.form.setAttribute('data-id', cert.id);
@@ -396,35 +400,40 @@ class CertificateFormHandler {
     // Populate student data
     const firstStudent = document.querySelector('.student-item');
     if (firstStudent) {
-      const nameInput = firstStudent.querySelector('input[name="students[0][name]"]');
-      const classSelect = firstStudent.querySelector('select[name="students[0][class]"]');
-      const roomInput = firstStudent.querySelector('input[name="students[0][room]"]');
-      
-      if (nameInput) nameInput.value = cert.student_name;
-      if (classSelect) classSelect.value = cert.student_class;
-      if (roomInput) roomInput.value = cert.student_room;
+      const idInput = firstStudent.querySelector('.student-id-hidden');
+      const nameInput = firstStudent.querySelector('.student-name-input');
+      const classInput = firstStudent.querySelector('.student-class-input');
+      const roomInput = firstStudent.querySelector('.student-room-input');
+      const searchInput = firstStudent.querySelector('.student-search');
+
+      if (idInput) idInput.value = cert.student_id || '';
+      if (nameInput) nameInput.value = cert.student_name || '';
+      if (classInput) classInput.value = cert.student_class || '';
+      if (roomInput) roomInput.value = cert.student_room || '';
+      if (searchInput) searchInput.value = cert.student_name || '';
     }
-    
+
     // Populate form fields
-    if (this.form.award_name) this.form.award_name.value = cert.award_name || '';
-    if (this.form.award_level) this.form.award_level.value = cert.award_level || '';
-    if (this.form.award_organization) this.form.award_organization.value = cert.award_organization || '';
-    if (this.form.award_type) this.form.award_type.value = cert.award_type;
-    if (this.form.award_detail) this.form.award_detail.value = cert.award_detail;
-    if (this.form.award_date) this.form.award_date.value = cert.award_date;
-    if (this.form.note) this.form.note.value = cert.note || '';
-    
+    const f = this.form;
+    if (f.award_name) f.award_name.value = cert.award_name || '';
+    if (f.award_level) f.award_level.value = cert.award_level || '';
+    if (f.award_organization) f.award_organization.value = cert.award_organization || '';
+    if (f.award_type) f.award_type.value = cert.award_type || '';
+    if (f.award_detail) f.award_detail.value = cert.award_detail || '';
+    if (f.award_date) f.award_date.value = cert.award_date || '';
+    if (f.note) f.note.value = cert.note || '';
+
     // Set term and year
     const termInput = document.getElementById('termInput');
     const yearInput = document.getElementById('yearInput');
     if (termInput && cert.term) termInput.value = cert.term;
     if (yearInput && cert.year) yearInput.value = cert.year;
-  }  showModal() {
+  } showModal() {
     this.modal?.classList.remove('hidden');
-    
+
     // เพิ่ม class เพื่อป้องกันการ scroll ของ body
     document.body.classList.add('modal-open');
-    
+
     // Focus management และ trap focus ใน modal
     setTimeout(() => {
       const firstInput = this.modal?.querySelector('input[name="students[0][name]"]');
@@ -436,10 +445,10 @@ class CertificateFormHandler {
 
   hideModal() {
     this.modal?.classList.add('hidden');
-    
+
     // ลบ class เพื่อคืนค่าการ scroll ของ body
     document.body.classList.remove('modal-open');
-    
+
     this.resetForm();
   }
 
@@ -447,22 +456,22 @@ class CertificateFormHandler {
     this.form?.reset();
     this.form?.removeAttribute('data-mode');
     this.form?.removeAttribute('data-id');
-    
+
     // Reset modal title
-    const modalTitle = document.querySelector('#modalAddCertificate h2');
+    const modalTitle = document.getElementById('modalTitleText');
     if (modalTitle) {
-      modalTitle.innerHTML = '🏆 บันทึกเกียรติบัตรใหม่';
+      modalTitle.textContent = 'บันทึกเกียรติบัตรใหม่';
     }
-    
+
     // Show add student button
     const addStudentBtn = document.getElementById('addStudentBtn');
     if (addStudentBtn) {
       addStudentBtn.style.display = 'flex';
     }
-    
+
     // Reset students
     this.resetStudents();
-    
+
     // Set current term info
     if (this.manager.currentTermInfo) {
       const termInput = document.getElementById('termInput');
@@ -477,21 +486,21 @@ class CertificateFormHandler {
   resetStudents() {
     const studentsContainer = document.getElementById('studentsContainer');
     const firstStudent = studentsContainer?.querySelector('.student-item');
-    
+
     if (firstStudent) {
       // Reset first student
       const nameInput = firstStudent.querySelector('input[name="students[0][name]"]');
       const classSelect = firstStudent.querySelector('select[name="students[0][class]"]');
       const roomInput = firstStudent.querySelector('input[name="students[0][room]"]');
-      
+
       if (nameInput) nameInput.value = '';
       if (classSelect) classSelect.value = '';
       if (roomInput) roomInput.value = '';
-      
+
       // Remove other students
       const otherStudents = studentsContainer.querySelectorAll('.student-item:not(:first-child)');
       otherStudents.forEach(item => item.remove());
-      
+
       // Hide remove button for first student
       const firstStudentRemoveBtn = firstStudent.querySelector('.remove-student');
       if (firstStudentRemoveBtn) {

@@ -6,17 +6,17 @@
 
 class CertificateManager {
   constructor() {
-    this.teacherId = window.teacherId || null;
+    this.teacherId = (window.CERTIFICATE_CONFIG && window.CERTIFICATE_CONFIG.teacherId) || window.teacherId || null;
     this.certificatesData = [];
     this.currentTermInfo = null;
-    
+
     // Initialize modules
     this.formHandler = new CertificateFormHandler(this);
     this.tableManager = new CertificateTableManager(this);
     this.filterManager = new CertificateFilterManager(this);
     this.statsManager = new CertificateStatsManager(this);
     this.exportManager = new CertificateExportManager(this);
-    
+
     this.init();
   }
 
@@ -30,7 +30,6 @@ class CertificateManager {
       ]);
       this.filterManager.init();
     } catch (error) {
-    //   console.error('Initialization error:', error);
       this.showError('เกิดข้อผิดพลาดในการเริ่มต้นระบบ');
     }
   }
@@ -43,9 +42,7 @@ class CertificateManager {
         this.currentTermInfo = result.data;
         this.displayCurrentTermInfo();
       }
-    } catch (error) {
-    //   console.error('Error loading term info:', error);
-    }
+    } catch (error) { }
   }
 
   displayCurrentTermInfo() {
@@ -53,7 +50,7 @@ class CertificateManager {
       const termInfoElement = document.createElement('div');
       termInfoElement.className = 'text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full';
       termInfoElement.innerHTML = `📚 ภาคเรียนที่ ${this.currentTermInfo.term} ปีการศึกษา ${this.currentTermInfo.year}`;
-      
+
       const headerElement = document.querySelector('.content-header h1');
       if (headerElement) {
         headerElement.appendChild(termInfoElement);
@@ -63,21 +60,19 @@ class CertificateManager {
 
   async loadCertificates() {
     this.tableManager.showLoadingState();
-    
+
     try {
       const response = await fetch(`../controllers/CertificateController.php?action=list&teacherId=${encodeURIComponent(this.teacherId)}`);
       const result = await response.json();
-      
+
       if (result.success) {
         this.certificatesData = Array.isArray(result.data) ? result.data : [];
       } else {
         this.certificatesData = [];
-        // console.error('List error:', result.message);
       }
-      
+
       this.tableManager.renderTable(this.certificatesData);
     } catch (error) {
-    //   console.error('Error loading certificates:', error);
       this.tableManager.showErrorState();
     } finally {
       this.tableManager.hideLoadingState();
@@ -90,82 +85,49 @@ class CertificateManager {
       const result = await response.json();
       if (result.success) {
         this.statsManager.updateDisplay(result.data);
-      }    } catch (error) {
-    //   console.error('Error loading statistics:', error);
-    }
+      }
+    } catch (error) { }
   }
+
   setupModalFocusTrap() {
     const modal = document.getElementById('modalAddCertificate');
-    
-    // ป้องกันการกด Escape และการคลิกนอก modal
+    if (!modal) return;
+
     document.addEventListener('keydown', (e) => {
       if (!modal.classList.contains('hidden')) {
-        // ป้องกันการกด Escape
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }
-        
-        // จัดการ Tab navigation ให้อยู่ใน modal เท่านั้น
         if (e.key === 'Tab') {
           const focusableElements = modal.querySelectorAll(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
           );
           const focusableArray = Array.from(focusableElements);
-          const firstElement = focusableArray[0];
-          const lastElement = focusableArray[focusableArray.length - 1];
-          
-          if (e.shiftKey) {
-            // Shift + Tab
-            if (document.activeElement === firstElement) {
-              e.preventDefault();
-              lastElement.focus();
-            }
-          } else {
-            // Tab
-            if (document.activeElement === lastElement) {
-              e.preventDefault();
-              firstElement.focus();
+          if (focusableArray.length > 0) {
+            const firstElement = focusableArray[0];
+            const lastElement = focusableArray[focusableArray.length - 1];
+
+            if (e.shiftKey) {
+              if (document.activeElement === firstElement) {
+                e.preventDefault();
+                lastElement.focus();
+              }
+            } else {
+              if (document.activeElement === lastElement) {
+                e.preventDefault();
+                firstElement.focus();
+              }
             }
           }
         }
       }
     });
-
-    // ป้องกันการคลิกนอก modal อย่างสมบูรณ์
-    modal.addEventListener('click', (e) => {
-      // หยุดการ propagation ทุก event
-      e.stopPropagation();
-      e.preventDefault();
-      
-      // ถ้าคลิกที่ background ของ modal (ไม่ใช่เนื้อหา)
-      if (e.target === modal) {
-        return false;
-      }
-    });
-
-    // ป้องกัน event bubbling จาก document
-    document.addEventListener('click', (e) => {
-      if (!modal.classList.contains('hidden')) {
-        // ถ้า modal เปิดอยู่และคลิกที่ไหนก็ตาม ให้ตรวจสอบว่าอยู่ใน modal หรือไม่
-        if (!modal.contains(e.target)) {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }
-      }
-    }, true); // ใช้ capture phase
   }
 
   initEventHandlers() {
-    // Modal focus management
     this.setupModalFocusTrap();
 
     // Statistics toggle
     const btnStats = document.getElementById('btnStats');
     const statsCards = document.getElementById('statsCards');
-    
+
     btnStats?.addEventListener('click', () => {
       if (statsCards.classList.contains('hidden')) {
         statsCards.classList.remove('hidden');
@@ -187,7 +149,7 @@ class CertificateManager {
     btnRefresh?.addEventListener('click', () => {
       const icon = btnRefresh.querySelector('i');
       icon?.classList.add('fa-spin');
-      
+
       Promise.all([this.loadCertificates(), this.loadStatistics()])
         .finally(() => {
           setTimeout(() => {

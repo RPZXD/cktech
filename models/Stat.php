@@ -85,14 +85,17 @@ class Stat
     // จำนวนรายงานแยกตามครู (ในช่วงวันที่)
     public function getReportCountByTeacher($startDate, $endDate)
     {
-        // ดึง teacher จาก DatabaseUsers
-        $sqlTeacher = "SELECT Teach_id, Teach_name FROM teacher WHERE Teach_status = 1";
+        // ดึง teacher จาก DatabaseUsers พร้อม department
+        $sqlTeacher = "SELECT Teach_id, Teach_name, Teach_major FROM teacher WHERE Teach_status = 1";
         $teachers = $this->dbUsers->query($sqlTeacher)->fetchAll();
 
-        // เตรียม mapping Teach_id => Teach_name
-        $teachNameMap = [];
+        // เตรียม mapping Teach_id => [name, department]
+        $teachInfoMap = [];
         foreach ($teachers as $t) {
-            $teachNameMap[$t['Teach_id']] = $t['Teach_name'];
+            $teachInfoMap[$t['Teach_id']] = [
+                'name' => $t['Teach_name'],
+                'department' => $t['Teach_major']
+            ];
         }
 
         // ดึงรายงานจาก teaching_reports
@@ -102,18 +105,22 @@ class Stat
         // นับจำนวนรายงานแยกตามครู
         $teacherCounts = [];
         foreach ($reports as $r) {
-            $name = $teachNameMap[$r['teacher_id']] ?? null;
-            if ($name) {
-                if (!isset($teacherCounts[$name])) $teacherCounts[$name] = 0;
-                $teacherCounts[$name]++;
+            $tid = $r['teacher_id'];
+            $info = $teachInfoMap[$tid] ?? null;
+            if ($info) {
+                if (!isset($teacherCounts[$tid])) {
+                    $teacherCounts[$tid] = [
+                        'teacher' => $info['name'],
+                        'department' => $info['department'],
+                        'count' => 0
+                    ];
+                }
+                $teacherCounts[$tid]['count']++;
             }
         }
 
         // จัดรูปแบบผลลัพธ์
-        $result = [];
-        foreach ($teacherCounts as $teacher => $count) {
-            $result[] = ['teacher' => $teacher, 'count' => $count];
-        }
+        $result = array_values($teacherCounts);
         // เรียงลำดับมากไปน้อย
         usort($result, function($a, $b) {
             return $b['count'] <=> $a['count'];

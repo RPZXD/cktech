@@ -56,4 +56,47 @@ class Student
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
+
+    /**
+     * ค้นหานักเรียนสำหรับ Select2 AJAX
+     * @param string $search คำค้นหา
+     * @param string $class ระดับชั้น (optional)
+     * @param int $limit จำนวนผลลัพธ์สูงสุด
+     * @return array
+     */
+    public function searchStudents($search = '', $class = '', $limit = 20)
+    {
+        $params = [];
+        $where = ["Stu_status = '1'"];
+        
+        // Search by name
+        if (!empty($search)) {
+            $where[] = "(CONCAT(Stu_pre, Stu_name, ' ', Stu_sur) LIKE ? OR Stu_id LIKE ?)";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+        }
+        
+        // Filter by class level
+        if (!empty($class)) {
+            $where[] = "Stu_major = ?";
+            $params[] = $class;
+        }
+        
+        // Use intval to ensure limit is integer
+        $limit = intval($limit);
+        if ($limit <= 0) $limit = 20;
+        
+        $sql = "SELECT Stu_id, Stu_major, Stu_room, 
+                       CONCAT(Stu_pre, Stu_name, ' ', Stu_sur) AS fullname,
+                       Stu_no
+                FROM student 
+                WHERE " . implode(' AND ', $where) . "
+                ORDER BY Stu_major, Stu_room, Stu_no ASC
+                LIMIT {$limit}";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
+

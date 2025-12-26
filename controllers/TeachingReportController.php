@@ -12,8 +12,20 @@ try {
     $action = $_GET['action'] ?? $_POST['action'] ?? 'list';
 
     switch ($action) {
+        case 'listAll':
+            // For admin - get all reports with optional filters
+            $teacher = $_GET['teacher'] ?? '';
+            $department = $_GET['department'] ?? '';
+            $level = $_GET['level'] ?? '';
+            $dateStart = $_GET['dateStart'] ?? '';
+            $dateEnd = $_GET['dateEnd'] ?? '';
+            
+            $reports = $reportModel->getAllReportsForAdmin($teacher, $department, $level, $dateStart, $dateEnd);
+            echo json_encode($reports);
+            break;
         case 'list':
-            $teacher_id = $_GET['teacher_id'] ?? $_POST['teacher_id'] ?? ($_SESSION['username'] ?? 0);
+            // ใช้ Teach_id จาก session แทน username
+            $teacher_id = $_GET['teacher_id'] ?? $_POST['teacher_id'] ?? ($_SESSION['user']['Teach_id'] ?? ($_SESSION['Teacher_login'] ?? 0));
             $reports = $reportModel->getAllByTeacher($teacher_id);
             echo json_encode($reports);
             break;

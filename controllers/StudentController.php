@@ -21,7 +21,36 @@ switch ($action) {
         $students = $studentModel->getStudentsByClassAndRooms($rooms);
         echo json_encode($students);
         break;
+    
+    case 'search':
+        // สำหรับ Select2 AJAX search
+        $search = $_GET['q'] ?? $_GET['search'] ?? '';
+        $classLevel = $_GET['class'] ?? '';
+        $limit = intval($_GET['limit'] ?? 20);
+        
+        $students = $studentModel->searchStudents($search, $classLevel, $limit);
+        
+        // Format for Select2
+        $results = [];
+        foreach ($students as $student) {
+            $results[] = [
+                'id' => $student['Stu_id'],
+                'text' => $student['fullname'],
+                'class' => $student['Stu_major'],
+                'room' => $student['Stu_room'],
+                // Display format: ชื่อ (ม.X/Y)
+                'display' => $student['fullname'] . ' (ม.' . $student['Stu_major'] . '/' . $student['Stu_room'] . ')'
+            ];
+        }
+        
+        echo json_encode([
+            'results' => $results,
+            'pagination' => ['more' => false]
+        ]);
+        break;
+        
     default:
         http_response_code(400);
         echo json_encode(['error' => 'Invalid action']);
 }
+
