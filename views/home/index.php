@@ -37,66 +37,66 @@
 
 <!-- Statistics Cards -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-    <!-- Teachers Card -->
+    <!-- Reports Card -->
     <div class="card-hover glass rounded-2xl p-5 md:p-6 group">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">ครูทั้งหมด</p>
-                <h3 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                    <?php echo number_format($statistics['total_teachers'] ?? 0); ?>
+                <p class="text-[10px] md:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">รายงานทั้งหมด</p>
+                <h3 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mt-1">
+                    <?php echo number_format($statistics['total_reports'] ?? 0); ?>
                 </h3>
-                <p class="text-xs text-gray-400 mt-1">คน</p>
+                <p class="text-[10px] text-blue-500 font-bold mt-1">รายการ</p>
             </div>
             <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
+                <i class="fas fa-file-alt text-white text-lg md:text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Teachers Card -->
+    <div class="card-hover glass rounded-2xl p-5 md:p-6 group">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-[10px] md:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">ครูผู้สอน</p>
+                <h3 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mt-1">
+                    <?php echo number_format($statistics['total_teachers'] ?? 0); ?>
+                </h3>
+                <p class="text-[10px] text-emerald-500 font-bold mt-1">คน</p>
+            </div>
+            <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg shadow-green-500/30 group-hover:scale-110 transition-transform">
                 <i class="fas fa-chalkboard-teacher text-white text-lg md:text-xl"></i>
             </div>
         </div>
     </div>
 
-    <!-- Students Card -->
+    <!-- Supervisions Card -->
     <div class="card-hover glass rounded-2xl p-5 md:p-6 group">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">นักเรียนทั้งหมด</p>
-                <h3 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                    <?php echo number_format($statistics['total_students'] ?? 0); ?>
+                <p class="text-[10px] md:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">การนิเทศสอน</p>
+                <h3 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mt-1">
+                    <?php echo number_format($statistics['total_supervisions'] ?? 0); ?>
                 </h3>
-                <p class="text-xs text-gray-400 mt-1">คน</p>
-            </div>
-            <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg shadow-green-500/30 group-hover:scale-110 transition-transform">
-                <i class="fas fa-user-graduate text-white text-lg md:text-xl"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- Subjects Card -->
-    <div class="card-hover glass rounded-2xl p-5 md:p-6 group">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">รายวิชา</p>
-                <h3 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                    <?php echo number_format($statistics['total_subjects'] ?? 0); ?>
-                </h3>
-                <p class="text-xs text-gray-400 mt-1">วิชา</p>
+                <p class="text-[10px] text-purple-500 font-bold mt-1">ครั้ง</p>
             </div>
             <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
-                <i class="fas fa-book text-white text-lg md:text-xl"></i>
+                <i class="fas fa-eye text-white text-lg md:text-xl"></i>
             </div>
         </div>
     </div>
 
-    <!-- Departments Card -->
+    <!-- Certificates Card -->
     <div class="card-hover glass rounded-2xl p-5 md:p-6 group">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">กลุ่มสาระ</p>
-                <h3 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                    <?php echo number_format($statistics['total_departments'] ?? 0); ?>
+                <p class="text-[10px] md:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">เกียรติบัตร</p>
+                <h3 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mt-1">
+                    <?php echo number_format($statistics['total_certificates'] ?? 0); ?>
                 </h3>
-                <p class="text-xs text-gray-400 mt-1">กลุ่ม</p>
+                <p class="text-[10px] text-orange-500 font-bold mt-1">ใบ</p>
             </div>
             <div class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl shadow-lg shadow-orange-500/30 group-hover:scale-110 transition-transform">
-                <i class="fas fa-building text-white text-lg md:text-xl"></i>
+                <i class="fas fa-trophy text-white text-lg md:text-xl"></i>
             </div>
         </div>
     </div>

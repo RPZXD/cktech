@@ -39,14 +39,15 @@ class Home
      */
     public function getStatistics(): array
     {
-        $stats = [
+        return [
+            'total_reports' => $this->getTotalReports(),
             'total_teachers' => $this->getTotalTeachers(),
+            'total_supervisions' => $this->getTotalSupervisions(),
+            'total_certificates' => $this->getTotalCertificates(),
             'total_students' => $this->getTotalStudents(),
             'total_subjects' => $this->getTotalSubjects(),
             'total_departments' => $this->getTotalDepartments(),
         ];
-        
-        return $stats;
     }
 
     /**
@@ -104,21 +105,55 @@ class Home
     }
 
     /**
-     * Get total number of departments
+     * Get total number of departments (from teacher majors)
      * @return int
      */
     public function getTotalDepartments(): int
     {
-        if (!$this->pdoUsers) return 0;
+        if (!$this->pdoUsers) return 8; // Default value if connection fails
         
         try {
-            $sql = "SELECT COUNT(*) as total FROM department";
+            $sql = "SELECT COUNT(DISTINCT Teach_major) as total FROM teacher WHERE Teach_major != ''";
             $stmt = $this->pdoUsers->query($sql);
             $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-            return (int)($result['total'] ?? 0);
+            return (int)($result['total'] ?? 8);
         } catch (\PDOException $e) {
-            return 0;
+            return 8;
         }
+    }
+
+    /**
+     * Get total reports
+     */
+    public function getTotalReports(): int
+    {
+        if (!$this->pdo) return 0;
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM teaching_reports");
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
+     * Get total supervisions
+     */
+    public function getTotalSupervisions(): int
+    {
+        if (!$this->pdo) return 0;
+        try {
+            $stmt = $this->pdo->query("SELECT COUNT(*) FROM supervisions");
+            return (int)$stmt->fetchColumn();
+        } catch (\Exception $e) { return 0; }
+    }
+
+    /**
+     * Get total certificates
+     */
+    public function getTotalCertificates(): int
+    {
+        if (!$this->pdo) return 0;
+        try {
+            $stmt = $this->pdo->query("SELECT COUNT(*) FROM certificates");
+            return (int)$stmt->fetchColumn();
+        } catch (\Exception $e) { return 0; }
     }
 
     /**
@@ -146,10 +181,10 @@ class Home
             if ($this->pdoUsers && !empty($reports)) {
                 foreach ($reports as &$report) {
                     try {
-                        $stmtTeacher = $this->pdoUsers->prepare("SELECT CONCAT(Teach_pre, Teach_name, ' ', Teach_sur) AS teacher_name FROM teacher WHERE Teach_id = ?");
+                        $stmtTeacher = $this->pdoUsers->prepare("SELECT Teach_name FROM teacher WHERE Teach_id = ?");
                         $stmtTeacher->execute([$report['teacher_id']]);
                         $teacher = $stmtTeacher->fetch(\PDO::FETCH_ASSOC);
-                        $report['teacher_name'] = $teacher['teacher_name'] ?? 'ไม่ระบุ';
+                        $report['teacher_name'] = $teacher['Teach_name'] ?? 'ไม่ระบุ';
                     } catch (\PDOException $e) {
                         $report['teacher_name'] = 'ไม่ระบุ';
                     }

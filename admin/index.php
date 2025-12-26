@@ -8,6 +8,9 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+// Set timezone to Thailand
+date_default_timezone_set('Asia/Bangkok');
+
 // Check session and role
 if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header('Location: ../login.php');

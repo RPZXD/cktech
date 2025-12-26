@@ -12,6 +12,9 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+// Set timezone to Thailand
+date_default_timezone_set('Asia/Bangkok');
+
 // Include the controller
 require_once __DIR__ . '/controllers/HomeController.php';
 

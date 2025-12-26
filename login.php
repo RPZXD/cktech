@@ -8,6 +8,9 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+// Set timezone to Thailand
+date_default_timezone_set('Asia/Bangkok');
+
 // Load config
 $config = json_decode(file_get_contents(__DIR__ . '/config.json'), true);
 $global = $config['global'];
