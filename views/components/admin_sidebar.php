@@ -44,6 +44,13 @@ $menuItems = [
         'gradient' => ['from' => 'orange-500', 'to' => 'amber-600'],
     ],
     [
+        'key' => 'certificate',
+        'name' => 'รายงานเกียรติบัตร',
+        'url' => 'certificate.php',
+        'icon' => 'fa-certificate',
+        'gradient' => ['from' => 'indigo-500', 'to' => 'violet-600'],
+    ],
+    [
         'key' => 'settings',
         'name' => 'ตั้งค่าระบบ',
         'url' => 'settings.php',
@@ -63,7 +70,7 @@ $menuItems = [
         <!-- Logo Section -->
         <div class="px-6 py-8 border-b border-white/5">
             <div class="flex items-center justify-between">
-                <a href="../index.php" class="flex items-center space-x-4 group flex-1">
+                <a href="index.php" class="flex items-center space-x-4 group flex-1">
                     <div class="relative">
                         <div class="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full blur-lg opacity-40 group-hover:opacity-70 transition-opacity"></div>
                         <img src="../dist/img/<?php echo $global['logoLink'] ?? 'logo-phicha.png'; ?>" class="relative w-12 h-12 rounded-full ring-2 ring-white/10 group-hover:ring-purple-400/50 transition-all" alt="Logo">
