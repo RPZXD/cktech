@@ -1339,76 +1339,123 @@ async function exportStatsPDF() {
     
     Swal.fire({
         title: 'กำลังสร้าง PDF สถิติ...',
-        html: 'กรุณารอสักครู่',
+        html: 'กำลังประมวลผลกราฟและตารางสรุป กรุณารอสักครู่',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
     });
     
     try {
-        // Capture charts as images
-        const levelCanvas = document.getElementById('levelChart');
-        const typeCanvas = document.getElementById('typeChart');
-        
-        const doc = new jsPDF('p', 'mm', 'a4');
-        const pageWidth = doc.internal.pageSize.getWidth();
-        let y = 20;
-        
-        // Title
-        doc.setFontSize(18);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Report: Certificate Statistics', pageWidth / 2, y, { align: 'center' });
-        y += 10;
-        
         const statsYear = document.getElementById('statsYear').value;
-        if (statsYear) {
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Academic Year: ${statsYear}`, pageWidth / 2, y, { align: 'center' });
-            y += 10;
-        }
-        
-        // Summary stats
-        doc.setFontSize(11);
         const total = document.getElementById('statsTotal').textContent;
         const international = document.getElementById('statsInternational').textContent;
         const national = document.getElementById('statsNational').textContent;
         const regional = document.getElementById('statsRegional').textContent;
         
-        doc.text(`Total Certificates: ${total}`, 20, y); y += 6;
-        doc.text(`International: ${international}`, 20, y); y += 6;
-        doc.text(`National: ${national}`, 20, y); y += 6;
-        doc.text(`Regional/Provincial: ${regional}`, 20, y); y += 15;
+        // Capture charts as base64
+        const levelCanvas = document.getElementById('levelChart');
+        const typeCanvas = document.getElementById('typeChart');
+        const levelImg = levelCanvas.toDataURL('image/png', 1.0);
+        const typeImg = typeCanvas.toDataURL('image/png', 1.0);
         
-        // Add charts as images
-        if (levelCanvas) {
-            const levelImg = levelCanvas.toDataURL('image/png', 1.0);
-            doc.text('Award Level Distribution', 20, y);
-            y += 5;
-            doc.addImage(levelImg, 'PNG', 20, y, 80, 80);
-        }
+        // Get department table content
+        const deptTableBody = document.getElementById('departmentStatsBody').innerHTML;
         
-        if (typeCanvas) {
-            const typeImg = typeCanvas.toDataURL('image/png', 1.0);
-            doc.text('Award Type Distribution', 110, y - 5);
-            doc.addImage(typeImg, 'PNG', 105, y, 80, 80);
-        }
+        const container = document.getElementById('pdfRenderContainer');
+        const title = statsYear ? `รายงานสถิติเกียรติบัตร ปีการศึกษา ${statsYear}` : 'รายงานสถิติเกียรติบัตรทั้งหมด';
         
-        // Footer
-        doc.setFontSize(8);
-        doc.text(`Generated: ${new Date().toLocaleString('th-TH')}`, pageWidth / 2, 285, { align: 'center' });
+        container.innerHTML = `
+            <div class="pdf-page" style="padding: 40px;">
+                <div class="pdf-header-lines">
+                    <div class="pdf-header-title">${title}</div>
+                </div>
+                
+                <div class="pdf-section-title">สรุปภาพรวม</div>
+                
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+                    <div style="border: 1px solid #000; padding: 15px; text-align: center; border-radius: 8px;">
+                        <div style="font-size: 14px; color: #666;">เกียรติบัตรทั้งหมด</div>
+                        <div style="font-size: 24px; font-weight: 700;">${total}</div>
+                    </div>
+                    <div style="border: 1px solid #000; padding: 15px; text-align: center; border-radius: 8px;">
+                        <div style="font-size: 14px; color: #666;">ระดับนานาชาติ</div>
+                        <div style="font-size: 24px; font-weight: 700; color: #f59e0b;">${international}</div>
+                    </div>
+                    <div style="border: 1px solid #000; padding: 15px; text-align: center; border-radius: 8px;">
+                        <div style="font-size: 14px; color: #666;">ระดับประเทศ</div>
+                        <div style="font-size: 24px; font-weight: 700; color: #ef4444;">${national}</div>
+                    </div>
+                    <div style="border: 1px solid #000; padding: 15px; text-align: center; border-radius: 8px;">
+                        <div style="font-size: 14px; color: #666;">ระดับภาค/จังหวัด</div>
+                        <div style="font-size: 24px; font-weight: 700; color: #3b82f6;">${regional}</div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 30px; margin-bottom: 30px;">
+                    <div style="flex: 1; text-align: center; border: 1px solid #eee; padding: 15px; border-radius: 12px;">
+                        <div style="font-weight: 700; margin-bottom: 10px; font-size: 16px;">สัดส่วนตามระดับรางวัล</div>
+                        <img src="${levelImg}" style="width: 100%; max-height: 250px; object-fit: contain;">
+                    </div>
+                    <div style="flex: 1; text-align: center; border: 1px solid #eee; padding: 15px; border-radius: 12px;">
+                        <div style="font-weight: 700; margin-bottom: 10px; font-size: 16px;">สัดส่วนตามประเภทรางวัล</div>
+                        <img src="${typeImg}" style="width: 100%; max-height: 250px; object-fit: contain;">
+                    </div>
+                </div>
+                
+                <div class="pdf-section-title">สถิติแยกตามรายครู (Top 15)</div>
+                <table class="pdf-table">
+                    <thead>
+                        <tr>
+                            <th>ชื่อครู/ผู้สอน</th>
+                            <th>นานาชาติ</th>
+                            <th>ประเทศ</th>
+                            <th>ภาค</th>
+                            <th>จังหวัด</th>
+                            <th>โรงเรียน</th>
+                            <th>รวม</th>
+                        </tr>
+                    </thead>
+                    <tbody style="font-size: 14px;">
+                        ${deptTableBody}
+                    </tbody>
+                </table>
+                
+                <div class="pdf-footer" style="margin-top: 40px;">
+                    <span>โรงเรียนพิชัย ฝ่ายบริหารงานวิชาการ</span>
+                    <span>รายงาน ณ วันที่ ${new Date().toLocaleDateString('th-TH', {day: 'numeric', month: 'long', year: 'numeric'})}</span>
+                </div>
+            </div>
+        `;
         
+        await document.fonts.ready;
+        
+        const canvas = await html2canvas(container, {
+            scale: 1.5,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        });
+        
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const imgData = canvas.toDataURL('image/jpeg', 0.9);
+        const imgWidth = pdfWidth - 10;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        doc.addImage(imgData, 'JPEG', 5, 5, imgWidth, imgHeight);
+        
+        container.innerHTML = '';
         doc.save(`certificate_statistics_${new Date().getTime()}.pdf`);
         
         Swal.fire({
             icon: 'success',
-            title: 'สร้าง PDF สำเร็จ!',
+            title: 'สร้าง PDF สถิติสำเร็จ!',
             timer: 2000,
             showConfirmButton: false
         });
         
     } catch (err) {
         console.error('Stats PDF Error:', err);
-        Swal.fire('ผิดพลาด', 'ไม่สามารถสร้าง PDF ได้', 'error');
+        Swal.fire('ผิดพลาด', 'ไม่สามารถสร้าง PDF สถิติได้', 'error');
     }
 }
+
 </script>
