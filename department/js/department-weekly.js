@@ -426,18 +426,6 @@ class DepartmentWeeklyManager {
         const totalReports = this.reports ? this.reports.length : 0;
         const totalTeachers = this.teachers ? this.teachers.length : 0;
 
-        // Build print-friendly table
-        let tableHtml = `
-            <table>
-                <thead>
-                    <tr>
-                        <th style="text-align:left;width:200px;">ชื่อ-นามสกุล ครู</th>
-        `;
-        weekDates.forEach(d => {
-            tableHtml += `<th>${this.formatDayName(d)}<br><small>${this.formatThaiDate(d)}</small></th>`;
-        });
-        tableHtml += `<th>รวม</th></tr></thead><tbody>`;
-
         // Group reports
         const reportMap = {};
         (this.reports || []).forEach(r => {
@@ -446,23 +434,45 @@ class DepartmentWeeklyManager {
             reportMap[r.teacher_id][r.report_date].push(r);
         });
 
+        // Build table rows
+        let tableRows = '';
+        let teacherIndex = 0;
         (this.teachers || []).forEach(t => {
+            teacherIndex++;
             let rowTotal = 0;
-            tableHtml += `<tr><td style="text-align:left;font-weight:bold;">${t.Teach_name}</td>`;
+            let cellsHtml = '';
+
             weekDates.forEach(d => {
                 const dateStr = this.formatISO(d);
                 const dayReports = (reportMap[t.Teach_id] && reportMap[t.Teach_id][dateStr]) ? reportMap[t.Teach_id][dateStr] : [];
                 rowTotal += dayReports.length;
+
                 if (dayReports.length > 0) {
-                    const periods = dayReports.map(r => `คาบ ${r.period_start}-${r.period_end}`).join(', ');
-                    tableHtml += `<td style="background:#ecfdf5;color:#059669;">${periods}</td>`;
+                    const badges = dayReports.map(r =>
+                        `<span class="period-badge">คาบ ${r.period_start}-${r.period_end}</span>`
+                    ).join('');
+                    cellsHtml += `<td class="has-report">${badges}</td>`;
                 } else {
-                    tableHtml += `<td style="color:#cbd5e1;">-</td>`;
+                    cellsHtml += `<td class="no-report">—</td>`;
                 }
             });
-            tableHtml += `<td style="font-weight:bold;color:#3b82f6;">${rowTotal}</td></tr>`;
+
+            tableRows += `
+                <tr>
+                    <td class="teacher-cell">
+                        <div class="teacher-info">
+                            <span class="teacher-num">${teacherIndex}</span>
+                            <span class="teacher-name">${t.Teach_name}</span>
+                        </div>
+                    </td>
+                    ${cellsHtml}
+                    <td class="total-cell">${rowTotal}</td>
+                </tr>
+            `;
         });
-        tableHtml += `</tbody></table>`;
+
+        // Calculate average per teacher
+        const avgPerTeacher = totalTeachers > 0 ? (totalReports / totalTeachers).toFixed(1) : 0;
 
         const printWindow = window.open('', '', 'width=1200,height=800');
         printWindow.document.write(`
@@ -471,116 +481,434 @@ class DepartmentWeeklyManager {
             <head>
                 <meta charset="UTF-8">
                 <title>รายงานรายสัปดาห์ - ${this.department}</title>
-                <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+                <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
                 <style>
+                    :root {
+                        --primary: #4f46e5;
+                        --primary-light: #818cf8;
+                        --success: #10b981;
+                        --success-light: #d1fae5;
+                        --gray-50: #f8fafc;
+                        --gray-100: #f1f5f9;
+                        --gray-200: #e2e8f0;
+                        --gray-300: #cbd5e1;
+                        --gray-400: #94a3b8;
+                        --gray-500: #64748b;
+                        --gray-600: #475569;
+                        --gray-700: #334155;
+                        --gray-800: #1e293b;
+                    }
+                    
                     * { margin: 0; padding: 0; box-sizing: border-box; }
+                    
                     body { 
                         font-family: 'Sarabun', sans-serif; 
-                        padding: 30px; 
-                        color: #1e293b;
                         background: #fff;
+                        color: var(--gray-800);
+                        line-height: 1.5;
                     }
-                    .header { 
-                        text-align: center; 
-                        margin-bottom: 30px; 
-                        padding-bottom: 20px;
-                        border-bottom: 3px double #e2e8f0;
+                    
+                    .page-container {
+                        max-width: 1100px;
+                        margin: 0 auto;
+                        padding: 40px;
                     }
-                    .header h1 { 
-                        font-size: 22px; 
-                        font-weight: 700; 
-                        color: #1e40af;
+                    
+                    /* Header Section */
+                    .header {
+                        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%);
+                        color: white;
+                        padding: 30px 40px;
+                        border-radius: 20px;
+                        margin-bottom: 30px;
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    
+                    .header::before {
+                        content: '';
+                        position: absolute;
+                        top: -50%;
+                        right: -20%;
+                        width: 300px;
+                        height: 300px;
+                        background: rgba(255,255,255,0.1);
+                        border-radius: 50%;
+                    }
+                    
+                    .header::after {
+                        content: '';
+                        position: absolute;
+                        bottom: -30%;
+                        left: -10%;
+                        width: 200px;
+                        height: 200px;
+                        background: rgba(255,255,255,0.05);
+                        border-radius: 50%;
+                    }
+                    
+                    .header-content {
+                        position: relative;
+                        z-index: 1;
+                    }
+                    
+                    .header-icon {
+                        font-size: 48px;
+                        margin-bottom: 10px;
+                    }
+                    
+                    .header h1 {
+                        font-size: 26px;
+                        font-weight: 800;
+                        margin-bottom: 8px;
+                        letter-spacing: -0.5px;
+                    }
+                    
+                    .header .dept-name {
+                        font-size: 18px;
+                        font-weight: 600;
+                        opacity: 0.95;
+                        margin-bottom: 4px;
+                    }
+                    
+                    .header .date-range {
+                        font-size: 14px;
+                        opacity: 0.85;
+                        font-weight: 400;
+                    }
+                    
+                    /* Stats Section */
+                    .stats-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 20px;
+                        margin-bottom: 30px;
+                    }
+                    
+                    .stat-card {
+                        background: var(--gray-50);
+                        border: 2px solid var(--gray-100);
+                        border-radius: 16px;
+                        padding: 24px;
+                        text-align: center;
+                        transition: all 0.3s;
+                    }
+                    
+                    .stat-card.primary {
+                        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+                        border-color: #bfdbfe;
+                    }
+                    
+                    .stat-card.success {
+                        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+                        border-color: #a7f3d0;
+                    }
+                    
+                    .stat-card.purple {
+                        background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+                        border-color: #e9d5ff;
+                    }
+                    
+                    .stat-icon {
+                        font-size: 32px;
                         margin-bottom: 8px;
                     }
-                    .header p { 
-                        font-size: 14px; 
-                        color: #64748b; 
-                        margin: 4px 0;
-                    }
-                    .header .dept-name {
-                        font-size: 16px;
-                        font-weight: 600;
-                        color: #334155;
-                    }
-                    .stats {
-                        display: flex;
-                        justify-content: center;
-                        gap: 40px;
-                        margin: 20px 0;
-                        padding: 15px;
-                        background: #f8fafc;
-                        border-radius: 8px;
-                    }
-                    .stat-item {
-                        text-align: center;
-                    }
+                    
                     .stat-value {
                         font-size: 28px;
-                        font-weight: 700;
-                        color: #3b82f6;
+                        font-weight: 800;
+                        color: var(--gray-800);
+                        line-height: 1;
+                        margin-bottom: 6px;
                     }
+                    
+                    .stat-card.primary .stat-value { color: #2563eb; }
+                    .stat-card.success .stat-value { color: #059669; }
+                    .stat-card.purple .stat-value { color: #9333ea; }
+                    
                     .stat-label {
-                        font-size: 12px;
-                        color: #64748b;
-                    }
-                    table { 
-                        width: 100%; 
-                        border-collapse: collapse; 
-                        margin-top: 20px; 
-                        font-size: 13px; 
-                    }
-                    th, td { 
-                        border: 1px solid #e2e8f0; 
-                        padding: 10px 8px; 
-                        text-align: center; 
-                    }
-                    th { 
-                        background: linear-gradient(to bottom, #f1f5f9, #e2e8f0); 
+                        font-size: 13px;
                         font-weight: 600;
-                        color: #475569;
+                        color: var(--gray-500);
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
                     }
-                    th small {
+                    
+                    /* Table Section */
+                    .table-container {
+                        background: white;
+                        border-radius: 20px;
+                        overflow: hidden;
+                        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 10px 15px -3px rgba(0,0,0,0.05);
+                        border: 2px solid var(--gray-100);
+                    }
+                    
+                    .table-header {
+                        background: var(--gray-50);
+                        padding: 16px 24px;
+                        border-bottom: 2px solid var(--gray-100);
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    }
+                    
+                    .table-header h2 {
+                        font-size: 16px;
+                        font-weight: 700;
+                        color: var(--gray-700);
+                    }
+                    
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 13px;
+                    }
+                    
+                    thead th {
+                        background: linear-gradient(180deg, var(--gray-50) 0%, var(--gray-100) 100%);
+                        padding: 16px 12px;
+                        font-weight: 700;
+                        color: var(--gray-600);
+                        border-bottom: 2px solid var(--gray-200);
+                        text-align: center;
+                    }
+                    
+                    thead th:first-child {
+                        text-align: left;
+                        padding-left: 24px;
+                    }
+                    
+                    thead th .day-label {
                         display: block;
-                        font-weight: 400;
-                        font-size: 11px;
-                        color: #64748b;
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: var(--gray-700);
+                        margin-bottom: 2px;
                     }
-                    tr:nth-child(even) { background: #fafafa; }
-                    tr:hover { background: #f0f9ff; }
+                    
+                    thead th .date-label {
+                        display: block;
+                        font-size: 11px;
+                        font-weight: 500;
+                        color: var(--gray-400);
+                    }
+                    
+                    tbody tr {
+                        border-bottom: 1px solid var(--gray-100);
+                        transition: background 0.2s;
+                    }
+                    
+                    tbody tr:nth-child(even) {
+                        background: var(--gray-50);
+                    }
+                    
+                    tbody tr:hover {
+                        background: #f0f9ff;
+                    }
+                    
+                    tbody td {
+                        padding: 14px 12px;
+                        text-align: center;
+                        vertical-align: middle;
+                    }
+                    
+                    .teacher-cell {
+                        text-align: left !important;
+                        padding-left: 24px !important;
+                    }
+                    
+                    .teacher-info {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    }
+                    
+                    .teacher-num {
+                        width: 28px;
+                        height: 28px;
+                        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+                        color: white;
+                        border-radius: 8px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 12px;
+                        font-weight: 700;
+                    }
+                    
+                    .teacher-name {
+                        font-weight: 600;
+                        color: var(--gray-700);
+                    }
+                    
+                    .has-report {
+                        background: rgba(16, 185, 129, 0.05);
+                    }
+                    
+                    .period-badge {
+                        display: inline-block;
+                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        color: white;
+                        padding: 4px 10px;
+                        border-radius: 20px;
+                        font-size: 11px;
+                        font-weight: 600;
+                        margin: 2px;
+                        white-space: nowrap;
+                    }
+                    
+                    .no-report {
+                        color: var(--gray-300);
+                        font-size: 16px;
+                    }
+                    
+                    .total-cell {
+                        font-weight: 800;
+                        font-size: 16px;
+                        color: var(--primary);
+                        background: rgba(79, 70, 229, 0.05);
+                    }
+                    
+                    /* Footer */
                     .footer {
                         margin-top: 30px;
-                        padding-top: 20px;
-                        border-top: 1px solid #e2e8f0;
-                        text-align: center;
-                        font-size: 11px;
-                        color: #94a3b8;
+                        padding: 20px;
+                        background: var(--gray-50);
+                        border-radius: 12px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
                     }
-                    @media print { 
-                        body { padding: 15px; }
-                        .stats { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                        th { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    
+                    .footer-left {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        color: var(--gray-500);
+                        font-size: 12px;
+                    }
+                    
+                    .footer-right {
+                        font-size: 12px;
+                        color: var(--gray-400);
+                    }
+                    
+                    .legend {
+                        display: flex;
+                        align-items: center;
+                        gap: 16px;
+                        font-size: 12px;
+                        color: var(--gray-500);
+                    }
+                    
+                    .legend-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    }
+                    
+                    .legend-dot {
+                        width: 12px;
+                        height: 12px;
+                        border-radius: 50%;
+                    }
+                    
+                    .legend-dot.success { background: var(--success); }
+                    .legend-dot.empty { background: var(--gray-200); }
+                    
+                    @media print {
+                        body { 
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        .page-container { padding: 20px; }
+                        .header { 
+                            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%) !important;
+                            -webkit-print-color-adjust: exact !important;
+                        }
+                        .stat-card, .period-badge, .teacher-num, .total-cell, .has-report {
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
                     }
                 </style>
             </head>
             <body>
-                <div class="header">
-                    <h1>📊 สรุปรายงานการจัดการเรียนการสอนรายสัปดาห์</h1>
-                    <p class="dept-name">กลุ่มสาระการเรียนรู้${this.department}</p>
-                    <p>สัปดาห์ระหว่างวันที่ ${weekStart} - ${weekEnd}</p>
-                </div>
-                <div class="stats">
-                    <div class="stat-item">
-                        <div class="stat-value">${totalTeachers}</div>
-                        <div class="stat-label">จำนวนครู</div>
+                <div class="page-container">
+                    <div class="header">
+                        <div class="header-content">
+                            <h1>📚 สรุปรายงานการจัดการเรียนการสอนรายสัปดาห์</h1>
+                            <p class="dept-name">กลุ่มสาระการเรียนรู้${this.department}</p>
+                            <p class="date-range">📅 สัปดาห์ที่ ${weekStart} — ${weekEnd}</p>
+                        </div>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${totalReports}</div>
-                        <div class="stat-label">รายงานทั้งหมด</div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card primary">
+                            <div class="stat-value">${totalTeachers}</div>
+                            <div class="stat-label">👨‍🏫จำนวนครูในกลุ่มสาระ</div>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-value">${totalReports}</div>
+                            <div class="stat-label">📝รายงานการสอนทั้งหมด</div>
+                        </div>
+                        <div class="stat-card purple">
+                            <div class="stat-value">${avgPerTeacher}</div>
+                            <div class="stat-label">📊เฉลี่ยต่อคน</div>
+                        </div>
                     </div>
-                </div>
-                ${tableHtml}
-                <div class="footer">
-                    พิมพ์เมื่อ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    
+                    <div class="table-container">
+                        <div class="table-header">
+                            <span style="font-size:20px;">📋</span>
+                            <h2>ตารางสรุปรายงานการสอนรายบุคคล</h2>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:220px;">
+                                        <span class="day-label">ชื่อ-นามสกุล</span>
+                                        <span class="date-label">ครูผู้สอน</span>
+                                    </th>
+                                    ${weekDates.map(d => `
+                                        <th>
+                                            <span class="day-label">${this.formatDayName(d)}</span>
+                                            <span class="date-label">${this.formatThaiDate(d)}</span>
+                                        </th>
+                                    `).join('')}
+                                    <th style="width:70px;">
+                                        <span class="day-label">รวม</span>
+                                        <span class="date-label">ทั้งสัปดาห์</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="footer">
+                        <div class="legend">
+                            <div class="legend-item">
+                                <span class="legend-dot success"></span>
+                                <span>มีรายงานการสอน</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot empty"></span>
+                                <span>ไม่มีรายงาน</span>
+                            </div>
+                        </div>
+                        <div class="footer-right">
+                            🖨️ พิมพ์เมื่อ ${new Date().toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })}
+                        </div>
+                    </div>
                 </div>
             </body>
             </html>
@@ -589,6 +917,6 @@ class DepartmentWeeklyManager {
         setTimeout(() => {
             printWindow.print();
             printWindow.close();
-        }, 800);
+        }, 1000);
     }
 }
