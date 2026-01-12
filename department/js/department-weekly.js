@@ -80,7 +80,10 @@ class DepartmentWeeklyManager {
     }
 
     async loadWeeklyReport() {
-        if (!this.department) return;
+        if (!this.department) {
+            this.showNoData();
+            return;
+        }
 
         this.weekDates = this.getWeekDates();
         this.showLoading('กำลังโหลดรายงานรายสัปดาห์...');
@@ -95,12 +98,19 @@ class DepartmentWeeklyManager {
                 return;
             }
 
+            // Store for print
+            this.teachers = teachers;
+
             // Load reports
             const teacherIds = teachers.map(t => t.Teach_id).join(',');
             const rRes = await fetch(`${this.baseUrl}controllers/TeachingReportController.php?action=listByTeachers&teacher_ids=${encodeURIComponent(teacherIds)}&week_start=${this.formatISO(this.weekDates[0])}&week_end=${this.formatISO(this.weekDates[4])}`);
             const reports = await rRes.json();
 
+            // Store for print
+            this.reports = reports;
+
             this.renderTable(teachers, reports);
+            this.renderMobileCards(teachers, reports);
             this.renderChart(teachers, reports);
 
             document.getElementById('weeklySection')?.classList.remove('hidden');
@@ -175,6 +185,92 @@ class DepartmentWeeklyManager {
             tr.innerHTML = rowHtml;
             tbody.appendChild(tr);
         });
+    }
+
+    renderMobileCards(teachers, reports) {
+        const container = document.getElementById('weeklyMobileCards');
+        if (!container) return;
+
+        // Group reports by teacher and date
+        const reportMap = {};
+        reports.forEach(r => {
+            if (!reportMap[r.teacher_id]) reportMap[r.teacher_id] = {};
+            if (!reportMap[r.teacher_id][r.report_date]) reportMap[r.teacher_id][r.report_date] = [];
+            reportMap[r.teacher_id][r.report_date].push(r);
+        });
+
+        container.innerHTML = '';
+
+        teachers.forEach(t => {
+            // Count total reports for this teacher
+            const teacherReports = reportMap[t.Teach_id] || {};
+            const totalReports = Object.values(teacherReports).reduce((sum, arr) => sum + arr.length, 0);
+
+            const card = document.createElement('div');
+            card.className = 'glass rounded-3xl p-5 border border-white/20 shadow-lg';
+
+            let cardHtml = `
+                <div class="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-blue-500/20">
+                        ${t.Teach_name.charAt(0)}
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-slate-800 dark:text-white">${t.Teach_name}</h3>
+                        <p class="text-xs text-slate-500">รายงานสัปดาห์นี้ <span class="font-bold text-blue-600">${totalReports}</span> รายการ</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+            `;
+
+            // Render each day
+            this.weekDates.forEach(d => {
+                const dateStr = this.formatISO(d);
+                const dayReports = (reportMap[t.Teach_id] && reportMap[t.Teach_id][dateStr]) ? reportMap[t.Teach_id][dateStr] : [];
+
+                cardHtml += `
+                    <div class="flex items-start gap-3 p-3 rounded-2xl ${dayReports.length > 0 ? 'bg-emerald-50/50 dark:bg-emerald-900/20' : 'bg-slate-50/50 dark:bg-slate-800/30'}">
+                        <div class="text-center min-w-[50px]">
+                            <p class="text-[10px] font-black text-slate-400 uppercase">${this.formatDayName(d)}</p>
+                            <p class="text-xs font-bold text-slate-600 dark:text-slate-300">${d.getDate()}</p>
+                        </div>
+                        <div class="flex-1 flex flex-wrap gap-1.5">
+                `;
+
+                if (dayReports.length > 0) {
+                    dayReports.forEach(r => {
+                        cardHtml += `
+                            <button onclick="window.manager.showDetail(${r.id})" class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 dark:bg-emerald-800/40 text-emerald-700 dark:text-emerald-300 rounded-lg text-[10px] font-bold border border-emerald-200 dark:border-emerald-700 hover:bg-emerald-200 active:scale-95 transition-all">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                คาบ ${r.period_start}-${r.period_end}
+                            </button>
+                        `;
+                    });
+                } else {
+                    cardHtml += `<span class="text-xs text-slate-400 italic">ไม่มีรายงาน</span>`;
+                }
+
+                cardHtml += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            cardHtml += `
+                </div>
+            `;
+
+            card.innerHTML = cardHtml;
+            container.appendChild(card);
+        });
+
+        // Add hint at bottom
+        const hint = document.createElement('div');
+        hint.className = 'flex items-center gap-2 px-4 py-3 bg-slate-100/50 dark:bg-slate-800/50 rounded-2xl';
+        hint.innerHTML = `
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-xs text-slate-500 font-medium">แตะที่ "คาบสอน" เพื่อดูรายละเอียด</span>
+        `;
+        container.appendChild(hint);
     }
 
     renderChart(teachers, reports) {
@@ -320,33 +416,172 @@ class DepartmentWeeklyManager {
 
     printWeekly() {
         const weekDates = this.weekDates;
+        if (!weekDates || weekDates.length === 0) {
+            Swal.fire('ไม่สามารถพิมพ์ได้', 'กรุณาโหลดข้อมูลก่อน', 'warning');
+            return;
+        }
+
         const weekStart = this.formatThaiDateLong(weekDates[0]);
         const weekEnd = this.formatThaiDateLong(weekDates[weekDates.length - 1]);
-        const tableContent = document.getElementById('weeklyTable').outerHTML;
+        const totalReports = this.reports ? this.reports.length : 0;
+        const totalTeachers = this.teachers ? this.teachers.length : 0;
+
+        // Build print-friendly table
+        let tableHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align:left;width:200px;">ชื่อ-นามสกุล ครู</th>
+        `;
+        weekDates.forEach(d => {
+            tableHtml += `<th>${this.formatDayName(d)}<br><small>${this.formatThaiDate(d)}</small></th>`;
+        });
+        tableHtml += `<th>รวม</th></tr></thead><tbody>`;
+
+        // Group reports
+        const reportMap = {};
+        (this.reports || []).forEach(r => {
+            if (!reportMap[r.teacher_id]) reportMap[r.teacher_id] = {};
+            if (!reportMap[r.teacher_id][r.report_date]) reportMap[r.teacher_id][r.report_date] = [];
+            reportMap[r.teacher_id][r.report_date].push(r);
+        });
+
+        (this.teachers || []).forEach(t => {
+            let rowTotal = 0;
+            tableHtml += `<tr><td style="text-align:left;font-weight:bold;">${t.Teach_name}</td>`;
+            weekDates.forEach(d => {
+                const dateStr = this.formatISO(d);
+                const dayReports = (reportMap[t.Teach_id] && reportMap[t.Teach_id][dateStr]) ? reportMap[t.Teach_id][dateStr] : [];
+                rowTotal += dayReports.length;
+                if (dayReports.length > 0) {
+                    const periods = dayReports.map(r => `คาบ ${r.period_start}-${r.period_end}`).join(', ');
+                    tableHtml += `<td style="background:#ecfdf5;color:#059669;">${periods}</td>`;
+                } else {
+                    tableHtml += `<td style="color:#cbd5e1;">-</td>`;
+                }
+            });
+            tableHtml += `<td style="font-weight:bold;color:#3b82f6;">${rowTotal}</td></tr>`;
+        });
+        tableHtml += `</tbody></table>`;
 
         const printWindow = window.open('', '', 'width=1200,height=800');
         printWindow.document.write(`
-            <html>
+            <!DOCTYPE html>
+            <html lang="th">
             <head>
+                <meta charset="UTF-8">
                 <title>รายงานรายสัปดาห์ - ${this.department}</title>
+                <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
                 <style>
-                    body { font-family: 'Sarabun', sans-serif; padding: 40px; }
-                    .header { text-align: center; margin-bottom: 40px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-                    th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-                    th { background-color: #f8fafc; font-weight: bold; }
-                    .teacher-name { text-align: left; font-weight: bold; }
-                    button { display: none; }
-                    @media print { .no-print { display: none; } }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { 
+                        font-family: 'Sarabun', sans-serif; 
+                        padding: 30px; 
+                        color: #1e293b;
+                        background: #fff;
+                    }
+                    .header { 
+                        text-align: center; 
+                        margin-bottom: 30px; 
+                        padding-bottom: 20px;
+                        border-bottom: 3px double #e2e8f0;
+                    }
+                    .header h1 { 
+                        font-size: 22px; 
+                        font-weight: 700; 
+                        color: #1e40af;
+                        margin-bottom: 8px;
+                    }
+                    .header p { 
+                        font-size: 14px; 
+                        color: #64748b; 
+                        margin: 4px 0;
+                    }
+                    .header .dept-name {
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: #334155;
+                    }
+                    .stats {
+                        display: flex;
+                        justify-content: center;
+                        gap: 40px;
+                        margin: 20px 0;
+                        padding: 15px;
+                        background: #f8fafc;
+                        border-radius: 8px;
+                    }
+                    .stat-item {
+                        text-align: center;
+                    }
+                    .stat-value {
+                        font-size: 28px;
+                        font-weight: 700;
+                        color: #3b82f6;
+                    }
+                    .stat-label {
+                        font-size: 12px;
+                        color: #64748b;
+                    }
+                    table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin-top: 20px; 
+                        font-size: 13px; 
+                    }
+                    th, td { 
+                        border: 1px solid #e2e8f0; 
+                        padding: 10px 8px; 
+                        text-align: center; 
+                    }
+                    th { 
+                        background: linear-gradient(to bottom, #f1f5f9, #e2e8f0); 
+                        font-weight: 600;
+                        color: #475569;
+                    }
+                    th small {
+                        display: block;
+                        font-weight: 400;
+                        font-size: 11px;
+                        color: #64748b;
+                    }
+                    tr:nth-child(even) { background: #fafafa; }
+                    tr:hover { background: #f0f9ff; }
+                    .footer {
+                        margin-top: 30px;
+                        padding-top: 20px;
+                        border-top: 1px solid #e2e8f0;
+                        text-align: center;
+                        font-size: 11px;
+                        color: #94a3b8;
+                    }
+                    @media print { 
+                        body { padding: 15px; }
+                        .stats { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        th { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    }
                 </style>
             </head>
             <body>
                 <div class="header">
-                    <h2>สรุปรายงานการจัดการเรียนการสอนรายสัปดาห์</h2>
-                    <p>กลุ่มสาระการเรียนรู้${this.department}</p>
-                    <p>สัปดาห์ระหว่างวันที่ ${weekStart} ถึง ${weekEnd}</p>
+                    <h1>📊 สรุปรายงานการจัดการเรียนการสอนรายสัปดาห์</h1>
+                    <p class="dept-name">กลุ่มสาระการเรียนรู้${this.department}</p>
+                    <p>สัปดาห์ระหว่างวันที่ ${weekStart} - ${weekEnd}</p>
                 </div>
-                ${tableContent}
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value">${totalTeachers}</div>
+                        <div class="stat-label">จำนวนครู</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${totalReports}</div>
+                        <div class="stat-label">รายงานทั้งหมด</div>
+                    </div>
+                </div>
+                ${tableHtml}
+                <div class="footer">
+                    พิมพ์เมื่อ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
             </body>
             </html>
         `);
@@ -354,6 +589,6 @@ class DepartmentWeeklyManager {
         setTimeout(() => {
             printWindow.print();
             printWindow.close();
-        }, 500);
+        }, 800);
     }
 }

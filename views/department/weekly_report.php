@@ -36,9 +36,11 @@
         </div>
     </div>
 
-    <!-- Main Content Table -->
+    <!-- Main Content -->
     <div id="weeklySection" class="hidden space-y-8 fade-in">
-        <div class="glass rounded-[2.5rem] border border-white/20 shadow-xl overflow-hidden">
+        
+        <!-- Desktop Table View (hidden on mobile) -->
+        <div class="hidden md:block glass rounded-[2.5rem] border border-white/20 shadow-xl overflow-hidden">
             <div class="overflow-x-auto">
                 <table id="weeklyTable" class="w-full text-sm">
                     <thead>
@@ -57,13 +59,18 @@
             </div>
         </div>
 
+        <!-- Mobile Card View (shown only on mobile) -->
+        <div id="weeklyMobileCards" class="md:hidden space-y-4">
+            <!-- JS Filled - Cards for each teacher -->
+        </div>
+
         <!-- Weekly Stats Chart -->
-        <div class="glass rounded-[2.5rem] p-8 border border-white/20 shadow-xl">
-            <h3 class="text-xl font-black mb-8 flex items-center gap-3">
+        <div class="glass rounded-[2.5rem] p-6 md:p-8 border border-white/20 shadow-xl">
+            <h3 class="text-lg md:text-xl font-black mb-6 md:mb-8 flex items-center gap-3">
                 <span class="w-2 h-8 bg-blue-500 rounded-full"></span>
                 วิเคราะห์ความหนาแน่นรายวัน
             </h3>
-            <div class="h-[300px]">
+            <div class="h-[250px] md:h-[300px]">
                 <canvas id="weeklyChartCanvas"></canvas>
             </div>
         </div>
@@ -74,6 +81,11 @@
         <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">📭</div>
         <h2 class="text-2xl font-black text-slate-400">ไม่พบข้อมูลรายงานในสัปดาห์นี้</h2>
         <p class="text-slate-500 mt-2 font-medium">กรุณาเลือกสัปดาห์อื่นหรือตรวจสอบภายหลัง</p>
+        <?php if (empty($department)): ?>
+        <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+            <p class="text-amber-700 text-sm font-medium">⚠️ ไม่พบข้อมูลกลุ่มสาระของคุณในระบบ กรุณาติดต่อผู้ดูแลระบบ</p>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 

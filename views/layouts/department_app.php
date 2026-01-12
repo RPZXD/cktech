@@ -8,8 +8,9 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check login and role
-if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'หัวหน้ากลุ่มสาระ') {
+// Check login and role (allow: หัวหน้ากลุ่มสาระ, admin, ผู้บริหาร)
+$allowedDepartmentRoles = ['หัวหน้ากลุ่มสาระ', 'admin', 'ผู้บริหาร'];
+if (!isset($_SESSION['username']) || !isset($_SESSION['role']) || !in_array($_SESSION['role'], $allowedDepartmentRoles)) {
     header('Location: ../login.php');
     exit;
 }
@@ -87,6 +88,9 @@ $global = $config['global'];
     
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     
     <style>
         * {
