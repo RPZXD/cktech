@@ -56,7 +56,7 @@ class DepartmentSupervisionManager {
     async loadSupervisions() {
         this.showLoading('กำลังโหลดข้อมูลการนิเทศ...');
         try {
-            const response = await fetch(`${this.baseUrl}controllers/SupervisionController.php?action=list_by_department&department=${encodeURIComponent(this.department)}`);
+            const response = await fetch(`${this.baseUrl}controllers/SupervisionController.php?action=list&subject_group=${encodeURIComponent(this.department)}`);
             this.supervisions = await response.json();
             this.renderTable(this.supervisions);
             this.updateStats(this.supervisions);

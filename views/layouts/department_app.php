@@ -31,7 +31,7 @@ $global = $config['global'];
     <link href="https://fonts.googleapis.com/css2?family=Mali:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../plugins/fontawesome-free/css/all.min.css">
     
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
