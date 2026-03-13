@@ -22,15 +22,17 @@ class User
         if ($role === 'นักเรียน') {
             $student = $db->getStudentByUsername($username);
             if ($student) {
-                // ถ้า Stu_password ว่าง ให้ return 'change_password'
+                // ถ้า Stu_password ว่าง (ยังไม่ได้ตั้งรหัสผ่านใหม่) ให้เช็คกับรหัสผ่านเริ่มต้น (Stu_id)
                 if (empty($student['Stu_password'])) {
-                    return 'change_password';
-                }
-                // เปรียบเทียบรหัสผ่าน (plain text)
-                if ($password === $student['Stu_password']) {
-                    // เพิ่ม role_edoc = 'STU' เพื่อความสอดคล้อง
-                    $student['role_ckteach'] = 'STU';
-                    return $student;
+                    if ($password === $student['Stu_id']) {
+                        return 'change_password';
+                    }
+                } else {
+                    // เปรียบเทียบรหัสผ่าน (รองรับทั้ง plain text และ hashed)
+                    if ($password === $student['Stu_password'] || password_verify($password, $student['Stu_password'])) {
+                        $student['role_ckteach'] = 'STU';
+                        return $student;
+                    }
                 }
             }
             return false;
@@ -39,15 +41,20 @@ class User
         $user = $db->getTeacherByUsername($username);
 
         if ($user) {
-            // ถ้า password ว่าง ให้ return 'change_password'
+            // ถ้า password ว่าง (ยังไม่ได้ตั้งรหัสผ่านใหม่) ให้เช็คกับรหัสผ่านเริ่มต้น
             if (empty($user['password'])) {
-                return 'change_password';
-            }
-            if (
-                password_verify($password, $user['password']) &&
-                self::roleMatch($user['role_ckteach'], $role)
-            ) {
-                return $user;
+                // ต้องระบุรหัสผ่านเริ่มต้นให้ถูกต้อง (Teach_id หรือ Teach_password) ถึงจะให้ไปเปลี่ยนรหัสผ่าน
+                if ($password === $user['Teach_id'] || (isset($user['Teach_password']) && $password === $user['Teach_password'])) {
+                    return 'change_password';
+                }
+            } else {
+                // ถ้ามีรหัสผ่านแบบ hash แล้ว ให้ตรวจสอบด้วย password_verify
+                if (
+                    password_verify($password, $user['password']) &&
+                    self::roleMatch($user['role_ckteach'], $role)
+                ) {
+                    return $user;
+                }
             }
         }
         return false;
