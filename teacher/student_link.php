@@ -25,10 +25,33 @@ $config = json_decode(file_get_contents(__DIR__ . '/../config.json'), true);
 $global = $config['global'];
 $pageTitle = "วิเคราะห์ผู้เรียนรายบุคคล";
 
-// Teacher Info from session
-$teacherId = $_SESSION['user']['Teach_id'] ?? ($_SESSION['username'] ?? null);
-$teacherName = $_SESSION['user']['Teach_name'] ?? ($_SESSION['username'] ?? '');
-$teacherMajor = $_SESSION['user']['Teach_major'] ?? '';
+// Database Connections
+require_once __DIR__ . '/../classes/DatabaseTeachingReport.php';
+require_once __DIR__ . '/../classes/DatabaseUsers.php';
+require_once __DIR__ . '/../models/Subject.php';
+use App\DatabaseTeachingReport;
+use App\DatabaseUsers;
+use App\Models\Subject;
+
+$db = new DatabaseTeachingReport();
+$dbUsers = new DatabaseUsers();
+$pdo = $db->getPDO();
+$subjectModel = new Subject($pdo);
+
+// Teacher Info - be robust about fetching the ID
+$username = $_SESSION['username'];
+$teacherData = $dbUsers->getTeacherByUsername($username);
+$teacherId = $teacherData['Teach_id'] ?? ($_SESSION['user']['Teach_id'] ?? null);
+$teacherName = $teacherData['Teach_name'] ?? ($_SESSION['user']['Teach_name'] ?? $username);
+
+error_log("[STUDENT_LINK] Username: $username, Resolved Teacher ID: $teacherId");
+
+// Fetch teacher's subjects for the dropdowns and links
+$subjects = [];
+if ($teacherId) {
+    $subjects = $subjectModel->getAllByTeacher($teacherId);
+}
+error_log("[STUDENT_LINK] Found " . count($subjects) . " subjects");
 
 // Set Base URL for student links
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";

@@ -55,7 +55,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // รองรับ GET (optional) สำหรับดึงข้อมูลรายวิชา
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['subject_id'])) {
     $subject_id = intval($_GET['subject_id']);
+    error_log("[STUDENT_ANALYZE] Fetching data for subject_id: " . $subject_id);
     $result = $model->getBySubject($subject_id);
+    error_log("[STUDENT_ANALYZE] Found " . count($result) . " students");
     echo json_encode(['success' => true, 'data' => $result]);
     exit;
 }
