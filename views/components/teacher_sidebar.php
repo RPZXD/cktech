@@ -29,10 +29,18 @@ $menuItems = [
         'gradient' => ['from' => 'blue-500', 'to' => 'indigo-600'],
         'submenu' => [
             ['name' => 'บันทึกรายงาน', 'url' => 'teaching-report.php', 'icon' => 'fa-edit'],
+            ['name' => 'สรุปข้อมูลการสอน', 'url' => 'report.php', 'icon' => 'fa-chart-pie'],
             ['name' => 'ปฏิทินการบันทึก', 'url' => 'calendar.php', 'icon' => 'fa-calendar'],
             ['name' => 'สมุดเช็คชื่อรายเดือน', 'url' => 'attendance.php', 'icon' => 'fa-clipboard-check'],
             ['name' => 'จัดการรายวิชา', 'url' => 'subject.php', 'icon' => 'fa-book'],
         ]
+    ],
+    [
+        'key' => 'student_analysis',
+        'name' => 'วิเคราะห์ผู้เรียนรายบุคคล',
+        'url' => 'student_link.php',
+        'icon' => 'fa-users-cog',
+        'gradient' => ['from' => 'cyan-500', 'to' => 'blue-600'],
     ],
     [
         'key' => 'supervision',
