@@ -43,8 +43,9 @@ $username = $_SESSION['username'];
 $teacherData = $dbUsers->getTeacherByUsername($username);
 $teacherId = $teacherData['Teach_id'] ?? ($_SESSION['user']['Teach_id'] ?? null);
 $teacherName = $teacherData['Teach_name'] ?? ($_SESSION['user']['Teach_name'] ?? $username);
+$teacherMajor = $teacherData['Teach_major'] ?? ($teacherData['Teach_department'] ?? 'ไม่ระบุ');
 
-error_log("[STUDENT_LINK] Username: $username, Resolved Teacher ID: $teacherId");
+error_log("[STUDENT_LINK] Username: $username, Resolved Teacher ID: $teacherId, Major: $teacherMajor");
 
 // Fetch teacher's subjects for the dropdowns and links
 $subjects = [];

@@ -21,7 +21,111 @@
         background: rgba(15, 23, 42, 0.5);
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
+
+    /* Print Styles */
+    @media print {
+        body {
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Hide UI Elements */
+        nav,
+        footer,
+        .sidebar,
+        aside,
+        .sidebar-item,
+        .teacher-sidebar,
+        #sidebar,
+        #sidebar-overlay,
+        .content-header,
+        #studentTabs,
+        .aurora-wrapper > .glass,
+        #tab-link,
+        .p-0.mb-6,
+        .flex-col.lg\:flex-row,
+        .bg-slate-50,
+        .flex.flex-col,
+        .ml-64,
+        #reportSubject,
+        #printReportBtn,
+        #excelReportBtn,
+        #allSubject,
+        #searchStudent,
+        #printAllBtn,
+        #excelAllBtn,
+        .lg\:pt-5,
+        .pt-5,
+        .btn-delete {
+            display: none !important;
+        }
+
+        /* Show active tab content */
+        .tab-content:not(.hidden) {
+            display: block !important;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+
+        /* Adjust Layout for Print */
+        .glass {
+            background: none !important;
+            backdrop-filter: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+
+        .lg\:ml-64 {
+            margin-left: 0 !important;
+        }
+
+        .p-4,
+        .md\:p-6,
+        .lg\:p-8 {
+            padding: 0 !important;
+        }
+
+        /* Chart container adjustment for print */
+        canvas {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        .grid {
+            display: block !important;
+        }
+
+        .grid > div {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+
+        /* Report Header (Hidden in Screen, Show in Print) */
+        .print-only-header {
+            display: block !important;
+        }
+    }
+
+    .print-only-header {
+        display: none;
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #000;
+        color: #000;
+    }
 </style>
+
+<!-- Print Only Header -->
+<div class="print-only-header">
+    <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">แบบสรุปวิเคราะห์ผู้เรียนรายบุคคล</h1>
+    <p style="font-size: 16px;"><?= htmlspecialchars($global['nameschool']) ?></p>
+    <p style="font-size: 14px;">ครูผู้สอน: <?= htmlspecialchars($teacherName) ?> | กลุ่มสาระฯ: <?= htmlspecialchars($teacherMajor ?: '-') ?></p>
+</div>
 
 <div class="content-header p-0 mb-6">
     <div class="container-fluid">
@@ -199,6 +303,9 @@
 </div>
 
 <!-- JS Logic -->
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- XLSX Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -519,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $.getJSON('../controllers/StudentAnalyzeController.php?subject_id=' + subjectId, (res) => {
             const data = res.data;
             let exportData = [];
-            if(type === 'all') {
+            if (type === 'all') {
                 exportData = data.map(s => ({
                     'เลขที่': s.student_no,
                     'ชื่อ-สกุล': `${s.prefix}${s.student_firstname} ${s.student_lastname}`,
@@ -535,9 +642,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     'อาศัยกับ': s.live_with
                 }));
             } else {
-                // Summary/Stats Logic
-                exportData = [{ '📈 สถิติผู้เรียน': 'สรุปผลวิเคราะห์ผู้เรียนรายบุคคล' }, {}];
-                // Add statistical rows here...
+                // Summary/Stats Processing
+                let male = 0, female = 0, other = 0;
+                let roomSet = new Set();
+                let gpaArr = [], gradeArr = [], weightArr = [], heightArr = [];
+                
+                data.forEach(s => {
+                    if (s.prefix.includes('ด.ช.') || s.prefix.includes('นาย')) male++;
+                    else if (s.prefix.includes('ด.ญ.') || s.prefix.includes('น.ส.')) female++;
+                    else other++;
+                    roomSet.add(s.student_level_room);
+                    if (s.gpa) gpaArr.push(parseFloat(s.gpa));
+                    if (s.last_com_grade) gradeArr.push(parseFloat(s.last_com_grade));
+                    if (s.weight) weightArr.push(parseFloat(s.weight));
+                    if (s.height) heightArr.push(parseFloat(s.height));
+                });
+
+                const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : '-';
+
+                exportData = [
+                    { '📊 หัวข้อ': 'สรุปสรุปผลวิเคราะห์ผู้เรียนรายบุคคล', 'ค่าสถิติ': '' },
+                    { '📊 หัวข้อ': 'จำนวนนักเรียนทั้งหมด', 'ค่าสถิติ': data.length + ' คน' },
+                    { '📊 หัวข้อ': 'เพศชาย', 'ค่าสถิติ': male + ' คน' },
+                    { '📊 หัวข้อ': 'เพศหญิง', 'ค่าสถิติ': female + ' คน' },
+                    { '📊 หัวข้อ': 'เพศอื่นๆ', 'ค่าสถิติ': other + ' คน' },
+                    { '📊 หัวข้อ': 'จำนวนห้องเรียน', 'ค่าสถิติ': roomSet.size + ' ห้อง' },
+                    {},
+                    { '📊 หัวข้อ': 'เกรดเฉลี่ย (GPA) เฉลี่ย', 'ค่าสถิติ': avg(gpaArr) },
+                    { '📊 หัวข้อ': 'เกรดวิชาคอมพิวเตอร์เฉลี่ย', 'ค่าสถิติ': avg(gradeArr) },
+                    { '📊 หัวข้อ': 'น้ำหนักเฉลี่ย', 'ค่าสถิติ': avg(weightArr) + ' กก.' },
+                    { '📊 หัวข้อ': 'ส่วนสูงเฉลี่ย', 'ค่าสถิติ': avg(heightArr) + ' ซม.' }
+                ];
             }
 
             const ws = XLSX.utils.json_to_sheet(exportData);
