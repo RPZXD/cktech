@@ -1283,25 +1283,30 @@
                 });
                 await document.fonts.ready;
 
-                // Capture with html2canvas (higher quality)
+                // Capture with html2canvas (optimized for large images)
                 const canvas = await html2canvas(container, {
-                    scale: 2.5,
+                    scale: 2.0, // Reduced from 2.5 to save memory
                     useCORS: true,
                     backgroundColor: '#ffffff',
                     logging: false,
-                    imageTimeout: 15000,
-                    allowTaint: false
+                    imageTimeout: 30000, // Increased timeout for large images
+                    allowTaint: false,
+                    removeContainer: true
                 });
 
-                const imgData = canvas.toDataURL('image/png');
-                const imgWidth = pdfWidth - 10; // Smaller margin
+                // Use JPEG with 0.7 compression instead of PNG to drastically reduce memory usage
+                const imgData = canvas.toDataURL('image/jpeg', 0.7);
+                const imgWidth = pdfWidth - 10;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
                 if (page > 0) doc.addPage();
                 doc.addImage(imgData, 'JPEG', 5, 5, imgWidth, imgHeight);
+
+                // Clean up current page and wait briefly for garbage collection
+                container.innerHTML = '';
+                await new Promise(resolve => setTimeout(resolve, 150)); 
             }
 
-            container.innerHTML = '';
             const filename = `certificate_report_${printYear || 'all'}_${new Date().getTime()}.pdf`;
             doc.save(filename);
 
