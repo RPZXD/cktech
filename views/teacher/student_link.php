@@ -244,6 +244,12 @@
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <div class="flex-1 space-y-1">
+                    <label class="block text-xs font-bold text-gray-500 uppercase">เทอม/ปีการศึกษา</label>
+                    <select id="reportTermYear" class="w-full glass-input rounded-xl px-4 py-2.5 font-bold text-slate-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-400 outline-none">
+                        <option value="">-- ทั้งหมด --</option>
+                    </select>
+                </div>
                 <div class="flex items-center gap-3 pt-5">
                     <button id="printReportBtn" class="flex-1 md:flex-none inline-flex items-center px-5 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-xl font-bold shadow-lg transition-all hover:-translate-y-1">
                         <i class="fas fa-print mr-2"></i> พิมพ์รายงาน
@@ -272,6 +278,12 @@
                         <?php foreach ($subjects as $sub): ?>
                             <option value="<?= $sub['id'] ?>"><?= htmlspecialchars($sub['name']) ?> (<?= htmlspecialchars($sub['code']) ?>)</option>
                         <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="flex-1 space-y-1">
+                    <label class="block text-xs font-bold text-gray-500 uppercase">เทอม/ปีการศึกษา</label>
+                    <select id="allTermYear" class="w-full glass-input rounded-xl px-4 py-2.5 font-bold text-slate-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-400 outline-none">
+                        <option value="">-- ทั้งหมด --</option>
                     </select>
                 </div>
                 <div class="flex-1 space-y-1">
@@ -312,6 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const teacherMajor = <?= json_encode($teacherMajor) ?>;
     const teacherName = <?= json_encode($teacherName) ?>;
     const subjects = <?= json_encode($subjects) ?>;
+    const currentTermYear = <?= json_encode($currentTermYear ?? '') ?>;
     
     // Tab Controller
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -345,6 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // --- Report / Charts Logic ---
+    let reportDataCache = [];
     $('#reportSubject').on('change', function() {
         const subjectId = $(this).val();
         const area = $('#reportContent');
@@ -358,161 +372,195 @@ document.addEventListener('DOMContentLoaded', function() {
         $.getJSON('../controllers/StudentAnalyzeController.php?subject_id=' + subjectId, function(res) {
             if (!res.success || !res.data.length) {
                 area.html('<div class="flex flex-col items-center justify-center py-20 text-rose-500/50 space-y-4"><i class="fas fa-exclamation-circle text-6xl opacity-20"></i><p class="font-bold">ไม่พบข้อมูลนักเรียนในรายวิชานี้</p></div>');
+                reportDataCache = [];
+                updateReportTermDropdown([]);
                 return;
             }
-
-            // Stats Processing
-            let male = 0, female = 0, other = 0;
-            let likeSubjects = {}, gpaArr = [], gradeArr = [];
-            let weightArr = [], heightArr = [];
-            let roomSet = new Set();
-            let diseaseMap = {}, activityMap = {}, skillMap = {}, liveWithMap = {};
-
-            res.data.forEach(s => {
-                // Gender
-                if (s.prefix.includes('ด.ช.') || s.prefix.includes('นาย')) male++;
-                else if (s.prefix.includes('ด.ญ.') || s.prefix.includes('น.ส.') || s.prefix.includes('นาง')) female++;
-                else other++;
-
-                // Academics
-                if (s.gpa) gpaArr.push(parseFloat(s.gpa));
-                if (s.last_com_grade) gradeArr.push(parseFloat(s.last_com_grade));
-                roomSet.add(s.student_level_room);
-
-                // Subjects
-                (s.like_subjects || '').split(',').forEach(sub => {
-                    sub = sub.trim();
-                    if (sub) likeSubjects[sub] = (likeSubjects[sub] || 0) + 1;
-                });
-
-                // Body
-                if (s.weight) weightArr.push(parseFloat(s.weight));
-                if (s.height) heightArr.push(parseFloat(s.height));
-
-                // Extras
-                if (s.disease) diseaseMap[s.disease] = (diseaseMap[s.disease] || 0) + 1;
-                (s.favorite_activity || '').split(',').forEach(a => { a = a.trim(); if(a) activityMap[a] = (activityMap[a] || 0) + 1; });
-                (s.special_skill || '').split(',').forEach(sk => { sk = sk.trim(); if(sk) skillMap[sk] = (skillMap[sk] || 0) + 1; });
-                if (s.live_with) liveWithMap[s.live_with] = (liveWithMap[s.live_with] || 0) + 1;
-            });
-
-            const avgGpa = gpaArr.length ? (gpaArr.reduce((a, b) => a + b, 0) / gpaArr.length).toFixed(2) : '-';
-            const avgGrade = gradeArr.length ? (gradeArr.reduce((a, b) => a + b, 0) / gradeArr.length).toFixed(2) : '-';
-
-            // Top lists
-            const topLikes = Object.entries(likeSubjects).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            
-            // Render View
-            area.html(`
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div class="glass p-5 rounded-2xl border-l-4 border-blue-500 shadow-sm transition-transform hover:-translate-y-1">
-                        <p class="text-[10px] font-black uppercase text-blue-500 tracking-wider">นักเรียนทั้งหมด</p>
-                        <h4 class="text-3xl font-black text-slate-800 dark:text-white mt-1">${res.data.length} <span class="text-xs font-bold text-gray-400">คน</span></h4>
-                    </div>
-                    <div class="glass p-5 rounded-2xl border-l-4 border-emerald-500 shadow-sm transition-transform hover:-translate-y-1">
-                        <p class="text-[10px] font-black uppercase text-emerald-500 tracking-wider">เกรดเฉลี่ย (GPA)</p>
-                        <h4 class="text-3xl font-black text-slate-800 dark:text-white mt-1">${avgGpa}</h4>
-                    </div>
-                    <div class="glass p-5 rounded-2xl border-l-4 border-purple-500 shadow-sm transition-transform hover:-translate-y-1">
-                        <p class="text-[10px] font-black uppercase text-purple-500 tracking-wider">เกรดเฉลี่ยวิชา</p>
-                        <h4 class="text-3xl font-black text-slate-800 dark:text-white mt-1">${avgGrade}</h4>
-                    </div>
-                    <div class="glass p-5 rounded-2xl border-l-4 border-amber-500 shadow-sm transition-transform hover:-translate-y-1">
-                        <p class="text-[10px] font-black uppercase text-amber-500 tracking-wider">ห้องเรียน</p>
-                        <h4 class="text-3xl font-black text-slate-800 dark:text-white mt-1">${roomSet.size} <span class="text-xs font-bold text-gray-400">ห้อง</span></h4>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="glass p-6 rounded-3xl">
-                        <h5 class="font-bold text-slate-700 dark:text-gray-200 mb-6 flex items-center gap-2">
-                             📌 สัดส่วนเพศนักเรียน
-                        </h5>
-                        <div class="h-[250px] relative">
-                            <canvas id="genderChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="glass p-6 rounded-3xl">
-                        <h5 class="font-bold text-slate-700 dark:text-gray-200 mb-6 flex items-center gap-2">
-                             🏆 วิชาที่นักเรียนชอบมากที่สุด
-                        </h5>
-                        <div class="h-[250px] relative">
-                            <canvas id="topSubjectsChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                    <div class="glass p-6 rounded-2xl bg-indigo-50/30 dark:bg-indigo-900/10">
-                        <h6 class="font-bold text-indigo-700 dark:text-indigo-400 mb-3 uppercase text-[10px] tracking-widest">🩺 สถิติสุขภาพ</h6>
-                        <ul class="space-y-2">
-                            <li class="flex justify-between"><span>น้ำหนักเฉลี่ย:</span> <span class="font-bold">${weightArr.length ? (weightArr.reduce((a,b)=>a+b,0)/weightArr.length).toFixed(1) : '-'} กก.</span></li>
-                            <li class="flex justify-between"><span>ส่วนสูงเฉลี่ย:</span> <span class="font-bold">${heightArr.length ? (heightArr.reduce((a,b)=>a+b,0)/heightArr.length).toFixed(1) : '-'} ซม.</span></li>
-                            <li class="mt-4 text-xs font-bold text-gray-400">โรคประจำตัวเด่น:</li>
-                            ${Object.keys(diseaseMap).slice(0,3).map(d => `<li class="text-xs text-slate-600 dark:text-gray-400">• ${d} (${diseaseMap[d]} คน)</li>`).join('') || '<li class="text-xs text-gray-400 italic font-normal">• ไม่มีข้อมูล</li>'}
-                        </ul>
-                    </div>
-                    <div class="glass p-6 rounded-2xl bg-fuchsia-50/30 dark:bg-fuchsia-900/10">
-                        <h6 class="font-bold text-fuchsia-700 dark:text-fuchsia-400 mb-3 uppercase text-[10px] tracking-widest">🎨 กิจกรรม/ทักษะ</h6>
-                        <ul class="space-y-2">
-                            <li class="text-xs font-bold text-gray-400">กิจกรรมที่ชอบมากสุด:</li>
-                            ${Object.entries(activityMap).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([a,c]) => `<li class="text-xs text-slate-600 dark:text-gray-400">• ${a} (${c} คน)</li>`).join('')}
-                            <li class="mt-4 text-xs font-bold text-gray-400">ความสามารถพิเศษ:</li>
-                            ${Object.entries(skillMap).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([s,c]) => `<li class="text-xs text-slate-600 dark:text-gray-400">• ${s} (${c} คน)</li>`).join('')}
-                        </ul>
-                    </div>
-                    <div class="glass p-6 rounded-2xl bg-emerald-50/30 dark:bg-emerald-900/10">
-                        <h6 class="font-bold text-emerald-700 dark:text-emerald-400 mb-3 uppercase text-[10px] tracking-widest">🏠 การอยู่อาศัย</h6>
-                        <ul class="space-y-2">
-                            ${Object.entries(liveWithMap).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([key, val]) => `
-                                <li class="flex justify-between"><span>${key}:</span> <span class="font-bold">${val} คน</span></li>
-                            `).join('') || '<li class="text-center text-gray-400 italic">ไม่มีข้อมูล</li>'}
-                        </ul>
-                    </div>
-                </div>
-            `);
-
-            // Charts Initialization
-            new Chart(document.getElementById('genderChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['ชาย', 'หญิง', 'อื่นๆ'],
-                    datasets: [{
-                        data: [male, female, other],
-                        backgroundColor: ['#3b82f6', '#ec4899', '#94a3b8'],
-                        borderWidth: 0,
-                        hoverOffset: 15
-                    }]
-                },
-                options: { maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { usePointStyle: true, font: { weight: 'bold' } } } } }
-            });
-
-            new Chart(document.getElementById('topSubjectsChart'), {
-                type: 'bar',
-                data: {
-                    labels: topLikes.map(l => l[0]),
-                    datasets: [{
-                        label: 'จำนวนนักเรียน',
-                        data: topLikes.map(l => l[1]),
-                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
-                        borderColor: '#3b82f6',
-                        borderWidth: 2,
-                        borderRadius: 10
-                    }]
-                },
-                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
-            });
+            reportDataCache = res.data;
+            updateReportTermDropdown(res.data);
+            renderReport();
         });
     });
 
+    $('#reportTermYear').on('change', renderReport);
+
+    function updateReportTermDropdown(data) {
+        const terms = [...new Set(data.map(d => d.term_year))].sort().reverse();
+        const select = $('#reportTermYear');
+        const currentVal = select.val() || currentTermYear;
+        select.html('<option value="">-- ทั้งหมด --</option>');
+        terms.forEach(t => {
+            const selected = (t === currentVal) ? 'selected' : '';
+            const suffix = (t === currentTermYear) ? ' (ปัจจุบัน)' : '';
+            select.append(`<option value="${t}" ${selected}>${t}${suffix}</option>`);
+        });
+        if(!select.val() && terms.includes(currentTermYear)) select.val(currentTermYear);
+    }
+
+    let reportCharts = {};
+
+    function renderReport() {
+        const area = $('#reportContent');
+        if(!reportDataCache.length) return;
+        
+        const termFilter = $('#reportTermYear').val();
+        const data = termFilter ? reportDataCache.filter(d => d.term_year === termFilter) : reportDataCache;
+
+        if(!data.length) {
+             area.html('<div class="flex flex-col items-center justify-center py-20 text-rose-500/50 space-y-4"><i class="fas fa-exclamation-circle text-6xl opacity-20"></i><p class="font-bold">ไม่พบข้อมูลนักเรียนในเทอมที่เลือก</p></div>');
+             return;
+        }
+
+        // Stats Processing
+        let male = 0, female = 0, other = 0;
+        let likeSubjects = {}, gpaArr = [], gradeArr = [];
+        let weightArr = [], heightArr = [];
+        let roomSet = new Set();
+        let diseaseMap = {}, activityMap = {}, skillMap = {}, liveWithMap = {};
+
+        data.forEach(s => {
+            // Gender
+            if (s.prefix.includes('ด.ช.') || s.prefix.includes('นาย')) male++;
+            else if (s.prefix.includes('ด.ญ.') || s.prefix.includes('น.ส.') || s.prefix.includes('นาง')) female++;
+            else other++;
+
+            // Academics
+            if (s.gpa) gpaArr.push(parseFloat(s.gpa));
+            if (s.last_com_grade) gradeArr.push(parseFloat(s.last_com_grade));
+            roomSet.add(s.student_level_room);
+
+            // Subjects
+            (s.like_subjects || '').split(',').forEach(sub => {
+                sub = sub.trim();
+                if (sub) likeSubjects[sub] = (likeSubjects[sub] || 0) + 1;
+            });
+
+            // Body
+            if (s.weight) weightArr.push(parseFloat(s.weight));
+            if (s.height) heightArr.push(parseFloat(s.height));
+
+            // Extras
+            if (s.disease) diseaseMap[s.disease] = (diseaseMap[s.disease] || 0) + 1;
+            (s.favorite_activity || '').split(',').forEach(a => { a = a.trim(); if(a) activityMap[a] = (activityMap[a] || 0) + 1; });
+            (s.special_skill || '').split(',').forEach(sk => { sk = sk.trim(); if(sk) skillMap[sk] = (skillMap[sk] || 0) + 1; });
+            if (s.live_with) liveWithMap[s.live_with] = (liveWithMap[s.live_with] || 0) + 1;
+        });
+
+        const avgGpa = gpaArr.length ? (gpaArr.reduce((a, b) => a + b, 0) / gpaArr.length).toFixed(2) : '-';
+        const avgGrade = gradeArr.length ? (gradeArr.reduce((a, b) => a + b, 0) / gradeArr.length).toFixed(2) : '-';
+
+        // Top lists
+        const topLikes = Object.entries(likeSubjects).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        
+        // Render View
+        area.html(`
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="glass p-5 rounded-2xl border-l-4 border-blue-500 shadow-sm transition-transform hover:-translate-y-1">
+                    <p class="text-[10px] font-black uppercase text-blue-500 tracking-wider">นักเรียนทั้งหมด</p>
+                    <h4 class="text-3xl font-black text-slate-800 dark:text-white mt-1">${data.length} <span class="text-xs font-bold text-gray-400">คน</span></h4>
+                </div>
+                <div class="glass p-5 rounded-2xl border-l-4 border-emerald-500 shadow-sm transition-transform hover:-translate-y-1">
+                    <p class="text-[10px] font-black uppercase text-emerald-500 tracking-wider">เกรดเฉลี่ย (GPA)</p>
+                    <h4 class="text-3xl font-black text-slate-800 dark:text-white mt-1">${avgGpa}</h4>
+                </div>
+                <div class="glass p-5 rounded-2xl border-l-4 border-purple-500 shadow-sm transition-transform hover:-translate-y-1">
+                    <p class="text-[10px] font-black uppercase text-purple-500 tracking-wider">เกรดเฉลี่ยวิชา</p>
+                    <h4 class="text-3xl font-black text-slate-800 dark:text-white mt-1">${avgGrade}</h4>
+                </div>
+                <div class="glass p-5 rounded-2xl border-l-4 border-amber-500 shadow-sm transition-transform hover:-translate-y-1">
+                    <p class="text-[10px] font-black uppercase text-amber-500 tracking-wider">ห้องเรียน</p>
+                    <h4 class="text-3xl font-black text-slate-800 dark:text-white mt-1">${roomSet.size} <span class="text-xs font-bold text-gray-400">ห้อง</span></h4>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="glass p-6 rounded-3xl">
+                    <h5 class="font-bold text-slate-700 dark:text-gray-200 mb-6 flex items-center gap-2">
+                         📌 สัดส่วนเพศนักเรียน
+                    </h5>
+                    <div class="h-[250px] relative">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-3xl">
+                    <h5 class="font-bold text-slate-700 dark:text-gray-200 mb-6 flex items-center gap-2">
+                         🏆 วิชาที่นักเรียนชอบมากที่สุด
+                    </h5>
+                    <div class="h-[250px] relative">
+                        <canvas id="topSubjectsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                <div class="glass p-6 rounded-2xl bg-indigo-50/30 dark:bg-indigo-900/10">
+                    <h6 class="font-bold text-indigo-700 dark:text-indigo-400 mb-3 uppercase text-[10px] tracking-widest">🩺 สถิติสุขภาพ</h6>
+                    <ul class="space-y-2">
+                        <li class="flex justify-between"><span>น้ำหนักเฉลี่ย:</span> <span class="font-bold">${weightArr.length ? (weightArr.reduce((a,b)=>a+b,0)/weightArr.length).toFixed(1) : '-'} กก.</span></li>
+                        <li class="flex justify-between"><span>ส่วนสูงเฉลี่ย:</span> <span class="font-bold">${heightArr.length ? (heightArr.reduce((a,b)=>a+b,0)/heightArr.length).toFixed(1) : '-'} ซม.</span></li>
+                        <li class="mt-4 text-xs font-bold text-gray-400">โรคประจำตัวเด่น:</li>
+                        ${Object.keys(diseaseMap).slice(0,3).map(d => `<li class="text-xs text-slate-600 dark:text-gray-400">• ${d} (${diseaseMap[d]} คน)</li>`).join('') || '<li class="text-xs text-gray-400 italic font-normal">• ไม่มีข้อมูล</li>'}
+                    </ul>
+                </div>
+                <div class="glass p-6 rounded-2xl bg-fuchsia-50/30 dark:bg-fuchsia-900/10">
+                    <h6 class="font-bold text-fuchsia-700 dark:text-fuchsia-400 mb-3 uppercase text-[10px] tracking-widest">🎨 กิจกรรม/ทักษะ</h6>
+                    <ul class="space-y-2">
+                        <li class="text-xs font-bold text-gray-400">กิจกรรมที่ชอบมากสุด:</li>
+                        ${Object.entries(activityMap).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([a,c]) => `<li class="text-xs text-slate-600 dark:text-gray-400">• ${a} (${c} คน)</li>`).join('')}
+                        <li class="mt-4 text-xs font-bold text-gray-400">ความสามารถพิเศษ:</li>
+                        ${Object.entries(skillMap).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([s,c]) => `<li class="text-xs text-slate-600 dark:text-gray-400">• ${s} (${c} คน)</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="glass p-6 rounded-2xl bg-emerald-50/30 dark:bg-emerald-900/10">
+                    <h6 class="font-bold text-emerald-700 dark:text-emerald-400 mb-3 uppercase text-[10px] tracking-widest">🏠 การอยู่อาศัย</h6>
+                    <ul class="space-y-2">
+                        ${Object.entries(liveWithMap).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([key, val]) => `
+                            <li class="flex justify-between"><span>${key}:</span> <span class="font-bold">${val} คน</span></li>
+                        `).join('') || '<li class="text-center text-gray-400 italic">ไม่มีข้อมูล</li>'}
+                    </ul>
+                </div>
+            </div>
+        `);
+
+        // Charts Initialization
+        if (reportCharts['gender']) reportCharts['gender'].destroy();
+        reportCharts['gender'] = new Chart(document.getElementById('genderChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['ชาย', 'หญิง', 'อื่นๆ'],
+                datasets: [{
+                    data: [male, female, other],
+                    backgroundColor: ['#3b82f6', '#ec4899', '#94a3b8'],
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }]
+            },
+            options: { maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { usePointStyle: true, font: { weight: 'bold' } } } } }
+        });
+
+        if (reportCharts['topSubjects']) reportCharts['topSubjects'].destroy();
+        reportCharts['topSubjects'] = new Chart(document.getElementById('topSubjectsChart'), {
+            type: 'bar',
+            data: {
+                labels: topLikes.map(l => l[0]),
+                datasets: [{
+                    label: 'จำนวนนักเรียน',
+                    data: topLikes.map(l => l[1]),
+                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                    borderColor: '#3b82f6',
+                    borderWidth: 2,
+                    borderRadius: 10
+                }]
+            },
+            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+        });
+    }
+
     // --- All Data Table Logic ---
     const allSubject = $('#allSubject');
-    allSubject.on('change', loadAllTable);
-    $('#searchStudent').on('input', loadAllTable);
-
-    function loadAllTable() {
-        const subjectId = allSubject.val();
-        const search = $('#searchStudent').val().toLowerCase();
+    let allDataCache = [];
+    allSubject.on('change', function() {
+        const subjectId = $(this).val();
         const area = $('#allContent');
         
         if (!subjectId) {
@@ -525,85 +573,125 @@ document.addEventListener('DOMContentLoaded', function() {
         $.getJSON('../controllers/StudentAnalyzeController.php?subject_id=' + subjectId, function(res) {
             if (!res.success || !res.data.length) {
                 area.html('<div class="py-20 text-center text-rose-400 font-bold">ไม่พบข้อมูล</div>');
+                allDataCache = [];
+                updateAllTermDropdown([]);
                 return;
             }
+            allDataCache = res.data;
+            updateAllTermDropdown(res.data);
+            loadAllTable();
+        });
+    });
 
-            let html = `
-                <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-inner">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
-                        <thead class="bg-gray-50 dark:bg-slate-800">
-                            <tr>
-                                <th class="p-3 text-center font-bold">เลขที่</th>
-                                <th class="p-3 text-left font-bold">นักเรียน</th>
-                                <th class="p-3 text-center font-bold">ห้อง</th>
-                                <th class="p-3 text-center font-bold">เพศ</th>
-                                <th class="p-3 text-center font-bold">ข้อมูลกายภาพ</th>
-                                <th class="p-3 text-left font-bold">โรคประจำตัว</th>
-                                <th class="p-3 text-center font-bold">GPA</th>
-                                <th class="p-3 text-center font-bold">เกรดวิชา</th>
-                                <th class="p-3 text-center font-bold">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800 bg-white/50 dark:bg-slate-900/30">
+    $('#allTermYear').on('change', loadAllTable);
+    $('#searchStudent').on('input', loadAllTable);
+
+    function updateAllTermDropdown(data) {
+        const terms = [...new Set(data.map(d => d.term_year))].sort().reverse();
+        const select = $('#allTermYear');
+        const currentVal = select.val() || currentTermYear;
+        select.html('<option value="">-- ทั้งหมด --</option>');
+        terms.forEach(t => {
+            const selected = (t === currentVal) ? 'selected' : '';
+            const suffix = (t === currentTermYear) ? ' (ปัจจุบัน)' : '';
+            select.append(`<option value="${t}" ${selected}>${t}${suffix}</option>`);
+        });
+        if(!select.val() && terms.includes(currentTermYear)) select.val(currentTermYear);
+    }
+
+    function loadAllTable() {
+        const area = $('#allContent');
+        if(!allDataCache.length) return;
+
+        const search = $('#searchStudent').val().toLowerCase();
+        const termFilter = $('#allTermYear').val();
+        
+        const data = allDataCache.filter(s => {
+            if(termFilter && s.term_year !== termFilter) return false;
+            const searchStr = `${s.prefix}${s.student_firstname} ${s.student_lastname} ${s.student_no} ${s.student_level_room}`.toLowerCase();
+            if(search && !searchStr.includes(search)) return false;
+            return true;
+        });
+
+        if (!data.length) {
+            area.html('<div class="py-20 text-center text-rose-400 font-bold">ไม่พบข้อมูล</div>');
+            return;
+        }
+
+        let html = `
+            <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-inner">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
+                    <thead class="bg-gray-50 dark:bg-slate-800">
+                        <tr>
+                            <th class="p-3 text-center font-bold">เทอม</th>
+                            <th class="p-3 text-center font-bold">เลขที่</th>
+                            <th class="p-3 text-left font-bold">นักเรียน</th>
+                            <th class="p-3 text-center font-bold">ห้อง</th>
+                            <th class="p-3 text-center font-bold">เพศ</th>
+                            <th class="p-3 text-center font-bold">ข้อมูลกายภาพ</th>
+                            <th class="p-3 text-left font-bold">โรคประจำตัว</th>
+                            <th class="p-3 text-center font-bold">GPA</th>
+                            <th class="p-3 text-center font-bold">เกรดวิชา</th>
+                            <th class="p-3 text-center font-bold">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800 bg-white/50 dark:bg-slate-900/30">
+        `;
+
+        data.forEach(s => {
+            html += `
+                <tr class="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors">
+                    <td class="p-3 text-center text-gray-500 text-[10px]">${s.term_year}</td>
+                    <td class="p-3 text-center font-bold text-gray-400">${s.student_no}</td>
+                    <td class="p-3">
+                        <div class="font-bold text-slate-800 dark:text-gray-200">${s.prefix}${s.student_firstname} ${s.student_lastname}</div>
+                        <div class="text-[9px] text-gray-500">${s.student_phone || '-'}</div>
+                    </td>
+                    <td class="p-3 text-center"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">ม.${s.student_level_room}</span></td>
+                    <td class="p-3 text-center">${s.prefix.includes('ด.ช.') || s.prefix.includes('นาย') ? '♂️' : (s.prefix.includes('ด.ญ.') || s.prefix.includes('น.ส.') || s.prefix.includes('นาง') ? '♀️' : '❓')}</td>
+                    <td class="p-3 text-center">
+                        <div class="text-[9px]">${s.weight} กก. / ${s.height} ซม.</div>
+                    </td>
+                    <td class="p-3">${s.disease || '-'}</td>
+                    <td class="p-3 text-center font-bold text-emerald-600">${s.gpa || '-'}</td>
+                    <td class="p-3 text-center font-bold text-blue-600">${s.last_com_grade || '-'}</td>
+                    <td class="p-3 text-center">
+                        <button class="btn-delete text-rose-500 hover:text-rose-700 transition-colors p-1.5" data-id="${s.id}" data-name="${s.student_firstname}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
             `;
+        });
 
-            res.data.forEach(s => {
-                const searchStr = `${s.prefix}${s.student_firstname} ${s.student_lastname} ${s.student_no} ${s.student_level_room}`.toLowerCase();
-                if (search && !searchStr.includes(search)) return;
+        html += `</tbody></table></div>`;
+        area.html(html);
 
-                html += `
-                    <tr class="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors">
-                        <td class="p-3 text-center font-bold text-gray-400">${s.student_no}</td>
-                        <td class="p-3">
-                            <div class="font-bold text-slate-800 dark:text-gray-200">${s.prefix}${s.student_firstname} ${s.student_lastname}</div>
-                            <div class="text-[9px] text-gray-500">${s.student_phone || '-'}</div>
-                        </td>
-                        <td class="p-3 text-center"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">ม.${s.student_level_room}</span></td>
-                        <td class="p-3 text-center">${s.prefix.includes('ด.ช.') || s.prefix.includes('นาย') ? '♂️' : (s.prefix.includes('ด.ญ.') || s.prefix.includes('น.ส.') ? '♀️' : '❓')}</td>
-                        <td class="p-3 text-center">
-                            <div class="text-[9px]">${s.weight} กก. / ${s.height} ซม.</div>
-                        </td>
-                        <td class="p-3">${s.disease || '-'}</td>
-                        <td class="p-3 text-center font-bold text-emerald-600">${s.gpa || '-'}</td>
-                        <td class="p-3 text-center font-bold text-blue-600">${s.last_com_grade || '-'}</td>
-                        <td class="p-3 text-center">
-                            <button class="btn-delete text-rose-500 hover:text-rose-700 transition-colors p-1.5" data-id="${s.id}" data-name="${s.student_firstname}">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            html += `</tbody></table></div>`;
-            area.html(html);
-
-            // Delete Event
-            $('.btn-delete').on('click', function() {
-                const id = $(this).data('id');
-                const name = $(this).data('name');
-                Swal.fire({
-                    title: 'ยืนยันการลบ?',
-                    text: `ต้องการข้อมูลของนักเรียน ${name} หรือไม่?`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'ลบเลย',
-                    cancelButtonText: 'ยกเลิก',
-                    confirmButtonColor: '#e11d48'
-                }).then(result => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: '../controllers/StudentAnalyzeController.php',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            data: JSON.stringify({ action: 'delete', id: id }),
-                            success: (re) => { 
-                                if(re.success) { Swal.fire('สำเร็จ', '', 'success'); loadAllTable(); }
-                                else Swal.fire('ผิดพลาด', re.error, 'error');
-                            }
-                        });
-                    }
-                });
+        // Delete Event
+        $('.btn-delete').on('click', function() {
+            const id = $(this).data('id');
+            const name = $(this).data('name');
+            Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: `ต้องการข้อมูลของนักเรียน ${name} หรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ลบเลย',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#e11d48'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '../controllers/StudentAnalyzeController.php',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ action: 'delete', id: id }),
+                        success: (re) => { 
+                            if(re.success) { Swal.fire('สำเร็จ', '', 'success'); $(`#allSubject`).trigger('change'); }
+                            else Swal.fire('ผิดพลาด', re.error, 'error');
+                        }
+                    });
+                }
             });
         });
     }
@@ -624,10 +712,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function exportToExcel(subjectId, type) {
         $.getJSON('../controllers/StudentAnalyzeController.php?subject_id=' + subjectId, (res) => {
-            const data = res.data;
+            let data = res.data;
+            const termFilter = (type === 'all') ? $('#allTermYear').val() : $('#reportTermYear').val();
+            if(termFilter) {
+                data = data.filter(d => d.term_year === termFilter);
+            }
+
+            if(!data.length) return Swal.fire('แจ้งเตือน', 'ไม่พบข้อมูลสำหรับเทอมที่เลือก', 'info');
+
             let exportData = [];
             if (type === 'all') {
                 exportData = data.map(s => ({
+                    'เทอม': s.term_year,
                     'เลขที่': s.student_no,
                     'ชื่อ-สกุล': `${s.prefix}${s.student_firstname} ${s.student_lastname}`,
                     'ห้อง': s.student_level_room,
@@ -649,7 +745,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 data.forEach(s => {
                     if (s.prefix.includes('ด.ช.') || s.prefix.includes('นาย')) male++;
-                    else if (s.prefix.includes('ด.ญ.') || s.prefix.includes('น.ส.')) female++;
+                    else if (s.prefix.includes('ด.ญ.') || s.prefix.includes('น.ส.') || s.prefix.includes('นาง')) female++;
                     else other++;
                     roomSet.add(s.student_level_room);
                     if (s.gpa) gpaArr.push(parseFloat(s.gpa));
@@ -662,6 +758,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 exportData = [
                     { '📊 หัวข้อ': 'สรุปสรุปผลวิเคราะห์ผู้เรียนรายบุคคล', 'ค่าสถิติ': '' },
+                    { '📊 หัวข้อ': 'เทอม/ปีการศึกษา', 'ค่าสถิติ': termFilter || 'ทั้งหมด' },
                     { '📊 หัวข้อ': 'จำนวนนักเรียนทั้งหมด', 'ค่าสถิติ': data.length + ' คน' },
                     { '📊 หัวข้อ': 'เพศชาย', 'ค่าสถิติ': male + ' คน' },
                     { '📊 หัวข้อ': 'เพศหญิง', 'ค่าสถิติ': female + ' คน' },

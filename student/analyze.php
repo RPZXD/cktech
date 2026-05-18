@@ -116,249 +116,533 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="th">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>แบบวิเคราะห์ผู้เรียนรายบุคคล</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mali:wght@200;300;400;500;600;700&display=swap">
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS 3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Mali', 'cursive', 'sans-serif'],
+                        heading: ['Kanit', 'sans-serif']
+                    },
+                    colors: {
+                        primary: '#4f46e5',
+                        secondary: '#ec4899',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Mali:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body, input, select, textarea, button {
-            font-family: 'Mali', cursive !important;
+        body {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            background-attachment: fixed;
+            font-family: 'Mali', cursive;
         }
-        .emoji-label {
-            font-size: 1.1em;
-            margin-right: 0.3em;
+        h1, h2, h3, h4, h5, h6, .heading-font {
+            font-family: 'Kanit', sans-serif;
         }
-        .focus-highlight:focus {
-            box-shadow: 0 0 0 2px #60a5fa;
-            border-color: #2563eb;
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
         }
-        .form-section {
-            background: linear-gradient(90deg, #f0f9ff 0%, #e0e7ff 100%);
+        .section-glass {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
         }
-        .form-card {
-            background: linear-gradient(120deg, #fff 60%, #f0f9ff 100%);
+        .section-glass:hover {
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
         }
-        .form-animate {
-            animation: fadeInUp 0.7s;
+        .input-glass {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(226, 232, 240, 0.8);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-family: 'Mali', cursive;
+            color: #1e293b;
         }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px);}
-            to { opacity: 1; transform: translateY(0);}
+        .input-glass:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+            background: #fff;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .required-star {
+            color: #ef4444;
+            margin-left: 0.25rem;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 1rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            font-family: 'Kanit', sans-serif;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.4);
+            color: white;
+        }
+        .check-card {
+            background: rgba(255,255,255,0.7);
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .check-card:hover {
+            background: rgba(255,255,255,1);
+            border-color: #818cf8;
+        }
+        .check-card input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            accent-color: #6366f1;
+            cursor: pointer;
+        }
+        .step-indicator {
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .step-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+            width: 0%;
+            transition: width 0.5s ease-out;
+            border-radius: 4px;
+        }
+        /* Override Bootstrap Container */
+        .container-custom {
+            max-width: 900px;
+            margin: 0 auto;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center justify-center">
-    <div class="w-full max-w-3xl form-card rounded-2xl shadow-2xl p-8 mt-8 form-animate">
-        <h1 class="text-3xl font-extrabold text-blue-700 mb-6 flex items-center gap-2">
-            <span class="emoji-label">📋</span>แบบวิเคราะห์ผู้เรียนรายบุคคล
-        </h1>
-        <?php if ($subject): ?>
-            <div class="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200 flex flex-col md:flex-row gap-4 items-center">
-                <div class="flex-1 flex flex-col gap-1">
-                    <div><span class="font-semibold text-blue-700">รหัสวิชา:</span> <?= htmlspecialchars($subject['code']) ?></div>
-                    <div><span class="font-semibold text-blue-700">ชื่อวิชา:</span> <?= htmlspecialchars($subject['name']) ?></div>
-                    <div><span class="font-semibold text-blue-700">ระดับชั้น:</span> <?= 'ม.' . intval($subject['level']) ?></div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="emoji-label">🧑‍💻</span>
-                    <span class="text-blue-600 font-bold">กรุณากรอกข้อมูลให้ครบถ้วน</span>
-                </div>
-            </div>
-        <?php endif; ?>
+<body class="py-8 px-4 sm:px-6">
 
-        <?php if ($success): ?>
-            <div class="bg-green-100 text-green-800 px-4 py-3 rounded mb-4 flex items-center gap-2 animate-bounce">
-                <span class="emoji-label">✅</span>บันทึกข้อมูลเรียบร้อยแล้ว ขอบคุณค่ะ/ครับ
-            </div>
-        <?php elseif ($error): ?>
-            <div class="bg-red-100 text-red-800 px-4 py-3 rounded mb-4 flex items-center gap-2 animate-pulse">
-                <span class="emoji-label">❌</span><?= htmlspecialchars($error) ?>
-            </div>
-        <?php endif; ?>
+    <div class="container-custom">
+        <div class="glass-card rounded-3xl p-6 md:p-10 relative overflow-hidden animate-[fadeInUp_0.8s_ease-out]">
+            <!-- Decorative Elements -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-purple-400 rounded-full mix-blend-multiply filter blur-2xl opacity-50 animate-pulse"></div>
+            <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-400 rounded-full mix-blend-multiply filter blur-2xl opacity-50 animate-pulse" style="animation-delay: 2s;"></div>
 
-        <form method="post" class="space-y-4">
-            <input type="hidden" name="subject_id" value="<?= htmlspecialchars($subjectId) ?>">
-            <div class="form-section rounded-lg p-4">
-                <div class="mb-3 flex gap-2">
-                    <div class="w-1/2">
-                        <label class="block font-medium mb-1"><span class="emoji-label">🏫</span>ชั้น/ห้อง <span class="text-red-500">*</span></label>
-                        <select name="student_level_room" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight">
-                            <option value="">-- เลือกห้อง --</option>
-                            <?php
-                            $selectedRoom = $_POST['student_level_room'] ?? '';
-                            for ($i = 1; $i <= 12; $i++) {
-                                $val = "ห้อง $i";
-                                $sel = ($selectedRoom === $val) ? 'selected' : '';
-                                echo "<option value=\"ห้อง $i\" $sel>ห้อง $i</option>";
-                            }
-                            ?>
-                        </select>
+            <div class="relative z-10">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 text-white shadow-lg mb-4">
+                        <i class="fa-solid fa-clipboard-user text-2xl"></i>
                     </div>
-                    <div class="w-1/2">
-                        <label class="block font-medium mb-1"><span class="emoji-label">🔢</span>เลขที่ <span class="text-red-500">*</span></label>
-                        <input type="number" name="student_no" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" min="1" max="50" value="<?= htmlspecialchars($_POST['student_no'] ?? '') ?>">
-                    </div>
+                    <h1 class="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700 mb-2">
+                        แบบวิเคราะห์ผู้เรียนรายบุคคล
+                    </h1>
+                    <p class="text-slate-500 heading-font text-lg">รวบรวมข้อมูลเพื่อการจัดการเรียนรู้ที่เหมาะสม</p>
                 </div>
-                <div class="mb-3 flex gap-2">
-                    <div class="w-1/3">
-                        <label class="block font-medium mb-1"><span class="emoji-label">🧑</span>คำนำหน้า <span class="text-red-500">*</span></label>
-                        <div class="relative">
-                            <select name="prefix" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight bg-white appearance-none transition-all duration-200 hover:ring-2 hover:ring-blue-200">
-                                <option value="">-- เลือกคำนำหน้า --</option>
-                                <?php
-                                $prefixes = [
-                                    'ด.ช.' => '👦 ด.ช.',
-                                    'ด.ญ.' => '👧 ด.ญ.',
-                                    'นาย' => '👨 นาย',
-                                    'นางสาว' => '👩 นางสาว',
-                                    'น.ส.' => '👩 น.ส.',
-                                    'นาง' => '👩‍🦳 นาง',
-                                    'อื่นๆ' => 'อื่นๆ'
-                                ];
-                                $selectedPrefix = $_POST['prefix'] ?? '';
-                                foreach ($prefixes as $val => $label) {
-                                    $sel = ($selectedPrefix === $val) ? 'selected' : '';
-                                    echo "<option value=\"$val\" $sel>$label</option>";
-                                }
-                                ?>
-                            </select>
-                            <span class="absolute right-3 top-3 text-gray-400 pointer-events-none">▼</span>
+
+                <?php if ($subject): ?>
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 mb-8 shadow-sm flex flex-col md:flex-row items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-book"></i>
+                    </div>
+                    <div class="flex-grow text-center md:text-left heading-font">
+                        <h4 class="text-lg font-bold text-blue-900 mb-1"><?= htmlspecialchars($subject['name']) ?></h4>
+                        <div class="flex flex-wrap justify-center md:justify-start gap-3 text-sm text-blue-700 font-medium">
+                            <span class="bg-blue-100/50 px-3 py-1 rounded-full"><i class="fa-solid fa-barcode mr-1"></i> <?= htmlspecialchars($subject['code']) ?></span>
+                            <span class="bg-blue-100/50 px-3 py-1 rounded-full"><i class="fa-solid fa-graduation-cap mr-1"></i> ชั้น ม.<?= intval($subject['level']) ?></span>
                         </div>
                     </div>
-                    <div class="w-1/3">
-                        <label class="block font-medium mb-1"><span class="emoji-label">👤</span>ชื่อ <span class="text-red-500">*</span></label>
-                        <input type="text" name="student_firstname" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight transition-all duration-200 hover:ring-2 hover:ring-blue-200" value="<?= htmlspecialchars($_POST['student_firstname'] ?? '') ?>">
+                </div>
+                <?php endif; ?>
+
+                <?php if ($success): ?>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'บันทึกข้อมูลสำเร็จ!',
+                                text: 'ขอบคุณที่ให้ความร่วมมือในการให้ข้อมูลค่ะ/ครับ',
+                                confirmButtonColor: '#4f46e5',
+                                confirmButtonText: 'ตกลง',
+                                customClass: {
+                                    popup: 'rounded-2xl',
+                                    title: 'heading-font',
+                                    htmlContainer: 'font-sans'
+                                }
+                            });
+                        });
+                    </script>
+                <?php elseif ($error): ?>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: <?= json_encode($error) ?>,
+                                confirmButtonColor: '#ec4899',
+                                confirmButtonText: 'ลองอีกครั้ง',
+                                customClass: {
+                                    popup: 'rounded-2xl',
+                                    title: 'heading-font',
+                                    htmlContainer: 'font-sans'
+                                }
+                            });
+                        });
+                    </script>
+                <?php endif; ?>
+
+                <!-- Progress Bar -->
+                <div class="mb-8">
+                    <div class="flex justify-between items-end mb-2 heading-font">
+                        <span class="text-sm font-semibold text-slate-600">ความคืบหน้า</span>
+                        <span id="progressText" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">0%</span>
                     </div>
-                    <div class="w-1/3">
-                        <label class="block font-medium mb-1"><span class="emoji-label">👤</span>สกุล <span class="text-red-500">*</span></label>
-                        <input type="text" name="student_lastname" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight transition-all duration-200 hover:ring-2 hover:ring-blue-200" value="<?= htmlspecialchars($_POST['student_lastname'] ?? '') ?>">
-                    </div>
-                </div>
-                <!-- เพิ่มลูกเล่น: แสดง progress bar การกรอก -->
-                <div class="mb-6">
-                    <div class="h-3 bg-blue-100 rounded-full overflow-hidden">
-                        <div id="progressBar" class="bg-gradient-to-r from-blue-400 to-blue-600 h-3 transition-all duration-300" style="width:0%"></div>
-                    </div>
-                    <div class="text-xs text-right text-blue-700 mt-1" id="progressText"></div>
-                </div>
-                <div class="mb-3">
-                    <label class="block font-medium mb-1"><span class="emoji-label">📱</span>เบอร์โทรศัพท์นักเรียน <span class="text-red-500">*</span></label>
-                    <input type="text" name="student_phone" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['student_phone'] ?? '') ?>">
-                </div>
-                <div class="mb-3 flex gap-2">
-                    <div class="w-1/2">
-                        <label class="block font-medium mb-1"><span class="emoji-label">⚖️</span>น้ำหนัก (กิโลกรัม) <span class="text-red-500">*</span></label>
-                        <input type="number" name="weight" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['weight'] ?? '') ?>">
-                    </div>
-                    <div class="w-1/2">
-                        <label class="block font-medium mb-1"><span class="emoji-label">📏</span>ส่วนสูง (เซนติเมตร) <span class="text-red-500">*</span></label>
-                        <input type="number" name="height" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['height'] ?? '') ?>">
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="block font-medium mb-1"><span class="emoji-label">💊</span>โรคประจำตัว <span class="text-red-500">*</span></label>
-                    <input type="text" name="disease" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['disease'] ?? '') ?>">
-                </div>
-                <div class="mb-3">
-                    <label class="block font-medium mb-1"><span class="emoji-label">👨‍👩‍👧‍👦</span>ชื่อผู้ปกครอง <span class="text-red-500">*</span></label>
-                    <input type="text" name="parent_name" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['parent_name'] ?? '') ?>">
-                </div>
-                <div class="mb-3">
-                    <label class="block font-medium mb-1"><span class="emoji-label">🏠</span>อาศัยอยู่กับ <span class="text-red-500">*</span></label>
-                    <input type="text" name="live_with" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['live_with'] ?? '') ?>">
-                </div>
-                <div class="mb-3">
-                    <label class="block font-medium mb-1"><span class="emoji-label">📬</span>ที่อยู่ปัจจุบัน <span class="text-red-500">*</span></label>
-                    <textarea name="address" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight"><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
-                </div>
-                <div class="mb-3">
-                    <label class="block font-medium mb-1"><span class="emoji-label">📞</span>เบอร์โทรศัพท์ผู้ปกครอง <span class="text-red-500">*</span></label>
-                    <input type="text" name="parent_phone" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['parent_phone'] ?? '') ?>">
-                </div>
-                <div class="mb-3">
-                    <label class="block font-medium mb-1"><span class="emoji-label">🎯</span>กิจกรรมที่ชอบ <span class="text-red-500">*</span></label>
-                    <input type="text" name="favorite_activity" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['favorite_activity'] ?? '') ?>">
-                </div>
-                <div class="mb-3">
-                    <label class="block font-medium mb-1"><span class="emoji-label">🌟</span>ความสามารถพิเศษ <span class="text-red-500">*</span></label>
-                    <input type="text" name="special_skill" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['special_skill'] ?? '') ?>">
-                </div>
-                <div class="mb-3 flex gap-2">
-                    <div class="w-1/2">
-                        <label class="block font-medium mb-1"><span class="emoji-label">📊</span>เกรดเฉลี่ย (ระดับชั้นเดิม) <span class="text-red-500">*</span></label>
-                        <input type="number" step="0.01" name="gpa" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" min="0" max="4" value="<?= htmlspecialchars($_POST['gpa'] ?? '') ?>">
-                    </div>
-                    <div class="w-1/2">
-                        <label class="block font-medium mb-1"><span class="emoji-label">💻</span>ผลการเรียนวิชา<?= htmlspecialchars($teacherMajor)?>ในภาคเรียนที่ผ่านมา <span class="text-red-500">*</span></label>
-                        <input type="number" step="0.01" name="last_com_grade" required class="w-full border rounded px-3 py-2 focus:outline-none focus-highlight" min="0" max="4" value="<?= htmlspecialchars($_POST['last_com_grade'] ?? '') ?>">
+                    <div class="step-indicator">
+                        <div id="progressBar" class="step-progress"></div>
                     </div>
                 </div>
-                <div class="mb-3">
-                    <label class="block font-medium mb-1"><span class="emoji-label">❤️</span>วิชาที่ชอบ (เลือกได้มากกว่า 1) <span class="text-red-500">*</span></label>
-                    <div class="flex flex-wrap gap-3">
+
+                <form method="post" id="analyzeForm" class="space-y-6 relative">
+                    <input type="hidden" name="subject_id" value="<?= htmlspecialchars($subjectId) ?>">
+
+                    <!-- Section 1: ข้อมูลนักเรียนเบื้องต้น -->
+                    <div class="section-glass">
+                        <h4 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200/60 pb-3">
+                            <i class="fa-solid fa-id-card text-indigo-500"></i> 1. ข้อมูลนักเรียนเบื้องต้น
+                        </h4>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">ชั้น/ห้อง<span class="required-star">*</span></label>
+                                <select name="student_level_room" required class="input-glass">
+                                    <option value="">-- เลือกห้อง --</option>
+                                    <?php
+                                    $selectedRoom = $_POST['student_level_room'] ?? '';
+                                    for ($i = 1; $i <= 12; $i++) {
+                                        $val = "ห้อง $i";
+                                        $sel = ($selectedRoom === $val) ? 'selected' : '';
+                                        echo "<option value=\"ห้อง $i\" $sel>ห้อง $i</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">เลขที่<span class="required-star">*</span></label>
+                                <input type="number" name="student_no" required class="input-glass" min="1" max="50" placeholder="เช่น 1" value="<?= htmlspecialchars($_POST['student_no'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">คำนำหน้า<span class="required-star">*</span></label>
+                                <select name="prefix" required class="input-glass">
+                                    <option value="">-- เลือก --</option>
+                                    <?php
+                                    $prefixes = ['ด.ช.', 'ด.ญ.', 'นาย', 'นางสาว', 'น.ส.', 'นาง', 'อื่นๆ'];
+                                    $selectedPrefix = $_POST['prefix'] ?? '';
+                                    foreach ($prefixes as $val) {
+                                        $sel = ($selectedPrefix === $val) ? 'selected' : '';
+                                        echo "<option value=\"$val\" $sel>$val</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ชื่อจริง<span class="required-star">*</span></label>
+                                <input type="text" name="student_firstname" required class="input-glass" placeholder="ชื่อ" value="<?= htmlspecialchars($_POST['student_firstname'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">นามสกุล<span class="required-star">*</span></label>
+                                <input type="text" name="student_lastname" required class="input-glass" placeholder="นามสกุล" value="<?= htmlspecialchars($_POST['student_lastname'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">เบอร์โทรศัพท์นักเรียน<span class="required-star">*</span></label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-mobile-screen"></i></span>
+                                    <input type="tel" name="student_phone" required class="input-glass pl-10" placeholder="08xxxxxxxx" maxlength="10" value="<?= htmlspecialchars($_POST['student_phone'] ?? '') ?>">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: ข้อมูลกายภาพและสุขภาพ -->
+                    <div class="section-glass">
+                        <h4 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200/60 pb-3">
+                            <i class="fa-solid fa-heart-pulse text-rose-500"></i> 2. ข้อมูลกายภาพและสุขภาพ
+                        </h4>
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <label class="form-label">น้ำหนัก (กิโลกรัม)<span class="required-star">*</span></label>
+                                <div class="relative">
+                                    <input type="number" step="0.1" name="weight" required class="input-glass pr-12" placeholder="0.0" value="<?= htmlspecialchars($_POST['weight'] ?? '') ?>">
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">กก.</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ส่วนสูง (เซนติเมตร)<span class="required-star">*</span></label>
+                                <div class="relative">
+                                    <input type="number" step="0.1" name="height" required class="input-glass pr-12" placeholder="0.0" value="<?= htmlspecialchars($_POST['height'] ?? '') ?>">
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">ซม.</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">โรคประจำตัว<span class="required-star">*</span></label>
+                                <input type="text" name="disease" required class="input-glass" placeholder="หากไม่มีให้ระบุ 'ไม่มี'" value="<?= htmlspecialchars($_POST['disease'] ?? '') ?>">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: ข้อมูลครอบครัวและที่อยู่ -->
+                    <div class="section-glass">
+                        <h4 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200/60 pb-3">
+                            <i class="fa-solid fa-house-chimney text-amber-500"></i> 3. ข้อมูลครอบครัวและที่อยู่
+                        </h4>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">ชื่อ-สกุลผู้ปกครอง<span class="required-star">*</span></label>
+                                <input type="text" name="parent_name" required class="input-glass" placeholder="ระบุชื่อ-สกุล" value="<?= htmlspecialchars($_POST['parent_name'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">เบอร์โทรศัพท์ผู้ปกครอง<span class="required-star">*</span></label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-phone"></i></span>
+                                    <input type="tel" name="parent_phone" required class="input-glass pl-10" placeholder="08xxxxxxxx" maxlength="10" value="<?= htmlspecialchars($_POST['parent_phone'] ?? '') ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">ปัจจุบันนักเรียนอาศัยอยู่กับใคร<span class="required-star">*</span></label>
+                                <input type="text" name="live_with" required class="input-glass" placeholder="เช่น บิดามารดา, ปู่ย่าตายาย, ญาติ" value="<?= htmlspecialchars($_POST['live_with'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">ที่อยู่ปัจจุบันที่สามารถติดต่อได้<span class="required-star">*</span></label>
+                                <textarea name="address" required class="input-glass" rows="2" placeholder="บ้านเลขที่ หมู่ ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: ความสนใจและความสามารถ -->
+                    <div class="section-glass">
+                        <h4 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200/60 pb-3">
+                            <i class="fa-solid fa-star text-yellow-500"></i> 4. ความสนใจและผลการเรียน
+                        </h4>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">เกรดเฉลี่ย (GPA) ภาคเรียนล่าสุด<span class="required-star">*</span></label>
+                                <input type="number" step="0.01" name="gpa" required class="input-glass" min="0" max="4" placeholder="0.00" value="<?= htmlspecialchars($_POST['gpa'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ผลการเรียนวิชา<?= htmlspecialchars($teacherMajor)?> ในภาคเรียนที่ผ่านมา<span class="required-star">*</span></label>
+                                <input type="number" step="0.01" name="last_com_grade" required class="input-glass" min="0" max="4" placeholder="0.00" value="<?= htmlspecialchars($_POST['last_com_grade'] ?? '') ?>">
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">กิจกรรมยามว่างที่ชอบ<span class="required-star">*</span></label>
+                                <input type="text" name="favorite_activity" required class="input-glass" placeholder="เช่น เล่นเกม, เล่นกีฬา, ดูซีรีส์" value="<?= htmlspecialchars($_POST['favorite_activity'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ความสามารถพิเศษ<span class="required-star">*</span></label>
+                                <input type="text" name="special_skill" required class="input-glass" placeholder="เช่น ร้องเพลง, วาดรูป, เขียนโปรแกรม" value="<?= htmlspecialchars($_POST['special_skill'] ?? '') ?>">
+                            </div>
+                        </div>
+
                         <?php
-                        $likeSubjectsList = [
-                            'คณิตศาสตร์','วิทยาศาสตร์','ภาษาไทย','สังคมศึกษา','ศิลปะศึกษา',
-                            'สุขศึกษาและพละศึกษา','การงานอาชีพ','เทคโนโลยี','ภาษาต่างประเทศ'
+                        $subjectsList = [
+                            'คณิตศาสตร์' => 'fa-calculator text-blue-500',
+                            'วิทยาศาสตร์' => 'fa-flask text-emerald-500',
+                            'ภาษาไทย' => 'fa-language text-rose-500',
+                            'สังคมศึกษา' => 'fa-globe text-amber-500',
+                            'ศิลปะศึกษา' => 'fa-palette text-purple-500',
+                            'สุขศึกษาและพละศึกษา' => 'fa-dumbbell text-orange-500',
+                            'การงานอาชีพ' => 'fa-hammer text-stone-500',
+                            'เทคโนโลยี' => 'fa-computer text-cyan-500',
+                            'ภาษาต่างประเทศ' => 'fa-comments text-indigo-500'
                         ];
-                        foreach ($likeSubjectsList as $subj) {
-                            $checked = (isset($_POST['like_subjects']) && in_array($subj, (array)$_POST['like_subjects'])) ? 'checked' : '';
-                            echo '<label class="flex items-center gap-1"><input type="checkbox" name="like_subjects[]" value="'.$subj.'" '.$checked.'> '.$subj.'</label>';
-                        }
                         ?>
-                        <label class="flex items-center gap-1">
-                            <input type="checkbox" name="like_subjects[]" value="อื่นๆ" <?= (isset($_POST['like_subjects']) && in_array('อื่นๆ', (array)$_POST['like_subjects'])) ? 'checked' : '' ?>>
-                            อื่นๆ:
-                            <input type="text" name="like_subjects_other" class="border rounded px-2 py-1 w-32 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['like_subjects_other'] ?? '') ?>">
-                        </label>
+                        
+                        <div class="mb-4">
+                            <label class="form-label block mb-3"><i class="fa-solid fa-thumbs-up text-blue-500 mr-1"></i> วิชาที่ชอบ (เลือกได้มากกว่า 1 ข้อ)<span class="required-star">*</span></label>
+                            <div class="row g-3">
+                                <?php foreach ($subjectsList as $subj => $icon): ?>
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <label class="check-card w-100">
+                                        <input type="checkbox" name="like_subjects[]" value="<?= $subj ?>" <?= (isset($_POST['like_subjects']) && in_array($subj, (array)$_POST['like_subjects'])) ? 'checked' : '' ?>>
+                                        <span class="text-sm"><i class="fa-solid <?= $icon ?> w-5 text-center mr-1"></i> <?= $subj ?></span>
+                                    </label>
+                                </div>
+                                <?php endforeach; ?>
+                                <div class="col-12 col-md-6">
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <label class="check-card flex-shrink-0">
+                                            <input type="checkbox" name="like_subjects[]" value="อื่นๆ" id="checkLikeOther" <?= (isset($_POST['like_subjects']) && in_array('อื่นๆ', (array)$_POST['like_subjects'])) ? 'checked' : '' ?>>
+                                            <span class="text-sm">อื่นๆ ระบุ:</span>
+                                        </label>
+                                        <input type="text" name="like_subjects_other" id="inputLikeOther" class="input-glass py-1.5 flex-grow" value="<?= htmlspecialchars($_POST['like_subjects_other'] ?? '') ?>" placeholder="...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label block mb-3"><i class="fa-solid fa-thumbs-down text-rose-500 mr-1"></i> วิชาที่ไม่ชอบ (เลือกได้มากกว่า 1 ข้อ)<span class="required-star">*</span></label>
+                            <div class="row g-3">
+                                <?php foreach ($subjectsList as $subj => $icon): ?>
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <label class="check-card w-100">
+                                        <input type="checkbox" name="dislike_subjects[]" value="<?= $subj ?>" <?= (isset($_POST['dislike_subjects']) && in_array($subj, (array)$_POST['dislike_subjects'])) ? 'checked' : '' ?>>
+                                        <span class="text-sm"><i class="fa-solid <?= $icon ?> w-5 text-center mr-1"></i> <?= $subj ?></span>
+                                    </label>
+                                </div>
+                                <?php endforeach; ?>
+                                <div class="col-12 col-md-6">
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <label class="check-card flex-shrink-0">
+                                            <input type="checkbox" name="dislike_subjects[]" value="อื่นๆ" id="checkDislikeOther" <?= (isset($_POST['dislike_subjects']) && in_array('อื่นๆ', (array)$_POST['dislike_subjects'])) ? 'checked' : '' ?>>
+                                            <span class="text-sm">อื่นๆ ระบุ:</span>
+                                        </label>
+                                        <input type="text" name="dislike_subjects_other" id="inputDislikeOther" class="input-glass py-1.5 flex-grow" value="<?= htmlspecialchars($_POST['dislike_subjects_other'] ?? '') ?>" placeholder="...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="mb-3">
-                    <label class="block font-medium mb-1"><span class="emoji-label">💔</span>วิชาที่ไม่ชอบ (เลือกได้มากกว่า 1) <span class="text-red-500">*</span></label>
-                    <div class="flex flex-wrap gap-3">
-                        <?php
-                        $dislikeSubjectsList = [
-                            'คณิตศาสตร์','วิทยาศาสตร์','ภาษาไทย','สังคมศึกษา','ศิลปะศึกษา',
-                            'สุขศึกษาและพละศึกษา','การงานอาชีพ','เทคโนโลยี','ภาษาต่างประเทศ'
-                        ];
-                        foreach ($dislikeSubjectsList as $subj) {
-                            $checked = (isset($_POST['dislike_subjects']) && in_array($subj, (array)$_POST['dislike_subjects'])) ? 'checked' : '';
-                            echo '<label class="flex items-center gap-1"><input type="checkbox" name="dislike_subjects[]" value="'.$subj.'" '.$checked.'> '.$subj.'</label>';
-                        }
-                        ?>
-                        <label class="flex items-center gap-1">
-                            <input type="checkbox" name="dislike_subjects[]" value="อื่นๆ" <?= (isset($_POST['dislike_subjects']) && in_array('อื่นๆ', (array)$_POST['dislike_subjects'])) ? 'checked' : '' ?>>
-                            อื่นๆ:
-                            <input type="text" name="dislike_subjects_other" class="border rounded px-2 py-1 w-32 focus:outline-none focus-highlight" value="<?= htmlspecialchars($_POST['dislike_subjects_other'] ?? '') ?>">
-                        </label>
+
+                    <!-- Submit Area -->
+                    <div class="mt-8 text-center bg-white/40 p-4 rounded-2xl border border-white/60">
+                        <p class="text-sm text-slate-500 mb-4 heading-font"><i class="fa-solid fa-circle-info text-blue-500"></i> ข้อมูลของนักเรียนจะถูกเก็บเป็นความลับเพื่อใช้ในการวางแผนการเรียนการสอนเท่านั้น</p>
+                        <button type="submit" class="btn-gradient w-full md:w-auto md:px-12 py-3 shadow-xl">
+                            <i class="fa-solid fa-paper-plane mr-2"></i> บันทึกข้อมูลการวิเคราะห์ผู้เรียน
+                        </button>
                     </div>
-                </div>
+                </form>
             </div>
-            <div class="flex justify-end mt-6">
-                <button type="submit" class="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white px-8 py-2 rounded shadow text-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2 animate-bounce">
-                    <span class="emoji-label">💾</span>บันทึก
-                </button>
-            </div>
-        </form>
+        </div>
+        
+        <div class="text-center mt-6 text-sm text-slate-600/70 font-medium heading-font drop-shadow-sm">
+            &copy; <?= date('Y') ?> ระบบดูแลช่วยเหลือนักเรียน - แบบวิเคราะห์ผู้เรียน
+        </div>
     </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-    // Progress bar ลูกเล่น
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form');
-        const requiredFields = Array.from(form.querySelectorAll('[required]'));
+        // Progress bar logic
+        const form = document.getElementById('analyzeForm');
+        const requiredInputs = Array.from(form.querySelectorAll('input[required], select[required], textarea[required]'));
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
-        function updateProgress() {
-            let filled = 0;
-            requiredFields.forEach(f => {
-                if ((f.type === 'checkbox' && f.checked) ||
-                    (f.type !== 'checkbox' && f.value.trim() !== '')) filled++;
+        
+        // Custom requirements for checkboxes (at least one must be checked)
+        const likeChecks = Array.from(form.querySelectorAll('input[name="like_subjects[]"]'));
+        const dislikeChecks = Array.from(form.querySelectorAll('input[name="dislike_subjects[]"]'));
+
+        function calculateProgress() {
+            let filledCount = 0;
+            const totalFields = requiredInputs.length + 2; // +2 for the two checkbox groups
+
+            // Check standard inputs
+            requiredInputs.forEach(input => {
+                if (input.value.trim() !== '') {
+                    filledCount++;
+                }
             });
-            const percent = Math.round((filled / requiredFields.length) * 100);
+
+            // Check checkboxes
+            if (likeChecks.some(chk => chk.checked)) filledCount++;
+            if (dislikeChecks.some(chk => chk.checked)) filledCount++;
+
+            const percent = Math.min(100, Math.round((filledCount / totalFields) * 100));
+            
             progressBar.style.width = percent + '%';
-            progressText.textContent = `กรอกข้อมูลแล้ว ${filled} / ${requiredFields.length} ช่อง (${percent}%)`;
+            progressText.textContent = percent + '%';
+            
+            if (percent === 100) {
+                progressText.classList.replace('text-indigo-600', 'text-emerald-600');
+                progressText.classList.replace('bg-indigo-50', 'bg-emerald-50');
+                progressBar.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+            } else {
+                progressText.classList.replace('text-emerald-600', 'text-indigo-600');
+                progressText.classList.replace('bg-emerald-50', 'bg-indigo-50');
+                progressBar.style.background = 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899)';
+            }
         }
-        form.addEventListener('input', updateProgress);
-        updateProgress();
+
+        form.addEventListener('input', calculateProgress);
+        form.addEventListener('change', calculateProgress);
+        calculateProgress(); // init
+
+        // Logic for "Other" text inputs
+        const checkLikeOther = document.getElementById('checkLikeOther');
+        const inputLikeOther = document.getElementById('inputLikeOther');
+        checkLikeOther.addEventListener('change', (e) => {
+            if(e.target.checked) { inputLikeOther.focus(); }
+        });
+        inputLikeOther.addEventListener('input', () => {
+            if(inputLikeOther.value.trim() !== '') checkLikeOther.checked = true;
+        });
+
+        const checkDislikeOther = document.getElementById('checkDislikeOther');
+        const inputDislikeOther = document.getElementById('inputDislikeOther');
+        checkDislikeOther.addEventListener('change', (e) => {
+            if(e.target.checked) { inputDislikeOther.focus(); }
+        });
+        inputDislikeOther.addEventListener('input', () => {
+            if(inputDislikeOther.value.trim() !== '') checkDislikeOther.checked = true;
+        });
+
+        // Form submission validation for checkboxes
+        form.addEventListener('submit', function(e) {
+            const hasLike = likeChecks.some(chk => chk.checked);
+            const hasDislike = dislikeChecks.some(chk => chk.checked);
+            
+            if (!hasLike) {
+                e.preventDefault();
+                Swal.fire('กรุณาระบุข้อมูล', 'กรุณาเลือกวิชาที่ชอบอย่างน้อย 1 วิชา', 'warning');
+                return false;
+            }
+            if (!hasDislike) {
+                e.preventDefault();
+                Swal.fire('กรุณาระบุข้อมูล', 'กรุณาเลือกวิชาที่ไม่ชอบอย่างน้อย 1 วิชา', 'warning');
+                return false;
+            }
+        });
     });
     </script>
 </body>

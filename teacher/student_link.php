@@ -50,8 +50,17 @@ error_log("[STUDENT_LINK] Username: $username, Resolved Teacher ID: $teacherId, 
 // Fetch teacher's subjects for the dropdowns and links
 $subjects = [];
 if ($teacherId) {
-    $subjects = $subjectModel->getAllByTeacher($teacherId);
+    $allSubjects = $subjectModel->getAllByTeacher($teacherId);
+    $subjects = array_filter($allSubjects, function($s) {
+        return $s['status'] === 'เปิดสอน';
+    });
 }
+error_log("[STUDENT_LINK] Found " . count($subjects) . " active subjects");
+
+// Fetch current term/year
+$stmtTerm = $dbUsers->getPDO()->query("SELECT term, pee FROM termpee LIMIT 1");
+$termData = $stmtTerm->fetch();
+$currentTermYear = ($termData['term'] ?? '1') . '/' . ($termData['pee'] ?? '2569');
 error_log("[STUDENT_LINK] Found " . count($subjects) . " subjects");
 
 // Set Base URL for student links

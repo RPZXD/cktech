@@ -58,6 +58,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['subject_id'])) {
     error_log("[STUDENT_ANALYZE] Fetching data for subject_id: " . $subject_id);
     $result = $model->getBySubject($subject_id);
     error_log("[STUDENT_ANALYZE] Found " . count($result) . " students");
+    
+    // Compute Term/Year from created_at
+    foreach ($result as &$row) {
+        $time = strtotime($row['created_at']);
+        $month = (int)date('n', $time);
+        $year = (int)date('Y', $time) + 543;
+        if ($month >= 5 && $month <= 10) {
+            $row['term_year'] = "1/" . $year;
+        } elseif ($month >= 11 || $month <= 4) {
+            if ($month <= 4) {
+                $year -= 1;
+            }
+            $row['term_year'] = "2/" . $year;
+        } else {
+            $row['term_year'] = "1/" . $year;
+        }
+    }
+
     echo json_encode(['success' => true, 'data' => $result]);
     exit;
 }
