@@ -430,7 +430,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     class: classValue,
                     room: room.replace('ห้อง ', '')
                 }));
-                loadStudentsForAttendance(subjectId, classRoomArr);
+                loadStudentsForAttendance(subjectId, classRoomArr, reportDate);
             }
         });
     }
@@ -446,7 +446,7 @@ document.addEventListener('DOMContentLoaded', function () {
         truant: { select: ['bg-gray-50', 'text-gray-800', 'border-gray-200'], pill: ['bg-gray-100', 'text-gray-800'], label: '🚫 โดดเรียน' }
     };
 
-    window.loadStudentsForAttendance = function (subjectId, selectedRooms) {
+    window.loadStudentsForAttendance = function (subjectId, selectedRooms, reportDate = '') {
         const area = document.getElementById('studentAttendanceArea');
         area.innerHTML = '';
         if (!subjectId || !selectedRooms.length) {
@@ -454,7 +454,12 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        fetch('../controllers/StudentController.php?action=list&subject_id=' + encodeURIComponent(subjectId) + '&rooms=' + encodeURIComponent(JSON.stringify(selectedRooms)))
+        let url = '../controllers/StudentController.php?action=list&subject_id=' + encodeURIComponent(subjectId) + '&rooms=' + encodeURIComponent(JSON.stringify(selectedRooms));
+        if (reportDate) {
+            url += '&date=' + encodeURIComponent(reportDate);
+        }
+
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 if (!data.length) {
@@ -483,6 +488,15 @@ document.addEventListener('DOMContentLoaded', function () {
                             <tbody>`;
 
                     groupByRoom[room].forEach((student, idx) => {
+                        let defaultVal = 'present';
+                        const careStatus = String(student.care_attendance_status || '');
+                        if (careStatus === '1') defaultVal = 'present';
+                        else if (careStatus === '2') defaultVal = 'absent';
+                        else if (careStatus === '3') defaultVal = 'late';
+                        else if (careStatus === '4') defaultVal = 'sick';
+                        else if (careStatus === '5') defaultVal = 'personal';
+                        else if (careStatus === '6') defaultVal = 'activity';
+
                         html += `
                             <tr class="border-b border-gray-200/80 dark:border-gray-700/60 hover:bg-indigo-50/60 dark:hover:bg-gray-800/70 transition-colors duration-200">
                                 <td class="p-4 border border-gray-200/70 dark:border-gray-700/60 text-center text-slate-900 dark:text-white font-semibold">${idx + 1}</td>
@@ -490,13 +504,13 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <td class="p-4 border border-gray-200/70 dark:border-gray-700/60">
                                     <div class="flex flex-wrap gap-2 items-center">
                                         <select name="attendance[${room}][${student.Stu_id}]" class="attendance-select w-44 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-600 bg-white/90 dark:bg-gray-800 text-slate-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-indigo-400/40 transition-all duration-200">
-                                            <option value="present">มา</option>
-                                            <option value="absent">ขาด</option>
-                                            <option value="late">มาสาย</option>
-                                            <option value="sick">ลาป่วย</option>
-                                            <option value="personal">ลากิจ</option>
-                                            <option value="activity">กิจกรรม</option>
-                                            <option value="truant">โดดเรียน</option>
+                                            <option value="present" ${defaultVal === 'present' ? 'selected' : ''}>มา</option>
+                                            <option value="absent" ${defaultVal === 'absent' ? 'selected' : ''}>ขาด</option>
+                                            <option value="late" ${defaultVal === 'late' ? 'selected' : ''}>มาสาย</option>
+                                            <option value="sick" ${defaultVal === 'sick' ? 'selected' : ''}>ลาป่วย</option>
+                                            <option value="personal" ${defaultVal === 'personal' ? 'selected' : ''}>ลากิจ</option>
+                                            <option value="activity" ${defaultVal === 'activity' ? 'selected' : ''}>กิจกรรม</option>
+                                            <option value="truant" ${defaultVal === 'truant' ? 'selected' : ''}>โดดเรียน</option>
                                         </select>
                                         <span class="attendance-pill text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-200 transition-all duration-200">✅ มา</span>
                                     </div>

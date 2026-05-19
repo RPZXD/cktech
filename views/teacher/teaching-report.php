@@ -297,8 +297,13 @@
                             <span class="w-7 h-7 md:w-8 md:h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center text-green-600 dark:text-green-400">📋</span>
                             เลขแผนการสอน
                         </label>
-                        <input type="text" name="plan_number" placeholder="เช่น 1, 2, 3..."
-                            class="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm md:text-base focus:outline-none focus:ring-4 focus:ring-green-500/20 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:border-green-300" />
+                        <select name="plan_number"
+                            class="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm md:text-base focus:outline-none focus:ring-4 focus:ring-green-500/20 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:border-green-300">
+                            <option value="">-- เลือกแผนการสอน --</option>
+                            <?php for($i = 1; $i <= 40; $i++): ?>
+                                <option value="<?php echo $i; ?>">แผนการจัดการเรียนรู้ที่ <?php echo $i; ?></option>
+                            <?php endfor; ?>
+                        </select>
                     </div>
                     <div class="group">
                         <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300 text-sm md:text-base flex items-center gap-2">

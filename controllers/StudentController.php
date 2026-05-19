@@ -17,8 +17,9 @@ switch ($action) {
         // ตัวอย่าง: [{"class":"1","room":"1"}, {"class":"1","room":"2"}]
         $rooms = isset($_GET['rooms']) ? json_decode($_GET['rooms'], true) : [];
         $periods = isset($_GET['periods']) ? json_decode($_GET['periods'], true) : [];
+        $date = $_GET['date'] ?? '';
         // ดึงนักเรียนตาม class และ room ที่เลือก
-        $students = $studentModel->getStudentsByClassAndRooms($rooms);
+        $students = $studentModel->getStudentsByClassAndRooms($rooms, $date);
         echo json_encode($students);
         break;
     

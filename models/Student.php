@@ -36,22 +36,32 @@ class Student
      * @param array $classRooms เช่น [['class' => '1', 'room' => '1'], ...]
      * @return array
      */
-    public function getStudentsByClassAndRooms($classRooms)
+    public function getStudentsByClassAndRooms($classRooms, $date = null)
     {
         if (empty($classRooms)) return [];
         $where = [];
         $params = [];
         foreach ($classRooms as $cr) {
-            // ปรับชื่อฟิลด์ให้ตรงกับฐานข้อมูลจริง
-            // สมมติใช้ Stu_level (หรือ Stu_major) แทน Stu_class และ Stu_room
-            $where[] = '(Stu_major = ? AND Stu_room = ?)';
+            $where[] = '(s.Stu_major = ? AND s.Stu_room = ?)';
             $params[] = $cr['class'];
             $params[] = $cr['room'];
         }
-        $sql = "SELECT Stu_id, Stu_major, Stu_room, CONCAT(Stu_pre,Stu_name, ' ', Stu_sur) AS fullname 
-                FROM student 
-                WHERE (" . implode(' OR ', $where) . ") AND Stu_status = '1'
-                ORDER BY Stu_major, Stu_room, Stu_no ASC";
+        
+        if (!empty($date)) {
+            $sql = "SELECT s.Stu_id, s.Stu_major, s.Stu_room, CONCAT(s.Stu_pre, s.Stu_name, ' ', s.Stu_sur) AS fullname,
+                           a.attendance_status AS care_attendance_status, a.reason AS care_attendance_reason
+                    FROM student s 
+                    LEFT JOIN student_attendance a ON s.Stu_id = a.student_id AND a.attendance_date = ?
+                    WHERE (" . implode(' OR ', $where) . ") AND s.Stu_status = '1'
+                    ORDER BY s.Stu_major, s.Stu_room, s.Stu_no ASC";
+            array_unshift($params, $date);
+        } else {
+            $sql = "SELECT s.Stu_id, s.Stu_major, s.Stu_room, CONCAT(s.Stu_pre, s.Stu_name, ' ', s.Stu_sur) AS fullname 
+                    FROM student s
+                    WHERE (" . implode(' OR ', $where) . ") AND s.Stu_status = '1'
+                    ORDER BY s.Stu_major, s.Stu_room, s.Stu_no ASC";
+        }
+        
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
