@@ -306,11 +306,22 @@
                         </select>
                     </div>
                     <div class="group">
-                        <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300 text-sm md:text-base flex items-center gap-2">
-                            <span class="w-7 h-7 md:w-8 md:h-8 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center text-amber-600 dark:text-amber-400">📝</span>
-                            หัวข้อ/สาระการเรียนรู้
-                        </label>
-                        <input type="text" name="plan_topic" placeholder="ระบุหัวข้อที่สอน"
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="font-semibold text-gray-700 dark:text-gray-300 text-sm md:text-base flex items-center gap-2">
+                                <span class="w-7 h-7 md:w-8 md:h-8 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center text-amber-600 dark:text-amber-400">📝</span>
+                                หัวข้อ/สาระการเรียนรู้ <span class="text-red-500">*</span>
+                            </label>
+                            <!-- AI Assist Buttons -->
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" id="btnGeminiGenerate" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-600 hover:from-violet-600 hover:to-indigo-600 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95">
+                                    <span>✨ ช่วยคิดด้วย AI</span>
+                                </button>
+                                <button type="button" id="btnGeminiSettings" title="ตั้งค่า API Key" class="inline-flex items-center justify-center w-8 h-8 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 rounded-xl text-sm transition-all hover:scale-105 active:scale-95 border border-gray-200 dark:border-gray-600">
+                                    <span>⚙️</span>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="text" name="plan_topic" id="planTopic" required placeholder="ระบุหัวข้อที่สอนเพื่อเป็นข้อมูลให้ AI วิเคราะห์"
                             class="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm md:text-base focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:border-amber-300" />
                     </div>
                 </div>

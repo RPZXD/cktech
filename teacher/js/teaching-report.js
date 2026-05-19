@@ -1111,6 +1111,196 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     };
 
+    // --- Gemini AI Helper Integration ---
+    const btnGeminiSettings = document.getElementById('btnGeminiSettings');
+    const btnGeminiGenerate = document.getElementById('btnGeminiGenerate');
+
+    if (btnGeminiSettings) {
+        btnGeminiSettings.addEventListener('click', function () {
+            // Fetch current masked key
+            fetch('../controllers/GeminiController.php?action=get_key')
+                .then(res => res.json())
+                .then(res => {
+                    let placeholderText = 'วาง Gemini API Key ของคุณที่นี่ (AIzaSy...)';
+                    if (res.success && res.has_key) {
+                        placeholderText = 'มี Key บันทึกอยู่แล้ว: ' + res.masked_key;
+                    }
+
+                    Swal.fire({
+                        title: '🔑 ตั้งค่า Gemini API Key ส่วนตัว',
+                        html: `
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 text-left">
+                                เพื่อประหยัด Token และแยกการใช้งานของครูแต่ละท่าน คุณครูสามารถสมัครและรับ API Key ฟรีได้จาก Google AI Studio
+                                <br>
+                                <a href="https://aistudio.google.com/" target="_blank" class="text-indigo-600 dark:text-indigo-400 font-bold hover:underline inline-flex items-center gap-1 mt-2">
+                                    🌐 คลิกที่นี่เพื่อขอรับ Key ฟรีจาก Google AI Studio
+                                </a>
+                            </p>
+                            <input type="password" id="geminiApiKeyInput" class="swal2-input w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white" placeholder="${placeholderText}">
+                            <p class="text-xs text-rose-500 mt-2 text-left">* หากปล่อยว่างและกดยืนยัน จะเป็นการลบ Key ที่บันทึกไว้ออก</p>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: '💾 บันทึก',
+                        cancelButtonText: 'ยกเลิก',
+                        confirmButtonColor: '#4f46e5',
+                        preConfirm: () => {
+                            const keyVal = document.getElementById('geminiApiKeyInput').value;
+                            return keyVal;
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            Swal.showLoading();
+                            fetch('../controllers/GeminiController.php?action=save_key', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ gemini_api_key: result.value })
+                            })
+                            .then(res => res.json())
+                            .then(saveRes => {
+                                if (saveRes.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'บันทึก Key สำเร็จ!',
+                                        text: 'คุณสามารถใช้ฟีเจอร์ช่วยเขียนรายงานด้วย AI ได้ทันที',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'เกิดข้อผิดพลาด',
+                                        text: saveRes.error || 'ไม่สามารถบันทึก Key ได้'
+                                    });
+                                }
+                            })
+                            .catch(err => {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'เกิดข้อผิดพลาด',
+                                    text: 'การเชื่อมต่อเครือข่ายล้มเหลว'
+                                });
+                            });
+                        }
+                    });
+                });
+        });
+    }
+
+    if (btnGeminiGenerate) {
+        btnGeminiGenerate.addEventListener('click', function () {
+            const planTopicInput = document.getElementById('planTopic');
+            const planTopic = planTopicInput ? planTopicInput.value.trim() : '';
+            const subjectSelect = document.querySelector('[name="subject_id"]');
+            
+            if (!subjectSelect || !subjectSelect.value) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'คำเตือน',
+                    text: 'กรุณาเลือกวิชาที่สอนก่อนใช้บริการ AI'
+                });
+                return;
+            }
+
+            if (!planTopic) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณากรอกหัวข้อก่อน',
+                    text: 'กรุณาระบุ "หัวข้อ/สาระการเรียนรู้" เพื่อให้ AI ใช้เป็นข้อมูลในการวิเคราะห์และแนะนำเนื้อหา'
+                });
+                return;
+            }
+
+            const subjectName = subjectSelect.options[subjectSelect.selectedIndex].text;
+
+            Swal.fire({
+                title: '🔮 กำลังส่งให้ Gemini AI วิเคราะห์...',
+                html: '<span class="text-sm text-gray-500">ระบบกำลังช่วยคุณเขียนกิจกรรมและสรุปการสะท้อนคิด KPA กรุณารอสักครู่ (ประมาณ 3-5 วินาที)...</span>',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch('../controllers/GeminiController.php?action=generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subject_name: subjectName,
+                    plan_topic: planTopic
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                Swal.close();
+                if (res.success) {
+                    const data = res.data;
+                    
+                    // Fields to auto-fill
+                    const fields = {
+                        activity: data.activity || '',
+                        reflection_k: data.reflection_k || '',
+                        reflection_p: data.reflection_p || '',
+                        reflection_a: data.reflection_a || '',
+                        problems: data.problems || '',
+                        suggestions: data.suggestions || ''
+                    };
+
+                    // Populate fields with dynamic highlight
+                    Object.keys(fields).forEach(key => {
+                        const inputEl = document.querySelector(`[name="${key}"]`);
+                        if (inputEl) {
+                            inputEl.value = fields[key];
+                            
+                            // Visual highlight transition
+                            inputEl.classList.add('border-indigo-500', 'ring-4', 'ring-indigo-500/20');
+                            setTimeout(() => {
+                                inputEl.classList.remove('border-indigo-500', 'ring-4', 'ring-indigo-500/20');
+                            }, 2000);
+                        }
+                    });
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'วิเคราะห์สำเร็จ! ✨',
+                        text: 'ระบบกรอกข้อมูลกิจกรรมการเรียนรู้, ผลการสะท้อนคิด KPA, ปัญหา และข้อเสนอแนะ ให้เรียบร้อยแล้ว!',
+                        timer: 3000,
+                        showConfirmButton: true,
+                        confirmButtonColor: '#4f46e5'
+                    });
+
+                } else if (res.needs_key) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: '🔑 ต้องตั้งค่า API Key ก่อนใช้บริการ',
+                        text: res.error || 'กรุณาตั้งค่า Gemini API Key ส่วนตัวก่อนเพื่อใช้งานฟีเจอร์นี้',
+                        showCancelButton: true,
+                        confirmButtonText: '🛠️ ตั้งค่าตอนนี้',
+                        cancelButtonText: 'ไว้ทีหลัง',
+                        confirmButtonColor: '#4f46e5'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            if (btnGeminiSettings) btnGeminiSettings.click();
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาดในการวิเคราะห์',
+                        text: res.error || 'โปรดตรวจสอบความถูกต้องของ API Key หรือข้อตกลงและลองอีกครั้ง'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.close();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เชื่อมต่อ AI ล้มเหลว',
+                    text: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ'
+                });
+            });
+        });
+    }
+
     // Initialize: call functions after all definitions are complete
     loadReports();
     loadSubjectsForReport();
