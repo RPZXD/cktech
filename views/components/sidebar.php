@@ -13,6 +13,79 @@ $menuItems = [
         'icon' => 'fa-home',
         'gradient' => ['from' => 'blue-500', 'to' => 'indigo-600'],
     ],
+];
+
+// If logged in, add direct link back to their portal/dashboard
+$dashboardUrl = '';
+$dashboardName = '';
+$dashboardIcon = '';
+$dashboardGradient = ['from' => 'blue-500', 'to' => 'indigo-600'];
+
+if (isset($_SESSION['logged_in']) && isset($_SESSION['role'])) {
+    $role = $_SESSION['role'];
+    if ($role === 'admin') {
+        $dashboardUrl = 'admin/index.php';
+        $dashboardName = 'กลับสู่ระบบดูแลระบบ';
+        $dashboardIcon = 'fa-user-shield';
+        $dashboardGradient = ['from' => 'rose-500', 'to' => 'pink-600'];
+    } elseif ($role === 'หัวหน้ากลุ่มสาระ') {
+        $dashboardUrl = 'department/index.php';
+        $dashboardName = 'กลับสู่ระบบหัวหน้ากลุ่มสาระ';
+        $dashboardIcon = 'fa-users-cog';
+        $dashboardGradient = ['from' => 'orange-500', 'to' => 'amber-600'];
+    } elseif ($role === 'ผู้บริหาร') {
+        $dashboardUrl = 'director/index.php';
+        $dashboardName = 'กลับสู่ระบบผู้บริหาร';
+        $dashboardIcon = 'fa-chart-line';
+        $dashboardGradient = ['from' => 'violet-500', 'to' => 'purple-600'];
+    } elseif ($role === 'ครู') {
+        $dashboardUrl = 'teacher/index.php';
+        $dashboardName = 'กลับสู่ระบบครู';
+        $dashboardIcon = 'fa-user-tie';
+        $dashboardGradient = ['from' => 'emerald-500', 'to' => 'green-600'];
+    } elseif ($role === 'นักเรียน') {
+        $dashboardUrl = 'student/index.php';
+        $dashboardName = 'กลับสู่ระบบนักเรียน';
+        $dashboardIcon = 'fa-user-graduate';
+        $dashboardGradient = ['from' => 'sky-500', 'to' => 'blue-600'];
+    }
+}
+
+if (empty($dashboardUrl)) {
+    if (isset($_SESSION['Admin_login'])) {
+        $dashboardUrl = 'admin/index.php';
+        $dashboardName = 'กลับสู่ระบบดูแลระบบ';
+        $dashboardIcon = 'fa-user-shield';
+        $dashboardGradient = ['from' => 'rose-500', 'to' => 'pink-600'];
+    } elseif (isset($_SESSION['Teacher_login'])) {
+        $dashboardUrl = 'teacher/index.php';
+        $dashboardName = 'กลับสู่ระบบครู';
+        $dashboardIcon = 'fa-user-tie';
+        $dashboardGradient = ['from' => 'emerald-500', 'to' => 'green-600'];
+    } elseif (isset($_SESSION['Officer_login'])) {
+        $dashboardUrl = 'officer/index.php';
+        $dashboardName = 'กลับสู่ระบบเจ้าหน้าที่';
+        $dashboardIcon = 'fa-user-cog';
+        $dashboardGradient = ['from' => 'cyan-500', 'to' => 'blue-600'];
+    } elseif (isset($_SESSION['Student_login'])) {
+        $dashboardUrl = 'student/index.php';
+        $dashboardName = 'กลับสู่ระบบนักเรียน';
+        $dashboardIcon = 'fa-user-graduate';
+        $dashboardGradient = ['from' => 'sky-500', 'to' => 'blue-600'];
+    }
+}
+
+if (!empty($dashboardUrl)) {
+    $menuItems[] = [
+        'key' => 'dashboard_back',
+        'name' => $dashboardName,
+        'url' => $dashboardUrl,
+        'icon' => $dashboardIcon,
+        'gradient' => $dashboardGradient,
+    ];
+}
+
+$menuItems = array_merge($menuItems, [
     [
         'key' => 'teaching_report',
         'name' => 'สถิติรายงานการสอน',
@@ -41,7 +114,7 @@ $menuItems = [
         'icon' => 'fa-user-check',
         'gradient' => ['from' => 'pink-500', 'to' => 'rose-600'],
     ],
-];
+]);
 ?>
 
 <!-- Sidebar Overlay (Mobile) -->
