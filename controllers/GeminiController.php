@@ -14,9 +14,9 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['role'])) {
 
 // Get action
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
-$teacher_id = $_SESSION['user']['Teach_id'] ?? $_SESSION['Teacher_login'] ?? '';
+$session_user = $_SESSION['user']['Teach_id'] ?? $_SESSION['Teacher_login'] ?? '';
 
-if (!$teacher_id) {
+if (!$session_user) {
     echo json_encode(['success' => false, 'error' => 'ไม่พบข้อมูลอาจารย์ผู้สอนในระบบ']);
     exit;
 }
@@ -54,6 +54,18 @@ function callGeminiAPI($apiKey, $model, $prompt, $isJson = false) {
 try {
     $db = new DatabaseUsers();
     $pdo = $db->getPDO();
+
+    // Look up real Teach_id using the session user value (could be Teach_id or Teach_name)
+    $stmt = $pdo->prepare("SELECT * FROM teacher WHERE (Teach_id = ? OR Teach_name = ?) AND Teach_status = '1' LIMIT 1");
+    $stmt->execute([$session_user, $session_user]);
+    $teacherData = $stmt->fetch();
+    
+    if (!$teacherData) {
+        echo json_encode(['success' => false, 'error' => 'ไม่พบข้อมูลอาจารย์ผู้สอนในระบบ']);
+        exit;
+    }
+    
+    $teacher_id = $teacherData['Teach_id'];
 
     switch ($action) {
         case 'get_key':
