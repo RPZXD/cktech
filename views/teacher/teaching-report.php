@@ -456,5 +456,5 @@
 </button>
 
 <!-- External JS -->
-<script src="js/teaching-report.js?v=5"></script>
+<script src="js/teaching-report.js?v=<?php echo time(); ?>"></script>
 
