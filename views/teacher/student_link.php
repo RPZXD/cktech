@@ -41,22 +41,8 @@
         #sidebar-overlay,
         .content-header,
         #studentTabs,
-        .aurora-wrapper > .glass,
         #tab-link,
-        .p-0.mb-6,
-        .flex-col.lg\:flex-row,
-        .bg-slate-50,
-        .flex.flex-col,
-        .ml-64,
-        #reportSubject,
-        #printReportBtn,
-        #excelReportBtn,
-        #allSubject,
-        #searchStudent,
-        #printAllBtn,
-        #excelAllBtn,
-        .lg\:pt-5,
-        .pt-5,
+        .no-print,
         .btn-delete {
             display: none !important;
         }
@@ -234,7 +220,7 @@
 
         <!-- Tab Content: Report -->
         <div id="tab-report" class="tab-content hidden transition-all duration-300">
-            <div class="flex flex-col md:flex-row md:items-center gap-4 mb-8 bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
+            <div class="no-print flex flex-col md:flex-row md:items-center gap-4 mb-8 bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
                 <div class="flex-1 space-y-1">
                     <label class="block text-xs font-bold text-gray-500 uppercase">เลือกวิชาเพื่อดูรายงาน</label>
                     <select id="reportSubject" class="w-full glass-input rounded-xl px-4 py-2.5 font-bold text-slate-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-400 outline-none">
@@ -270,7 +256,7 @@
 
         <!-- Tab Content: All Data -->
         <div id="tab-all" class="tab-content hidden transition-all duration-300">
-            <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-8 bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
+            <div class="no-print flex flex-col lg:flex-row lg:items-center gap-4 mb-8 bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
                 <div class="flex-1 space-y-1">
                     <label class="block text-xs font-bold text-gray-500 uppercase">กรองตามรายวิชา</label>
                     <select id="allSubject" class="w-full glass-input rounded-xl px-4 py-2.5 font-bold text-slate-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-400 outline-none">
