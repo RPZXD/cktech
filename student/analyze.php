@@ -78,9 +78,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!is_numeric($gpa) || $gpa < 0 || $gpa > 4) {
             $error = 'เกรดเฉลี่ยต้องเป็นตัวเลขระหว่าง 0-4';
         } else {
-            // เช็คว่ามีข้อมูลเดิมอยู่แล้วหรือไม่ เพื่อทำการอัปเดตแทนการแจ้งเตือนผิดพลาด
-            $stmtCheck = $pdo->prepare("SELECT id FROM student_analyze WHERE subject_id=? AND student_level_room=? AND student_no=?");
-            $stmtCheck->execute([$subject_id, $student_level_room, $student_no]);
+            // ดึงปีการศึกษาปัจจุบัน
+            $stmtTerm = $pdoUsers->query("SELECT term, pee FROM termpee LIMIT 1");
+            $termData = $stmtTerm->fetch();
+            $currentTermYear = ($termData['term'] ?? '1') . '/' . ($termData['pee'] ?? '2569');
+
+            // เช็คว่ามีข้อมูลเดิมในเทอม/ปีการศึกษานี้อยู่แล้วหรือไม่ เพื่อทำการอัปเดตแทนการแจ้งเตือนผิดพลาด
+            $stmtCheck = $pdo->prepare("SELECT id FROM student_analyze WHERE subject_id=? AND student_level_room=? AND student_no=? AND term_year=?");
+            $stmtCheck->execute([$subject_id, $student_level_room, $student_no, $currentTermYear]);
             $existingId = $stmtCheck->fetchColumn();
         }
 
@@ -88,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // รวมข้อมูลวิชาที่ชอบ/ไม่ชอบ
             $like_subjects_str = implode(', ', $like_subjects);
             if ($like_subjects_other) $like_subjects_str .= ($like_subjects_str ? ', ' : '') . $like_subjects_other;
-            $dislike_subjects_str = implode(', ', $dislike_subjects);
+            $dislike_subjects_str = is_array($dislike_subjects) ? implode(', ', $dislike_subjects) : '';
             if ($dislike_subjects_other) $dislike_subjects_str .= ($dislike_subjects_str ? ', ' : '') . $dislike_subjects_other;
 
             if ($existingId) {
@@ -110,12 +115,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("INSERT INTO student_analyze (
                     subject_id, student_level_room, student_no, prefix, student_firstname, student_lastname, student_phone,
                     weight, height, disease, parent_name, live_with, address, parent_phone, favorite_activity, special_skill,
-                    gpa, last_com_grade, like_subjects, dislike_subjects, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                    gpa, last_com_grade, like_subjects, dislike_subjects, term_year, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
                 $success = $stmt->execute([
                     $subject_id, $student_level_room, $student_no, $prefix, $student_firstname, $student_lastname, $student_phone,
                     $weight, $height, $disease, $parent_name, $live_with, $address, $parent_phone, $favorite_activity, $special_skill,
-                    $gpa, $last_com_grade, $like_subjects_str, $dislike_subjects_str
+                    $gpa, $last_com_grade, $like_subjects_str, $dislike_subjects_str, $currentTermYear
                 ]);
             }
             if (!$success) {
