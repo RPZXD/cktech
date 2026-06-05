@@ -419,7 +419,12 @@ document.addEventListener('DOMContentLoaded', function() {
     $('#reportTermYear').on('change', renderReport);
 
     function updateReportTermDropdown(data) {
-        const terms = [...new Set(data.map(d => d.term_year))].sort().reverse();
+        let terms = [...new Set(data.map(d => d.term_year))].filter(Boolean);
+        if (currentTermYear && !terms.includes(currentTermYear)) {
+            terms.push(currentTermYear);
+        }
+        terms.sort().reverse();
+        
         const select = $('#reportTermYear');
         const currentVal = select.val() || currentTermYear;
         select.html('<option value="">-- ทั้งหมด --</option>');
@@ -924,7 +929,12 @@ document.addEventListener('DOMContentLoaded', function() {
     $('#searchStudent').on('input', loadAllTable);
 
     function updateAllTermDropdown(data) {
-        const terms = [...new Set(data.map(d => d.term_year))].sort().reverse();
+        let terms = [...new Set(data.map(d => d.term_year))].filter(Boolean);
+        if (currentTermYear && !terms.includes(currentTermYear)) {
+            terms.push(currentTermYear);
+        }
+        terms.sort().reverse();
+        
         const select = $('#allTermYear');
         const currentVal = select.val() || currentTermYear;
         select.html('<option value="">-- ทั้งหมด --</option>');
