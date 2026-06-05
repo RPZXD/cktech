@@ -344,7 +344,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const teacherMajor = <?= json_encode($teacherMajor) ?>;
     const teacherName = <?= json_encode($teacherName) ?>;
-    const subjects = <?= json_encode($subjects) ?>;
+    const subjects = <?= json_encode(array_values($subjects)) ?>;
     const currentTermYear = <?= json_encode($currentTermYear ?? '') ?>;
     
     // Tab Controller
