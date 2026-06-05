@@ -24,6 +24,9 @@ if ($subjectId) {
         $teacher = $stmtTeacher->fetch();
         if ($teacher) {
             $teacherMajor = $teacher['Teach_major'];
+            if ($teacherMajor === 'คอมพิวเตอร์' || $teacherMajor === 'วิทยาศาสตร์') {
+                $teacherMajor = 'วิทยาศาสตร์และเทคโนโลยี';
+            }
         }
     }
 }

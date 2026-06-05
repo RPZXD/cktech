@@ -44,6 +44,9 @@ $teacherData = $dbUsers->getTeacherByUsername($username);
 $teacherId = $teacherData['Teach_id'] ?? ($_SESSION['user']['Teach_id'] ?? null);
 $teacherName = $teacherData['Teach_name'] ?? ($_SESSION['user']['Teach_name'] ?? $username);
 $teacherMajor = $teacherData['Teach_major'] ?? ($teacherData['Teach_department'] ?? 'ไม่ระบุ');
+if ($teacherMajor === 'คอมพิวเตอร์' || $teacherMajor === 'วิทยาศาสตร์') {
+    $teacherMajor = 'วิทยาศาสตร์และเทคโนโลยี';
+}
 
 error_log("[STUDENT_LINK] Username: $username, Resolved Teacher ID: $teacherId, Major: $teacherMajor");
 
