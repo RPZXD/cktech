@@ -74,7 +74,7 @@ $menuItems = [
     <div class="h-full overflow-y-auto bg-gradient-to-b from-emerald-800 via-emerald-900 to-slate-900">
         
         <!-- Logo Section -->
-        <div class="px-6 py-8 border-b border-white/5">
+        <div class="no-print px-6 py-8 border-b border-white/5">
             <div class="flex items-center justify-between">
                 <a href="index.php" class="flex items-center space-x-4 group flex-1">
                     <div class="relative">
@@ -93,7 +93,7 @@ $menuItems = [
         </div>
         
         <!-- User Info -->
-        <div class="px-6 py-4 border-b border-white/5">
+        <div class="no-print px-6 py-4 border-b border-white/5">
             <div class="flex items-center space-x-3">
                 <?php if (!empty($userPhoto)): ?>
                 <img src="https://std.phichai.ac.th/teacher/uploads/phototeach/<?php echo htmlspecialchars($userPhoto); ?>" class="w-10 h-10 rounded-full object-cover ring-2 ring-emerald-400/50" alt="Profile">
@@ -110,7 +110,7 @@ $menuItems = [
         </div>
         
         <!-- Navigation -->
-        <nav class="mt-2 px-3 pb-24">
+        <nav class="no-print mt-2 px-3 pb-24">
             <div class="mb-4 px-4">
                 <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">เมนูหลัก</p>
             </div>

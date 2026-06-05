@@ -131,13 +131,13 @@
 
 <div class="aurora-wrapper relative z-10">
     <div class="glass rounded-3xl p-6 md:p-8 shadow-xl mb-8">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+        <div class="no-print flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
             <div>
-                <p class="uppercase tracking-[0.2em] text-[10px] font-black text-blue-500 mb-1">Student Insight Portal</p>
-                <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <p class="no-print uppercase tracking-[0.2em] text-[10px] font-black text-blue-500 mb-1">Student Insight Portal</p>
+                <h2 class="no-print text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                     📱 ลิงก์เก็บข้อมูลและรายงานผล
                 </h2>
-                <div class="mt-2 flex items-center gap-3">
+                <div class="no-print mt-2 flex items-center gap-3">
                     <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold shadow-sm">
                         👨‍🏫 <?= htmlspecialchars($teacherName) ?>
                     </span>
@@ -148,7 +148,7 @@
         </div>
 
         <!-- Navigation Tabs -->
-        <div class="mb-8 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+        <div class="no-print mb-8 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
             <nav class="flex space-x-2" aria-label="Tabs" id="studentTabs">
                 <button class="tab-btn px-6 py-3 font-bold text-sm rounded-t-2xl transition-all duration-200 tab-active" data-tab="tab-link">
                     <i class="fas fa-link mr-2"></i> ลิงก์สำหรับนักเรียน
