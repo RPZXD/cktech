@@ -17,8 +17,8 @@ class StudentAnalyze
         $stmt = $this->pdo->prepare("INSERT INTO student_analyze (
             subject_id, student_level_room, student_no, prefix, student_firstname, student_lastname, student_phone,
             weight, height, disease, parent_name, live_with, address, parent_phone, favorite_activity, special_skill,
-            gpa, last_com_grade, like_subjects, dislike_subjects, term_year, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+            gpa, last_com_grade, like_subjects, dislike_subjects, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
         return $stmt->execute([
             $data['subject_id'],
             $data['student_level_room'],
@@ -39,8 +39,7 @@ class StudentAnalyze
             $data['gpa'],
             $data['last_com_grade'],
             $data['like_subjects'],
-            $data['dislike_subjects'],
-            $data['term_year'] ?? null
+            $data['dislike_subjects']
         ]);
     }
 

@@ -59,11 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['subject_id'])) {
     $result = $model->getBySubject($subject_id);
     error_log("[STUDENT_ANALYZE] Found " . count($result) . " students");
     
-    // Compute Term/Year from created_at if term_year is null or empty
+    // Compute Term/Year from created_at
     foreach ($result as &$row) {
-        if (!empty($row['term_year'])) {
-            continue;
-        }
         $time = strtotime($row['created_at']);
         $month = (int)date('n', $time);
         $year = (int)date('Y', $time) + 543;
