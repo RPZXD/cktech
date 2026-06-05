@@ -105,6 +105,12 @@
             color: #000 !important;
             padding: 6px 8px !important;
         }
+
+        /* Override any layout classes (like .grid) and hide print-excluded items */
+        .no-print,
+        .btn-delete {
+            display: none !important;
+        }
     }
 
     .print-only-header {
@@ -546,13 +552,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const weight = parseFloat(s.weight) || 50;
             const height = parseFloat(s.height) || 160;
             const hasDisease = s.disease && s.disease.trim() !== '' && s.disease !== 'ไม่มี' && s.disease !== '-';
+            const liveWith = (s.live_with || '').trim();
+            const favoriteActivity = (s.favorite_activity || '').trim();
+            const specialSkill = (s.special_skill || '').trim();
+            const likeSubjects = (s.like_subjects || '').trim();
             
             // BMI = weight / (height/100)^2
             const bmi = weight / Math.pow(height / 100, 2);
             const isNormalBmi = bmi >= 18.5 && bmi <= 24.9;
 
-            const hash = (s.student_firstname || '').charCodeAt(0) || 0;
-            
             // 1.1 ความรู้พื้นฐาน (Prior Knowledge) -> based on grade
             let s1_1 = 2;
             if (grade >= 3.0) s1_1 = 3;
@@ -568,65 +576,87 @@ document.addEventListener('DOMContentLoaded', function() {
             if ((gpa + grade) / 2 >= 2.8) s1_3 = 3;
             else if ((gpa + grade) / 2 < 2.0) s1_3 = 1;
 
-            // 2.1 ความคิดริเริ่มสร้างสรรค์ (Creativity)
+            // 2.1 ความคิดริเริ่มสร้างสรรค์ (Creativity) -> based on special skills/activities or high GPA
             let s2_1 = 2;
-            if (gpa >= 3.2) s2_1 = 3;
-            else if (gpa < 2.2) s2_1 = 1;
-            if (s2_1 === 2 && hash % 3 === 0) s2_1 = 3;
+            const creativeKeywords = ['วาด', 'ศิลปะ', 'ดนตรี', 'ร้องเพลง', 'คอม', 'โค้ด', 'โปรแกรม', 'เขียน', 'ประดิษฐ์'];
+            const isCreative = creativeKeywords.some(kw => specialSkill.includes(kw) || favoriteActivity.includes(kw));
+            if (isCreative) s2_1 = 3;
+            else if (gpa >= 3.2) s2_1 = 3;
+            else if (gpa < 2.0) s2_1 = 1;
 
-            // 2.2 ความมีเหตุผล (Reasoning)
+            // 2.2 ความมีเหตุผล (Reasoning) -> based on liking science/math/tech or high GPA
             let s2_2 = 2;
-            if (gpa >= 3.0) s2_2 = 3;
+            const reasoningKeywords = ['คณิตศาสตร์', 'วิทยาศาสตร์', 'เทคโนโลยี', 'คอมพิวเตอร์'];
+            const likesReasoning = reasoningKeywords.some(kw => likeSubjects.includes(kw));
+            if (likesReasoning) s2_2 = 3;
+            else if (gpa >= 3.0) s2_2 = 3;
             else if (gpa < 2.0) s2_2 = 1;
-            if (s2_2 === 2 && hash % 4 === 0) s2_2 = 3;
 
-            // 2.3 ความสามารถในการเรียนรู้/ลำดับความ (Learning speed)
+            // 2.3 ความสามารถในการเรียนรู้/ลำดับความ (Learning speed) -> based on computer/subject grade
             let s2_3 = 2;
-            if (grade >= 3.2) s2_3 = 3;
-            else if (grade < 2.2) s2_3 = 1;
+            if (grade >= 3.0) s2_3 = 3;
+            else if (grade < 2.0) s2_3 = 1;
 
-            // 3.1 การแสดงออก (Behavioral expression)
-            let s3_1 = 3;
-            if (hash % 7 === 0) s3_1 = 2;
-            if (gpa < 1.8) s3_1 = 1;
+            // 3.1 การแสดงออก (Behavioral expression) -> based on active hobbies (sports, games, performance)
+            let s3_1 = 2;
+            const activeKeywords = ['กีฬา', 'ฟุตบอล', 'วิ่ง', 'เต้น', 'ร้องเพลง', 'ดนตรี', 'เกม'];
+            const isActive = activeKeywords.some(kw => favoriteActivity.includes(kw) || specialSkill.includes(kw));
+            if (isActive) s3_1 = 3;
+            else if (gpa < 1.8) s3_1 = 1;
 
-            // 3.2 การควบคุมอารมณ์ (Emotional control)
-            let s3_2 = 3;
-            if (hash % 8 === 0) s3_2 = 2;
-            if (gpa < 1.8) s3_2 = 1;
+            // 3.2 การควบคุมอารมณ์ (Emotional control) -> based on calm hobbies or special skills
+            let s3_2 = 2;
+            const calmKeywords = ['อ่านหนังสือ', 'ฟังเพลง', 'นอน', 'สวดมนต์', 'วาดรูป', 'ศิลปะ', 'ธรรมะ', 'สมาธิ'];
+            const isCalm = calmKeywords.some(kw => favoriteActivity.includes(kw) || specialSkill.includes(kw));
+            if (isCalm) s3_2 = 3;
+            else if (gpa < 1.8) s3_2 = 1;
 
-            // 3.3 ความมุ่งมั่นขยันอดทน (Determination)
+            // 3.3 ความมุ่งมั่นขยันอดทน (Determination) -> based on GPA
             let s3_3 = 2;
             if (gpa >= 2.5) s3_3 = 3;
             else if (gpa < 1.8) s3_3 = 1;
 
-            // 4.1 สุขภาพร่างกายแข็งแรงสมบูรณ์ (Physical health)
+            // 4.1 สุขภาพร่างกายแข็งแรงสมบูรณ์ (Physical health) -> based on diseases
             let s4_1 = 3;
-            if (hasDisease) s4_1 = 2;
-            if (hasDisease && (hash % 2 === 0)) s4_1 = 1;
-            else if (!isNormalBmi && hash % 3 === 0) s4_1 = 2;
+            if (hasDisease) {
+                const severeKeywords = ['หัวใจ', 'หอบ', 'เบาหวาน', 'ไต'];
+                const isSevere = severeKeywords.some(kw => s.disease.includes(kw));
+                s4_1 = isSevere ? 1 : 2;
+            } else if (!isNormalBmi) {
+                s4_1 = 2;
+            }
 
-            // 4.2 การเจริญเติบโตสมวัย (Growth)
+            // 4.2 การเจริญเติบโตสมวัย (Growth) -> based on BMI
             let s4_2 = 3;
-            if (!isNormalBmi) s4_2 = 2;
-            if (bmi < 15 || bmi > 30) s4_2 = 1;
+            if (bmi < 16 || bmi > 30) s4_2 = 1;
+            else if (bmi < 18.5 || bmi > 25) s4_2 = 2;
 
-            // 4.3 สุขภาพจิต (Mental health)
+            // 4.3 สุขภาพจิต (Mental health) -> based on living status & disease
             let s4_3 = 3;
-            if (hash % 10 === 0) s4_3 = 2;
+            const parentKeywords = ['บิดา', 'มารดา', 'พ่อ', 'แม่', 'ครอบครัว'];
+            const livesWithParents = parentKeywords.some(kw => liveWith.includes(kw));
+            if (!livesWithParents) s4_3 = 2;
+            if (hasDisease) s4_3 = Math.min(s4_3, 2);
 
-            // 5.1 การปรับตัวเข้ากับผู้อื่น (Social adjustment)
-            let s5_1 = 3;
-            if (hash % 11 === 0) s5_1 = 2;
+            // 5.1 การปรับตัวเข้ากับผู้อื่น (Social adjustment) -> based on living status & active hobbies
+            let s5_1 = 2;
+            const groupKeywords = ['กีฬา', 'ฟุตบอล', 'บาส', 'เที่ยว', 'กลุ่ม', 'เพื่อน', 'เกม', 'ดนตรี', 'ร้องเพลง', 'เต้น'];
+            const isGroupOriented = groupKeywords.some(kw => favoriteActivity.includes(kw) || specialSkill.includes(kw));
+            if (isGroupOriented) s5_1 = 3;
+            else if (liveWith.includes('คนเดียว')) s5_1 = 1;
 
-            // 5.2 การเสียสละช่วยเหลือแบ่งปัน (Sharing)
-            let s5_2 = 3;
-            if (hash % 12 === 0) s5_2 = 2;
+            // 5.2 การเสียสละช่วยเหลือแบ่งปัน (Sharing) -> default positive, lower if GPA/skills very low
+            let s5_2 = 2;
+            const helpfulKeywords = ['ช่วย', 'อาสา', 'กวาด', 'งานบ้าน', 'เลี้ยงน้อง', 'ทำความสะอาด', 'จิตสาธารณะ'];
+            const isHelpful = helpfulKeywords.some(kw => favoriteActivity.includes(kw) || specialSkill.includes(kw));
+            if (isHelpful) s5_2 = 3;
+            else if (gpa >= 2.0) s5_2 = 3;
+            else if (gpa < 1.5) s5_2 = 1;
 
-            // 5.3 เคารพกฎกติกาและมีระเบียบวินัย (Rules & Discipline)
+            // 5.3 เคารพกฎกติกาและมีระเบียบวินัย (Rules & Discipline) -> based on GPA
             let s5_3 = 3;
-            if (hash % 13 === 0) s5_3 = 2;
-            if (gpa < 1.8) s5_3 = 1;
+            if (gpa < 1.5) s5_3 = 1;
+            else if (gpa < 2.0) s5_3 = 2;
 
             return {
                 s1_1, s1_2, s1_3,
@@ -770,9 +800,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 <!-- Signature Section -->
                 <div class="hidden print:flex mt-8 justify-end print:mt-12">
-                    <div class="text-center w-80 font-semibold print:text-black">
-                        <p class="mb-12">ลงชื่อ................................................ครูผู้สอน</p>
-                        <p class="mb-1">( ${teacherName} )</p>
+                    <div class="text-center w-[350px] font-semibold print:text-black">
+                        <p class="mb-12 whitespace-nowrap">ลงชื่อ...........................................ครูผู้สอน</p>
+                        <p class="mb-1 whitespace-nowrap">( ${teacherName} )</p>
                         <p class="text-xs text-slate-500 print:text-black">ตำแหน่ง ครูผู้สอน กลุ่มสาระการเรียนรู้ ${teacherMajor || '-'}</p>
                     </div>
                 </div>
