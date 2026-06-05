@@ -225,7 +225,7 @@
         <!-- Tab Content: Report -->
         <div id="tab-report" class="tab-content hidden transition-all duration-300">
             <!-- Print Only Header -->
-            <div class="print-only-header text-center mb-6">
+            <div class="print-only-header hidden print:block text-center mb-6">
                 <div class="flex justify-center mb-2">
                     <img src="../dist/img/<?= $global['logoLink'] ?? 'logo-phicha.png' ?>" class="h-20 w-auto object-contain mx-auto">
                 </div>
@@ -278,7 +278,7 @@
         <!-- Tab Content: All Data -->
         <div id="tab-all" class="tab-content hidden transition-all duration-300">
             <!-- Print Only Header -->
-            <div class="print-only-header text-center mb-6">
+            <div class="print-only-header hidden print:block text-center mb-6">
                 <div class="flex justify-center mb-2">
                     <img src="../dist/img/<?= $global['logoLink'] ?? 'logo-phicha.png' ?>" class="h-20 w-auto object-contain mx-auto">
                 </div>
@@ -764,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
 
                 <!-- Signature Section -->
-                <div class="mt-8 flex justify-end print:mt-12">
+                <div class="hidden print:flex mt-8 justify-end print:mt-12">
                     <div class="text-center w-80 font-semibold print:text-black">
                         <p class="mb-12">ลงชื่อ................................................ครูผู้สอน</p>
                         <p class="mb-1">( ${teacherName} )</p>
