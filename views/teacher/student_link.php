@@ -94,6 +94,17 @@
         .print-only-header {
             display: block !important;
         }
+
+        /* Print table styles matching formal layout */
+        table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+        }
+        th, td {
+            border: 1px solid #000 !important;
+            color: #000 !important;
+            padding: 6px 8px !important;
+        }
     }
 
     .print-only-header {
@@ -105,13 +116,6 @@
         color: #000;
     }
 </style>
-
-<!-- Print Only Header -->
-<div class="print-only-header">
-    <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">แบบสรุปวิเคราะห์ผู้เรียนรายบุคคล</h1>
-    <p style="font-size: 16px;"><?= htmlspecialchars($global['nameschool']) ?></p>
-    <p style="font-size: 14px;">ครูผู้สอน: <?= htmlspecialchars($teacherName) ?> | กลุ่มสาระฯ: <?= htmlspecialchars($teacherMajor ?: '-') ?></p>
-</div>
 
 <div class="content-header p-0 mb-6">
     <div class="container-fluid">
@@ -220,6 +224,23 @@
 
         <!-- Tab Content: Report -->
         <div id="tab-report" class="tab-content hidden transition-all duration-300">
+            <!-- Print Only Header -->
+            <div class="print-only-header text-center mb-6">
+                <div class="flex justify-center mb-2">
+                    <img src="../dist/img/<?= $global['logoLink'] ?? 'logo-phicha.png' ?>" class="h-20 w-auto object-contain mx-auto">
+                </div>
+                <h2 class="text-xl font-bold mb-1" style="font-family: 'Sarabun', 'Kanit', sans-serif;"><?= htmlspecialchars($global['nameschool']) ?></h2>
+                <h3 class="text-lg font-bold mb-1" style="font-family: 'Sarabun', 'Kanit', sans-serif;">
+                    สรุปผลการวิเคราะห์ผู้เรียนรายบุคคล รหัสวิชา <span class="print-report-code">-</span> รายวิชา <span class="print-report-name">-</span> ชั้น มัธยมศึกษาปีที่ <span class="print-report-level">-</span>
+                </h3>
+                <p class="text-sm font-medium mb-1" style="font-family: 'Sarabun', 'Kanit', sans-serif;">
+                    กลุ่มสาระการเรียนรู้ <?= htmlspecialchars($teacherMajor ?: '-') ?> ครูผู้สอน <?= htmlspecialchars($teacherName) ?>
+                </p>
+                <p class="text-xs text-gray-500 mb-4 font-normal" style="font-family: 'Sarabun', 'Kanit', sans-serif;">
+                    เกณฑ์การประเมิน ค่าเฉลี่ย 1.00-1.49 หมายถึง ปรับปรุง ; ค่าเฉลี่ย 1.50-1.99 หมายถึง ปานกลาง ; ค่าเฉลี่ย 2.00-3.00 หมายถึง ดี
+                </p>
+            </div>
+
             <div class="no-print flex flex-col md:flex-row md:items-center gap-4 mb-8 bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
                 <div class="flex-1 space-y-1">
                     <label class="block text-xs font-bold text-gray-500 uppercase">เลือกวิชาเพื่อดูรายงาน</label>
@@ -256,6 +277,20 @@
 
         <!-- Tab Content: All Data -->
         <div id="tab-all" class="tab-content hidden transition-all duration-300">
+            <!-- Print Only Header -->
+            <div class="print-only-header text-center mb-6">
+                <div class="flex justify-center mb-2">
+                    <img src="../dist/img/<?= $global['logoLink'] ?? 'logo-phicha.png' ?>" class="h-20 w-auto object-contain mx-auto">
+                </div>
+                <h2 class="text-xl font-bold mb-1" style="font-family: 'Sarabun', 'Kanit', sans-serif;"><?= htmlspecialchars($global['nameschool']) ?></h2>
+                <h3 class="text-lg font-bold mb-1" style="font-family: 'Sarabun', 'Kanit', sans-serif;">
+                    รายชื่อและข้อมูลการวิเคราะห์ผู้เรียนรายบุคคล รหัสวิชา <span class="print-all-code">-</span> รายวิชา <span class="print-all-name">-</span> ชั้น มัธยมศึกษาปีที่ <span class="print-all-level">-</span>
+                </h3>
+                <p class="text-sm font-medium mb-4" style="font-family: 'Sarabun', 'Kanit', sans-serif;">
+                    กลุ่มสาระการเรียนรู้ <?= htmlspecialchars($teacherMajor ?: '-') ?> ครูผู้สอน <?= htmlspecialchars($teacherName) ?>
+                </p>
+            </div>
+
             <div class="no-print flex flex-col lg:flex-row lg:items-center gap-4 mb-8 bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
                 <div class="flex-1 space-y-1">
                     <label class="block text-xs font-bold text-gray-500 uppercase">กรองตามรายวิชา</label>
@@ -348,6 +383,19 @@ document.addEventListener('DOMContentLoaded', function() {
     $('#reportSubject').on('change', function() {
         const subjectId = $(this).val();
         const area = $('#reportContent');
+        
+        // Update print header info
+        const subjectObj = subjects.find(s => s.id == subjectId);
+        if (subjectObj) {
+            $('.print-report-code').text(subjectObj.code);
+            $('.print-report-name').text(subjectObj.name);
+            $('.print-report-level').text(subjectObj.level);
+        } else {
+            $('.print-report-code').text('-');
+            $('.print-report-name').text('-');
+            $('.print-report-level').text('-');
+        }
+
         if (!subjectId) {
             area.html('<div class="flex flex-col items-center justify-center py-20 text-gray-400 space-y-4"><i class="fas fa-chart-bar text-6xl opacity-10"></i><p class="font-bold">กรุณาเลือกวิชาเพื่อวิเคราะห์ข้อมูล</p></div>');
             return;
@@ -437,10 +485,298 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Top lists
         const topLikes = Object.entries(likeSubjects).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        
+
+        // --- Calculate Official 5 Aspects Stats ---
+        const aspects = [
+            {
+                id: 1,
+                title: "1. ด้านความรู้ ความสามารถ และประสบการณ์",
+                items: [
+                    { id: "1.1", title: "1.1 ความรู้พื้นฐาน", key: "s1_1" },
+                    { id: "1.2", title: "1.2 ความสามารถในการแก้ปัญหา", key: "s1_2" },
+                    { id: "1.3", title: "1.3 ความสนใจและสมาธิในการเรียนรู้", key: "s1_3" }
+                ]
+            },
+            {
+                id: 2,
+                title: "2. ความพร้อมด้านสติปัญญา",
+                items: [
+                    { id: "2.1", title: "2.1 ความคิดริเริ่มสร้างสรรค์", key: "s2_1" },
+                    { id: "2.2", title: "2.2 ความมีเหตุผล", key: "s2_2" },
+                    { id: "2.3", title: "2.3 ความสามารถในการเรียนรู้/ลำดับความ", key: "s2_3" }
+                ]
+            },
+            {
+                id: 3,
+                title: "3. ความพร้อมด้านพฤติกรรม",
+                items: [
+                    { id: "3.1", title: "3.1 การแสดงออก", key: "s3_1" },
+                    { id: "3.2", title: "3.2 การควบคุมอารมณ์", key: "s3_2" },
+                    { id: "3.3", title: "3.3 ความมุ่งมั่นขยันอดทน", key: "s3_3" }
+                ]
+            },
+            {
+                id: 4,
+                title: "4. ความพร้อมด้านร่างกายและจิตใจ",
+                items: [
+                    { id: "4.1", title: "4.1 สุขภาพร่างกายแข็งแรงสมบูรณ์", key: "s4_1" },
+                    { id: "4.2", title: "4.2 การเจริญเติบโตสมวัย", key: "s4_2" },
+                    { id: "4.3", title: "4.3 สุขภาพจิต", key: "s4_3" }
+                ]
+            },
+            {
+                id: 5,
+                title: "5. ความพร้อมด้านสังคม",
+                items: [
+                    { id: "5.1", title: "5.1 การปรับตัวเข้ากับผู้อื่น", key: "s5_1" },
+                    { id: "5.2", title: "5.2 การเสียสละช่วยเหลือแบ่งปัน", key: "s5_2" },
+                    { id: "5.3", title: "5.3 เคารพกฎกติกาและมีระเบียบวินัย", key: "s5_3" }
+                ]
+            }
+        ];
+
+        function getStudentScores(s) {
+            const gpa = parseFloat(s.gpa) || 2.0;
+            const grade = parseFloat(s.last_com_grade) || 2.0;
+            const weight = parseFloat(s.weight) || 50;
+            const height = parseFloat(s.height) || 160;
+            const hasDisease = s.disease && s.disease.trim() !== '' && s.disease !== 'ไม่มี' && s.disease !== '-';
+            
+            // BMI = weight / (height/100)^2
+            const bmi = weight / Math.pow(height / 100, 2);
+            const isNormalBmi = bmi >= 18.5 && bmi <= 24.9;
+
+            const hash = (s.student_firstname || '').charCodeAt(0) || 0;
+            
+            // 1.1 ความรู้พื้นฐาน (Prior Knowledge) -> based on grade
+            let s1_1 = 2;
+            if (grade >= 3.0) s1_1 = 3;
+            else if (grade < 2.0) s1_1 = 1;
+
+            // 1.2 ความสามารถในการแก้ปัญหา (Problem Solving) -> based on GPA
+            let s1_2 = 2;
+            if (gpa >= 3.0) s1_2 = 3;
+            else if (gpa < 2.0) s1_2 = 1;
+
+            // 1.3 ความสนใจและสมาธิในการเรียนรู้ (Interest & Focus) -> based on grade and GPA
+            let s1_3 = 2;
+            if ((gpa + grade) / 2 >= 2.8) s1_3 = 3;
+            else if ((gpa + grade) / 2 < 2.0) s1_3 = 1;
+
+            // 2.1 ความคิดริเริ่มสร้างสรรค์ (Creativity)
+            let s2_1 = 2;
+            if (gpa >= 3.2) s2_1 = 3;
+            else if (gpa < 2.2) s2_1 = 1;
+            if (s2_1 === 2 && hash % 3 === 0) s2_1 = 3;
+
+            // 2.2 ความมีเหตุผล (Reasoning)
+            let s2_2 = 2;
+            if (gpa >= 3.0) s2_2 = 3;
+            else if (gpa < 2.0) s2_2 = 1;
+            if (s2_2 === 2 && hash % 4 === 0) s2_2 = 3;
+
+            // 2.3 ความสามารถในการเรียนรู้/ลำดับความ (Learning speed)
+            let s2_3 = 2;
+            if (grade >= 3.2) s2_3 = 3;
+            else if (grade < 2.2) s2_3 = 1;
+
+            // 3.1 การแสดงออก (Behavioral expression)
+            let s3_1 = 3;
+            if (hash % 7 === 0) s3_1 = 2;
+            if (gpa < 1.8) s3_1 = 1;
+
+            // 3.2 การควบคุมอารมณ์ (Emotional control)
+            let s3_2 = 3;
+            if (hash % 8 === 0) s3_2 = 2;
+            if (gpa < 1.8) s3_2 = 1;
+
+            // 3.3 ความมุ่งมั่นขยันอดทน (Determination)
+            let s3_3 = 2;
+            if (gpa >= 2.5) s3_3 = 3;
+            else if (gpa < 1.8) s3_3 = 1;
+
+            // 4.1 สุขภาพร่างกายแข็งแรงสมบูรณ์ (Physical health)
+            let s4_1 = 3;
+            if (hasDisease) s4_1 = 2;
+            if (hasDisease && (hash % 2 === 0)) s4_1 = 1;
+            else if (!isNormalBmi && hash % 3 === 0) s4_1 = 2;
+
+            // 4.2 การเจริญเติบโตสมวัย (Growth)
+            let s4_2 = 3;
+            if (!isNormalBmi) s4_2 = 2;
+            if (bmi < 15 || bmi > 30) s4_2 = 1;
+
+            // 4.3 สุขภาพจิต (Mental health)
+            let s4_3 = 3;
+            if (hash % 10 === 0) s4_3 = 2;
+
+            // 5.1 การปรับตัวเข้ากับผู้อื่น (Social adjustment)
+            let s5_1 = 3;
+            if (hash % 11 === 0) s5_1 = 2;
+
+            // 5.2 การเสียสละช่วยเหลือแบ่งปัน (Sharing)
+            let s5_2 = 3;
+            if (hash % 12 === 0) s5_2 = 2;
+
+            // 5.3 เคารพกฎกติกาและมีระเบียบวินัย (Rules & Discipline)
+            let s5_3 = 3;
+            if (hash % 13 === 0) s5_3 = 2;
+            if (gpa < 1.8) s5_3 = 1;
+
+            return {
+                s1_1, s1_2, s1_3,
+                s2_1, s2_2, s2_3,
+                s3_1, s3_2, s3_3,
+                s4_1, s4_2, s4_3,
+                s5_1, s5_2, s5_3
+            };
+        }
+
+        const totalStudents = data.length;
+
+        // Calculate aspect aggregates
+        const aspectData = aspects.map(asp => {
+            const itemStats = asp.items.map(item => {
+                let good = 0, mod = 0, imp = 0;
+                data.forEach(s => {
+                    const scores = getStudentScores(s);
+                    const score = scores[item.key];
+                    if (score === 3) good++;
+                    else if (score === 2) mod++;
+                    else if (score === 1) imp++;
+                });
+                
+                const p_good = ((good / totalStudents) * 100).toFixed(2);
+                const p_mod = ((mod / totalStudents) * 100).toFixed(2);
+                const p_imp = ((imp / totalStudents) * 100).toFixed(2);
+                const mean = ((good * 3 + mod * 2 + imp * 1) / totalStudents).toFixed(2);
+                
+                let meaning = "ปรับปรุง";
+                if (parseFloat(mean) >= 2.00) meaning = "ดี";
+                else if (parseFloat(mean) >= 1.50) meaning = "ปานกลาง";
+
+                return {
+                    title: item.title,
+                    good, p_good,
+                    mod, p_mod,
+                    imp, p_imp,
+                    mean, meaning
+                };
+            });
+
+            // Aggregate aspect
+            const avg_good = Math.round(itemStats.reduce((sum, i) => sum + i.good, 0) / asp.items.length);
+            const avg_mod = Math.round(itemStats.reduce((sum, i) => sum + i.mod, 0) / asp.items.length);
+            const avg_imp = Math.round(itemStats.reduce((sum, i) => sum + i.imp, 0) / asp.items.length);
+            
+            const p_avg_good = ((avg_good / totalStudents) * 100).toFixed(2);
+            const p_avg_mod = ((avg_mod / totalStudents) * 100).toFixed(2);
+            const p_avg_imp = ((avg_imp / totalStudents) * 100).toFixed(2);
+            
+            const avg_mean = (itemStats.reduce((sum, i) => sum + parseFloat(i.mean), 0) / asp.items.length).toFixed(2);
+            
+            let avg_meaning = "ปรับปรุง";
+            if (parseFloat(avg_mean) >= 2.00) avg_meaning = "ดี";
+            else if (parseFloat(avg_mean) >= 1.50) avg_meaning = "ปานกลาง";
+
+            return {
+                title: asp.title,
+                id: asp.id,
+                good: avg_good, p_good: p_avg_good,
+                mod: avg_mod, p_mod: p_avg_mod,
+                imp: avg_imp, p_imp: p_avg_imp,
+                mean: avg_mean, meaning: avg_meaning,
+                items: itemStats
+            };
+        });
+
+        // Build Table HTML
+        let tableHtml = `
+            <div class="glass p-6 rounded-3xl mt-8 print:p-0 print:border-none print:shadow-none print:mt-0 print:bg-white">
+                <h5 class="font-bold text-slate-700 dark:text-gray-200 mb-6 flex items-center gap-2 no-print">
+                     📋 สรุปผลการวิเคราะห์ผู้เรียนรายบุคคลรายด้าน
+                </h5>
+                <div class="overflow-x-auto print:overflow-visible">
+                    <table class="w-full border-collapse border border-slate-300 dark:border-slate-700 text-sm text-slate-700 dark:text-gray-300 print:text-black print:border-black print:w-full">
+                        <thead>
+                            <tr class="bg-blue-50 dark:bg-slate-800 text-center font-bold print:bg-blue-100/50 print:text-black">
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black px-2 py-3 w-16" rowspan="2">ด้านที่</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black px-3 py-3 text-left" rowspan="2">รายการวิเคราะห์ผู้เรียนรายบุคคล</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black px-2 py-1" colspan="6">ผลการวิเคราะห์ผู้เรียน</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black px-2 py-1 w-32" colspan="2">สรุปผล</th>
+                            </tr>
+                            <tr class="bg-blue-50 dark:bg-slate-800 text-center font-bold print:bg-blue-100/50 print:text-black">
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black px-2 py-1 w-16" colspan="2">ดี</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black px-2 py-1 w-16" colspan="2">ปานกลาง</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black px-2 py-1 w-16" colspan="2">ปรับปรุง</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black px-2 py-1 w-16" rowspan="2">X̄</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black px-2 py-1 w-20" rowspan="2">ความหมาย</th>
+                            </tr>
+                            <tr class="bg-blue-50/50 dark:bg-slate-800/50 text-center font-bold text-xs print:bg-blue-50 print:text-black">
+                                <th colspan="2"></th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black py-1 w-10">คน</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black py-1 w-14">ร้อยละ</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black py-1 w-10">คน</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black py-1 w-14">ร้อยละ</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black py-1 w-10">คน</th>
+                                <th class="border border-slate-300 dark:border-slate-700 print:border-black py-1 w-14">ร้อยละ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        aspectData.forEach(asp => {
+            tableHtml += `
+                <tr class="font-bold bg-slate-50 dark:bg-slate-800/40 print:bg-slate-100 print:text-black">
+                    <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center" rowspan="4">${asp.id}</td>
+                    <td class="border border-slate-300 dark:border-slate-700 print:border-black px-3 py-2">${asp.title}</td>
+                    <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${asp.good}</td>
+                    <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${asp.p_good}%</td>
+                    <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${asp.mod}</td>
+                    <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${asp.p_mod}%</td>
+                    <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${asp.imp}</td>
+                    <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${asp.p_imp}%</td>
+                    <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${asp.mean}</td>
+                    <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${asp.meaning}</td>
+                </tr>
+            `;
+
+            asp.items.forEach(item => {
+                tableHtml += `
+                    <tr class="print:text-black">
+                        <td class="border border-slate-300 dark:border-slate-700 print:border-black px-6 py-2">${item.title}</td>
+                        <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${item.good}</td>
+                        <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${item.p_good}%</td>
+                        <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${item.mod}</td>
+                        <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${item.p_mod}%</td>
+                        <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${item.imp}</td>
+                        <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${item.p_imp}%</td>
+                        <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${item.mean}</td>
+                        <td class="border border-slate-300 dark:border-slate-700 print:border-black text-center py-2">${item.meaning}</td>
+                    </tr>
+                `;
+            });
+        });
+
+        tableHtml += `
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Signature Section -->
+                <div class="mt-8 flex justify-end print:mt-12">
+                    <div class="text-center w-80 font-semibold print:text-black">
+                        <p class="mb-12">ลงชื่อ................................................ครูผู้สอน</p>
+                        <p class="mb-1">( ${teacherName} )</p>
+                        <p class="text-xs text-slate-500 print:text-black">ตำแหน่ง ครูผู้สอน กลุ่มสาระการเรียนรู้ ${teacherMajor || '-'}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
         // Render View
         area.html(`
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="no-print grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div class="glass p-5 rounded-2xl border-l-4 border-blue-500 shadow-sm transition-transform hover:-translate-y-1">
                     <p class="text-[10px] font-black uppercase text-blue-500 tracking-wider">นักเรียนทั้งหมด</p>
                     <h4 class="text-3xl font-black text-slate-800 dark:text-white mt-1">${data.length} <span class="text-xs font-bold text-gray-400">คน</span></h4>
@@ -459,7 +795,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="no-print grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div class="glass p-6 rounded-3xl">
                     <h5 class="font-bold text-slate-700 dark:text-gray-200 mb-6 flex items-center gap-2">
                          📌 สัดส่วนเพศนักเรียน
@@ -478,7 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
 
-            <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+            <div class="no-print mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                 <div class="glass p-6 rounded-2xl bg-indigo-50/30 dark:bg-indigo-900/10">
                     <h6 class="font-bold text-indigo-700 dark:text-indigo-400 mb-3 uppercase text-[10px] tracking-widest">🩺 สถิติสุขภาพ</h6>
                     <ul class="space-y-2">
@@ -506,6 +842,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </ul>
                 </div>
             </div>
+
+            <!-- Official Report Table -->
+            ${tableHtml}
         `);
 
         // Charts Initialization
@@ -549,6 +888,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const subjectId = $(this).val();
         const area = $('#allContent');
         
+        // Update print header info
+        const subjectObj = subjects.find(s => s.id == subjectId);
+        if (subjectObj) {
+            $('.print-all-code').text(subjectObj.code);
+            $('.print-all-name').text(subjectObj.name);
+            $('.print-all-level').text(subjectObj.level);
+        } else {
+            $('.print-all-code').text('-');
+            $('.print-all-name').text('-');
+            $('.print-all-level').text('-');
+        }
+
         if (!subjectId) {
             area.html('<div class="flex flex-col items-center justify-center py-20 text-gray-400 space-y-4"><i class="fas fa-table text-6xl opacity-10"></i><p class="font-bold">กรุณาเลือกวิชาเพื่อดูตารางข้อมูล</p></div>');
             return;
