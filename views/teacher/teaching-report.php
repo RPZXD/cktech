@@ -194,7 +194,11 @@
                     <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">บันทึกการสอนทั้งหมดของคุณ</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center flex-wrap gap-2">
+                <!-- Dropdown filter for semester (term/pee) -->
+                <select id="termFilterSelect" class="border-2 border-indigo-200 dark:border-indigo-800 rounded-xl px-3 py-1.5 text-xs font-semibold bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 transition-all cursor-pointer">
+                    <option value="">กำลังโหลดภาคเรียน...</option>
+                </select>
                 <span class="px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 text-xs font-semibold rounded-full">
                     <i class="fas fa-sync-alt mr-1"></i> Auto-Refresh
                 </span>

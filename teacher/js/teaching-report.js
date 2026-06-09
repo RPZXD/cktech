@@ -94,11 +94,26 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     window.loadReports = function () {
-        fetch('../controllers/TeachingReportController.php?action=list')
+        const termFilter = document.getElementById('termFilterSelect');
+        let url = '../controllers/TeachingReportController.php?action=list';
+        if (termFilter && termFilter.value) {
+            const parts = termFilter.value.split('/');
+            if (parts.length === 2) {
+                url += `&term=${encodeURIComponent(parts[0])}&pee=${encodeURIComponent(parts[1])}`;
+            }
+        }
+
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 const tbody = document.getElementById('reportTableBody');
                 const mobileContainer = document.getElementById('mobileReportCards');
+
+                // Destroy DataTable before changing HTML to avoid Datatable errors
+                if ($.fn.DataTable.isDataTable('.min-w-full')) {
+                    $('.min-w-full').DataTable().destroy();
+                }
+
                 tbody.innerHTML = '';
 
                 if (!data.length) {
@@ -110,9 +125,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>`;
                     }
                     updateReportStats([]);
-                    if ($.fn.DataTable.isDataTable('#reportTableBody')) {
-                        $('#reportTableBody').DataTable().destroy();
-                    }
                     return;
                 }
 
@@ -226,6 +238,54 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     };
 
+    window.loadTermsFilter = function () {
+        fetch('../controllers/TeachingReportController.php?action=getTerms')
+            .then(res => res.json())
+            .then(data => {
+                const select = document.getElementById('termFilterSelect');
+                if (!select) return;
+                
+                select.innerHTML = '';
+                
+                const terms = data.terms || [];
+                const currentTerm = data.current_term;
+                const currentPee = data.current_pee;
+                
+                // We should make sure the current active term is in the list
+                if (currentTerm && currentPee) {
+                    const hasCurrentTerm = terms.some(t => t.term == currentTerm && t.pee == currentPee);
+                    if (!hasCurrentTerm) {
+                        // Prepend current active term if it doesn't have any reports yet
+                        terms.unshift({ term: currentTerm, pee: currentPee });
+                    }
+                }
+                
+                terms.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = `${t.term}/${t.pee}`;
+                    opt.textContent = `ภาคเรียนที่ ${t.term}/${t.pee}`;
+                    if (t.term == currentTerm && t.pee == currentPee) {
+                        opt.selected = true;
+                    }
+                    select.appendChild(opt);
+                });
+                
+                // Add an option to see all reports
+                const optAll = document.createElement('option');
+                optAll.value = '';
+                optAll.textContent = 'ดูทั้งหมด';
+                select.appendChild(optAll);
+                
+                // After populating, load reports for the selected option (which defaults to current term)
+                loadReports();
+            })
+            .catch(err => {
+                console.error('Failed to load terms:', err);
+                // Fallback to load reports directly
+                loadReports();
+            });
+    };
+
     function bindReportEventHandlers() {
         // View details
         document.querySelectorAll('.btn-report-detail').forEach(btn => {
@@ -293,6 +353,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const subjectSelect = document.getElementById('subjectSelect');
     const reportDateInput = document.getElementById('reportDate');
     const classRoomSelectArea = document.getElementById('classRoomSelectArea');
+    const termFilterSelect = document.getElementById('termFilterSelect');
     let subjectClassRooms = {};
 
     window.loadSubjectsForReport = function () {
@@ -411,6 +472,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (reportDateInput) {
         reportDateInput.addEventListener('change', function () {
             renderClassRoomCheckboxes(subjectSelect.value, this.value);
+        });
+    }
+
+    if (termFilterSelect) {
+        termFilterSelect.addEventListener('change', function () {
+            loadReports();
         });
     }
 
@@ -1302,6 +1369,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Initialize: call functions after all definitions are complete
-    loadReports();
+    loadTermsFilter();
     loadSubjectsForReport();
 });

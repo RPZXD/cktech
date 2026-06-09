@@ -23,10 +23,24 @@ try {
             $reports = $reportModel->getAllReportsForAdmin($teacher, $department, $level, $dateStart, $dateEnd);
             echo json_encode($reports);
             break;
+        case 'getTerms':
+            $teacher_id = $_GET['teacher_id'] ?? $_POST['teacher_id'] ?? ($_SESSION['user']['Teach_id'] ?? ($_SESSION['Teacher_login'] ?? 0));
+            $terms = $reportModel->getUniqueTermsByTeacher($teacher_id);
+            // Get current term/year info
+            require_once __DIR__ . '/../models/TermPee.php';
+            $currentTermInfo = \TermPee::getCurrent();
+            echo json_encode([
+                'terms' => $terms,
+                'current_term' => $currentTermInfo->term,
+                'current_pee' => $currentTermInfo->pee
+            ]);
+            break;
         case 'list':
             // ใช้ Teach_id จาก session แทน username
             $teacher_id = $_GET['teacher_id'] ?? $_POST['teacher_id'] ?? ($_SESSION['user']['Teach_id'] ?? ($_SESSION['Teacher_login'] ?? 0));
-            $reports = $reportModel->getAllByTeacher($teacher_id);
+            $term = $_GET['term'] ?? '';
+            $pee = $_GET['pee'] ?? '';
+            $reports = $reportModel->getAllByTeacher($teacher_id, $term, $pee);
             echo json_encode($reports);
             break;
         case 'listByTeachers':

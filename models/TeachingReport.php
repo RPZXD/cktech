@@ -15,9 +15,55 @@ class TeachingReport
         $db = new \App\DatabaseTeachingReport();
         $this->pdo = $db->getPDO();
         $this->dbUsers = new \App\DatabaseUsers();
+        $this->updateTableStructure();
     }
 
-    public function getAllByTeacher($teacher_id)
+    private function updateTableStructure()
+    {
+        try {
+            $checkColumns = ['term', 'pee'];
+            foreach ($checkColumns as $column) {
+                $checkSql = "SHOW COLUMNS FROM teaching_reports LIKE '$column'";
+                $stmt = $this->pdo->query($checkSql);
+                if ($stmt->rowCount() == 0) {
+                    $alterSql = "ALTER TABLE teaching_reports ADD COLUMN $column VARCHAR(10) DEFAULT NULL";
+                    $this->pdo->exec($alterSql);
+                    error_log("Added $column column to teaching_reports table");
+                }
+            }
+            
+            // Backfill existing NULL values
+            $backfillSql = "UPDATE teaching_reports 
+                            SET term = CASE 
+                                WHEN MONTH(report_date) BETWEEN 5 AND 10 THEN '1'
+                                ELSE '2'
+                            END,
+                            pee = CASE 
+                                WHEN MONTH(report_date) BETWEEN 5 AND 12 THEN YEAR(report_date) + 543
+                                ELSE YEAR(report_date) + 543 - 1
+                            END
+                            WHERE term IS NULL OR pee IS NULL";
+            $this->pdo->exec($backfillSql);
+        } catch (\Exception $e) {
+            error_log("Error updating teaching_reports table structure: " . $e->getMessage());
+        }
+    }
+
+    public function getUniqueTermsByTeacher($teacher_id)
+    {
+        if (!$this->pdo) {
+            return [];
+        }
+        $sql = "SELECT DISTINCT term, pee 
+                FROM teaching_reports 
+                WHERE teacher_id = ? AND term IS NOT NULL AND pee IS NOT NULL
+                ORDER BY pee DESC, term DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$teacher_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getAllByTeacher($teacher_id, $term = null, $pee = null)
     {
         // ตรวจสอบการเชื่อมต่อฐานข้อมูล DatabaseTeachingReport
         if (!$this->pdo) {
@@ -27,10 +73,21 @@ class TeachingReport
         $sql = "SELECT r.*, s.name AS subject_name , s.level
                 FROM teaching_reports r
                 LEFT JOIN subjects s ON r.subject_id = s.id
-                WHERE r.teacher_id = ?
-                ORDER BY r.report_date DESC";
+                WHERE r.teacher_id = ?";
+        $params = [$teacher_id];
+
+        if ($term !== null && $term !== '') {
+            $sql .= " AND r.term = ?";
+            $params[] = $term;
+        }
+        if ($pee !== null && $pee !== '') {
+            $sql .= " AND r.pee = ?";
+            $params[] = $pee;
+        }
+
+        $sql .= " ORDER BY r.report_date DESC";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$teacher_id]);
+        $stmt->execute($params);
         $reports = $stmt->fetchAll();
 
         // เตรียมเชื่อมต่อฐานข้อมูล student
@@ -355,9 +412,14 @@ class TeachingReport
                 $img1 = !empty($row['image1']) ? $row['image1'] : null;
                 $img2 = !empty($row['image2']) ? $row['image2'] : null;
 
+                require_once __DIR__ . '/TermPee.php';
+                $currentTerm = \TermPee::getCurrent();
+                $term = $row['term'] ?? $currentTerm->term;
+                $pee = $row['pee'] ?? $currentTerm->pee;
+
                 $stmt = $this->pdo->prepare("INSERT INTO teaching_reports 
-                    (report_date, subject_id, class_room, period_start, period_end, plan_number, plan_topic, activity, reflection_k, reflection_p, reflection_a, problems, suggestions, teacher_id, image1, image2, created_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                    (report_date, subject_id, class_room, period_start, period_end, plan_number, plan_topic, activity, reflection_k, reflection_p, reflection_a, problems, suggestions, teacher_id, image1, image2, term, pee, created_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
                 $stmt->execute([
                     $row['report_date'],
                     $row['subject_id'],
@@ -374,7 +436,9 @@ class TeachingReport
                     $row['suggestions'] ?? null,
                     $row['teacher_id'],
                     $img1,
-                    $img2
+                    $img2,
+                    $term,
+                    $pee
                 ]);
                 $reportId = $this->pdo->lastInsertId();
                 $reportIds[] = $reportId;
@@ -504,9 +568,19 @@ class TeachingReport
     {
         try {
             $this->pdo->beginTransaction();
+            $term = $row['term'] ?? null;
+            $pee = $row['pee'] ?? null;
+            if (!$term || !$pee) {
+                $reportDate = $row['report_date'];
+                $month = intval(date('m', strtotime($reportDate)));
+                $year = intval(date('Y', strtotime($reportDate)));
+                $term = ($month >= 5 && $month <= 10) ? '1' : '2';
+                $pee = ($month >= 5 && $month <= 12) ? ($year + 543) : ($year + 543 - 1);
+            }
+
             // อัปเดต teaching_reports
             $stmt = $this->pdo->prepare("UPDATE teaching_reports SET 
-                report_date=?, subject_id=?, class_room=?, period_start=?, period_end=?, plan_number=?, plan_topic=?, activity=?, reflection_k=?, reflection_p=?, reflection_a=?, problems=?, suggestions=?, teacher_id=?, image1=?, image2=?
+                report_date=?, subject_id=?, class_room=?, period_start=?, period_end=?, plan_number=?, plan_topic=?, activity=?, reflection_k=?, reflection_p=?, reflection_a=?, problems=?, suggestions=?, teacher_id=?, image1=?, image2=?, term=?, pee=?
                 WHERE id=?");
             $stmt->execute([
                 $row['report_date'],
@@ -525,6 +599,8 @@ class TeachingReport
                 $row['teacher_id'],
                 !empty($row['image1']) ? $row['image1'] : null,
                 !empty($row['image2']) ? $row['image2'] : null,
+                $term,
+                $pee,
                 $id
             ]);
             // ลบ attendance logs เดิม
