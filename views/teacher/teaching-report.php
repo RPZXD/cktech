@@ -139,8 +139,13 @@
                 </p>
             </div>
             
-            <!-- Action Button - Hidden on Mobile (use FAB instead) -->
-            <div class="hidden md:flex justify-end">
+            <!-- Action Buttons - Hidden on Mobile (use FAB instead) -->
+            <div class="hidden md:flex items-center gap-3 justify-end">
+                <button id="btnBatchReport" class="group relative inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 px-5 py-3.5 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5 active:scale-95">
+                    <span class="text-xl group-hover:rotate-12 transition-transform duration-200">⚡</span>
+                    <span class="text-base">รายงานย้อนหลังถึงปัจจุบัน</span>
+                    <span class="absolute inset-0 rounded-full border-2 border-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                </button>
                 <button id="btnAddReport" class="group relative inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600 px-6 py-3.5 text-white font-semibold shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5 active:scale-95">
                     <span class="text-xl group-hover:rotate-12 transition-transform duration-200">➕</span>
                     <span class="text-base">เพิ่มรายงานใหม่</span>
@@ -442,6 +447,128 @@
         <!-- Modal Body -->
         <div class="flex-1 overflow-y-auto p-4 md:p-6">
             <div id="attendanceModalContent"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Batch Retroactive Reports -->
+<div id="modalBatchReport" class="fixed inset-0 flex items-start md:items-center justify-center z-50 hidden transition-all duration-300 bg-black/40 backdrop-blur-sm p-0 pt-0 md:p-4 overflow-y-auto">
+    <div class="modal-enter bg-white dark:bg-gray-800 rounded-none md:rounded-3xl shadow-2xl w-full md:max-w-4xl relative border-0 md:border border-gray-200 dark:border-gray-700 min-h-screen md:min-h-0 md:max-h-[90vh] flex flex-col">
+        <!-- Modal Header -->
+        <div class="sticky top-0 z-10 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 md:p-6">
+            <button id="closeModalBatchReport" class="absolute top-3 right-3 md:top-4 md:right-4 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full text-white text-xl md:text-2xl transition-all">&times;</button>
+            <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2 md:gap-3 pr-10">
+                <span class="text-2xl md:text-3xl">⚡</span>
+                <span>สร้างรายงานย้อนหลังถึงปัจจุบัน</span>
+            </h2>
+            <p class="text-white/80 text-xs md:text-sm mt-1">สร้างบันทึกการสอนอัตโนมัติตามตารางสอน ตั้งแต่วันที่เริ่มต้นจนถึงวันที่ปัจจุบัน</p>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            <form id="formBatchReport" class="space-y-4 md:space-y-6">
+                <!-- Subject Selection -->
+                <div class="group">
+                    <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300 text-sm md:text-base flex items-center gap-2">
+                        <span class="w-7 h-7 md:w-8 md:h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center text-purple-600 dark:text-purple-400">📖</span>
+                        เลือกวิชาที่ต้องการสร้างรายงาน <span class="text-red-500">*</span>
+                    </label>
+                    <select name="batch_subject_id" id="batchSubjectSelect" required 
+                        class="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm md:text-base focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200">
+                        <option value="">-- เลือกวิชา --</option>
+                    </select>
+                </div>
+
+                <!-- Date Range (Start Date -> End Date / Today) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div class="group">
+                        <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300 text-sm md:text-base flex items-center gap-2">
+                            <span class="w-7 h-7 md:w-8 md:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">📅</span>
+                            ตั้งแต่วันที่เริ่มต้น <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" name="batch_start_date" id="batchStartDate" required 
+                            class="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm md:text-base focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200" />
+                    </div>
+                    <div class="group">
+                        <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300 text-sm md:text-base flex items-center gap-2">
+                            <span class="w-7 h-7 md:w-8 md:h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center text-emerald-600 dark:text-emerald-400">🎯</span>
+                            ถึงวันที่ (ปัจจุบัน) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" name="batch_end_date" id="batchEndDate" required 
+                            class="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm md:text-base focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200" />
+                    </div>
+                </div>
+
+                <!-- Template Content (Plan Topic, Activity, Reflections) -->
+                <div class="bg-gradient-to-br from-indigo-50/70 to-purple-50/70 dark:from-gray-700/50 dark:to-gray-700/30 rounded-2xl p-4 md:p-6 border border-indigo-100 dark:border-gray-600 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <h3 class="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                            <span>📝</span> ข้อมูลสาระการเรียนรู้ & กิจกรรม (ตามรายสัปดาห์)
+                        </h3>
+                        <button type="button" id="btnBatchAiGenerate" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-600 hover:from-violet-600 hover:to-indigo-600 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                            <span>✨ ให้ AI จัดเนื้อหาตามหลักสูตรไม่ซ้ำกันแต่ละสัปดาห์</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block mb-1.5 font-medium text-gray-700 dark:text-gray-300 text-sm">หัวข้อ/สาระการเรียนรู้เริ่มต้น (Fallback)</label>
+                            <input type="text" name="batch_plan_topic" id="batchPlanTopic" placeholder="เช่น การจัดการเรียนรู้ตามหลักสูตร"
+                                class="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-3.5 py-2.5 text-sm focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all" />
+                        </div>
+                        <div>
+                            <label class="block mb-1.5 font-medium text-gray-700 dark:text-gray-300 text-sm">กิจกรรมการเรียนรู้เริ่มต้น (Fallback)</label>
+                            <input type="text" name="batch_activity" id="batchActivity" placeholder="เช่น จัดกิจกรรมการเรียนรู้ บรรยาย และฝึกปฏิบัติ"
+                                class="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-3.5 py-2.5 text-sm focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all" />
+                        </div>
+                    </div>
+
+                    <!-- KPA Defaults -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                        <div>
+                            <label class="block mb-1 font-medium text-blue-700 dark:text-blue-300 text-xs">ความรู้ (K)</label>
+                            <textarea name="batch_reflection_k" rows="2" placeholder="ผู้เรียนมีความรู้ความเข้าใจตามเนื้อหา"
+                                class="w-full border border-blue-200 dark:border-blue-800 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block mb-1 font-medium text-purple-700 dark:text-purple-300 text-xs">ทักษะ (P)</label>
+                            <textarea name="batch_reflection_p" rows="2" placeholder="ผู้เรียนได้ฝึกปฏิบัติตามกิจกรรม"
+                                class="w-full border border-purple-200 dark:border-purple-800 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block mb-1 font-medium text-pink-700 dark:text-pink-300 text-xs">เจตคติ (A)</label>
+                            <textarea name="batch_reflection_a" rows="2" placeholder="ผู้เรียนมีความกระตือรือร้นและตั้งใจเรียน"
+                                class="w-full border border-pink-200 dark:border-pink-800 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-2 text-xs text-indigo-700 dark:text-indigo-300 font-medium">
+                        <i class="fas fa-magic text-indigo-500"></i>
+                        <span>ระบบจะจัดสรรเนื้อหาตามรายสัปดาห์ (สัปดาห์เดียวกันทุกห้องจะใช้เนื้อหาตรงกัน แต่ต่างสัปดาห์เนื้อหาจะไม่ซ้ำกัน)</span>
+                    </div>
+                </div>
+
+                <!-- Preview Area for generated sessions -->
+                <div id="batchPreviewArea" class="space-y-2"></div>
+            </form>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="sticky bottom-0 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 md:p-5 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div id="batchSummaryCount" class="text-sm font-semibold text-gray-600 dark:text-gray-300"></div>
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <button type="button" id="cancelBatchReport" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100 font-semibold transition-all duration-200">
+                    ยกเลิก
+                </button>
+                <button type="button" id="btnPreviewBatch" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 font-semibold transition-all duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-search"></i>
+                    <span>ตรวจสอบคาบสอน</span>
+                </button>
+                <button type="button" id="btnSubmitBatch" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold shadow-lg shadow-indigo-500/20 transition-all duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-check-double"></i>
+                    <span>ยืนยันสร้างรายงาน</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>

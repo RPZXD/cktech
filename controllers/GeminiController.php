@@ -36,7 +36,8 @@ function callGeminiAPI($apiKey, $model, $prompt, $isJson = false) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -135,15 +136,7 @@ try {
                     . "  \"suggestions\": \"ข้อเสนอแนะ/แนวทางการแก้ไขปัญหาสำหรับใช้ในคาบเรียนถัดไป\"\n"
                     . "}";
 
-            $res = callGeminiAPI($apiKey, 'gemini-2.5-flash', $prompt, true);
-            if (!$res['success']) {
-                $errData = json_decode($res['response'], true);
-                $msg = $errData['error']['message'] ?? '';
-                $isTransient = ($res['http_code'] === 429 || $res['http_code'] >= 500 || stripos($msg, 'demand') !== false || stripos($msg, 'limit') !== false || stripos($msg, 'overloaded') !== false || stripos($msg, 'quota') !== false);
-                if ($isTransient) {
-                    $res = callGeminiAPI($apiKey, 'gemini-1.5-flash', $prompt, true);
-                }
-            }
+            $res = callGeminiAPI($apiKey, 'gemini-3.6-flash', $prompt, true);
 
             if (!$res['success']) {
                 $errData = json_decode($res['response'], true);
@@ -183,6 +176,75 @@ try {
             echo json_encode([
                 'success' => true,
                 'data' => $aiData
+            ]);
+            break;
+
+        case 'generate_curriculum_batch':
+            // Get teacher's key
+            $stmt = $pdo->prepare("SELECT gemini_api_key FROM teacher WHERE Teach_id = ?");
+            $stmt->execute([$teacher_id]);
+            $teacher = $stmt->fetch();
+            $apiKey = trim($teacher['gemini_api_key'] ?? '');
+
+            if (empty($apiKey)) {
+                echo json_encode(['success' => false, 'needs_key' => true, 'error' => 'กรุณาตั้งค่า Gemini API Key ก่อนใช้งาน']);
+                exit;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $subjectName = trim($input['subject_name'] ?? '');
+            $totalWeeks = max(1, min(40, intval($input['weeks_count'] ?? 1)));
+
+            if (empty($subjectName)) {
+                echo json_encode(['success' => false, 'error' => 'กรุณาระบุชื่อวิชา']);
+                exit;
+            }
+
+            $prompt = "คุณคือผู้เชี่ยวชาญการจัดทำแผนการสอนวิชา: \"{$subjectName}\"\n"
+                    . "กรุณาสร้างแผนการสอนรายสัปดาห์จำนวน {$totalWeeks} สัปดาห์ (สัปดาห์ที่ 1 ถึง {$totalWeeks}) โดยแต่ละสัปดาห์มีหัวข้อ กิจกรรม และ K,P,A ที่กระชับ ได้ใจความ ไม่ซ้ำกัน สอดคล้องกับวิชานี้\n"
+                    . "ส่งผลลัพธ์เป็น JSON Array เท่านั้น ตามโครงสร้าง:\n"
+                    . "[\n"
+                    . "  {\n"
+                    . "    \"week\": 1,\n"
+                    . "    \"plan_topic\": \"หัวข้อการเรียนรู้สัปดาห์ที่ 1\",\n"
+                    . "    \"activity\": \"กิจกรรมการเรียนรู้สั้นๆ 1-2 ประโยค\",\n"
+                    . "    \"reflection_k\": \"ความรู้ที่ได้รับ\",\n"
+                    . "    \"reflection_p\": \"ทักษะที่ได้ปฏิบัติ\",\n"
+                    . "    \"reflection_a\": \"เจตคติที่คุณลักษณะที่ปลูกฝัง\"\n"
+                    . "  }\n"
+                    . "]";
+
+            $res = callGeminiAPI($apiKey, 'gemini-3.6-flash', $prompt, true);
+
+            if (!$res['success']) {
+                $errData = json_decode($res['response'], true);
+                $msg = $errData['error']['message'] ?? ($res['error'] ? 'การเชื่อมต่อล้มเหลว: ' . $res['error'] : 'Gemini API Error (HTTP ' . $res['http_code'] . ')');
+                if (strpos($msg, 'API_KEY_INVALID') !== false) {
+                    echo json_encode(['success' => false, 'needs_key' => true, 'error' => 'API Key ของคุณไม่ถูกต้องตามที่ Google กำหนด']);
+                } else {
+                    echo json_encode(['success' => false, 'error' => $msg]);
+                }
+                exit;
+            }
+
+            $resDecoded = json_decode($res['response'], true);
+            $textResult = $resDecoded['candidates'][0]['content']['parts'][0]['text'] ?? '';
+
+            $aiList = json_decode(trim($textResult), true);
+            if (!$aiList) {
+                if (preg_match('/\[.*\]/s', $textResult, $matches)) {
+                    $aiList = json_decode($matches[0], true);
+                }
+            }
+
+            if (!is_array($aiList) || empty($aiList)) {
+                echo json_encode(['success' => false, 'error' => 'AI ไม่สามารถสร้างโครงสร้างรายสัปดาห์ได้', 'raw' => $textResult]);
+                exit;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => $aiList
             ]);
             break;
 

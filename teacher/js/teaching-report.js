@@ -365,8 +365,9 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(res => res.json())
             .then(data => {
                 const select = document.getElementById('subjectSelect');
-                if (!select) return;
-                select.innerHTML = `<option value="">-- เลือกวิชา --</option>`;
+                const batchSelect = document.getElementById('batchSubjectSelect');
+                if (select) select.innerHTML = `<option value="">-- เลือกวิชา --</option>`;
+                if (batchSelect) batchSelect.innerHTML = `<option value="">-- เลือกวิชา --</option>`;
                 subjectClassRooms = {};
                 (Array.isArray(data) ? data : []).forEach(subject => {
                     subjectClassRooms[String(subject.id)] = Array.isArray(subject.class_periods) ? subject.class_periods : [];
@@ -377,7 +378,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     opt.value = subject.id;
                     opt.textContent = `${code}${name}`;
                     if (level) opt.setAttribute('data-class', level);
-                    select.appendChild(opt);
+                    if (select) select.appendChild(opt);
+                    if (batchSelect) {
+                        const batchOpt = opt.cloneNode(true);
+                        batchSelect.appendChild(batchOpt);
+                    }
                 });
             });
     };
@@ -559,7 +564,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const careStatus = String(student.care_attendance_status || '');
                         if (careStatus === '1') defaultVal = 'present';
                         else if (careStatus === '2') defaultVal = 'absent';
-                        else if (careStatus === '3') defaultVal = 'late';
+                        else if (careStatus === '3') defaultVal = 'present'; // มาสายจากระบบดูแล ให้นับเป็นมาเรียน
                         else if (careStatus === '4') defaultVal = 'sick';
                         else if (careStatus === '5') defaultVal = 'personal';
                         else if (careStatus === '6') defaultVal = 'activity';
@@ -1365,6 +1370,456 @@ document.addEventListener('DOMContentLoaded', function () {
                     text: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ'
                 });
             });
+        });
+    }
+
+    // --- Batch Retroactive Report Logic ---
+    const btnBatchReport = document.getElementById('btnBatchReport');
+    const modalBatchReport = document.getElementById('modalBatchReport');
+    const closeModalBatchReport = document.getElementById('closeModalBatchReport');
+    const cancelBatchReport = document.getElementById('cancelBatchReport');
+    const btnPreviewBatch = document.getElementById('btnPreviewBatch');
+    const btnSubmitBatch = document.getElementById('btnSubmitBatch');
+    const batchSubjectSelect = document.getElementById('batchSubjectSelect');
+    const batchStartDate = document.getElementById('batchStartDate');
+    const batchEndDate = document.getElementById('batchEndDate');
+    const batchPreviewArea = document.getElementById('batchPreviewArea');
+    const batchSummaryCount = document.getElementById('batchSummaryCount');
+
+    let calculatedBatchSessions = [];
+
+    // Helper: format YYYY-MM-DD
+    function toISODate(d) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    if (btnBatchReport) {
+        btnBatchReport.addEventListener('click', function () {
+            const today = new Date();
+            const todayStr = toISODate(today);
+
+            // Default start date: 30 days ago or start of current semester
+            const pastDate = new Date();
+            pastDate.setDate(today.getDate() - 30);
+            const pastStr = toISODate(pastDate);
+
+            if (batchStartDate) batchStartDate.value = pastStr;
+            if (batchEndDate) batchEndDate.value = todayStr;
+            if (batchPreviewArea) batchPreviewArea.innerHTML = '';
+            if (batchSummaryCount) batchSummaryCount.textContent = '';
+            calculatedBatchSessions = [];
+
+            if (modalBatchReport) modalBatchReport.classList.remove('hidden');
+        });
+    }
+
+    if (closeModalBatchReport) {
+        closeModalBatchReport.addEventListener('click', () => {
+            if (modalBatchReport) modalBatchReport.classList.add('hidden');
+        });
+    }
+
+    if (cancelBatchReport) {
+        cancelBatchReport.addEventListener('click', () => {
+            if (modalBatchReport) modalBatchReport.classList.add('hidden');
+        });
+    }
+
+    // Function to calculate and preview sessions
+    async function calculateBatchSessions() {
+        const subjectId = batchSubjectSelect.value;
+        const startDateVal = batchStartDate.value;
+        const endDateVal = batchEndDate.value;
+
+        if (!subjectId) {
+            Swal.fire('แจ้งเตือน', 'กรุณาเลือกวิชาที่ต้องการสร้างรายงาน', 'warning');
+            return null;
+        }
+        if (!startDateVal || !endDateVal) {
+            Swal.fire('แจ้งเตือน', 'กรุณาระบุช่วงวันที่ให้ครบถ้วน', 'warning');
+            return null;
+        }
+        if (startDateVal > endDateVal) {
+            Swal.fire('แจ้งเตือน', 'วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด', 'warning');
+            return null;
+        }
+
+        const classPeriods = subjectClassRooms[subjectId] || [];
+        if (!classPeriods.length) {
+            Swal.fire('ไม่พบตารางสอน', 'วิชานี้ยังไม่มีการตั้งค่าตารางสอนและคาบเรียนในระบบ', 'warning');
+            return null;
+        }
+
+        // Show loading indicator
+        batchPreviewArea.innerHTML = `
+            <div class="text-center py-6 text-indigo-600 dark:text-indigo-400">
+                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                <p class="text-sm font-medium">กำลังคำนวณคาบสอนและตรวจสอบรายงานเดิม...</p>
+            </div>
+        `;
+
+        try {
+            // Fetch existing reports to avoid duplicate sessions on the same date/period/room
+            const existingRes = await fetch('../controllers/TeachingReportController.php?action=list');
+            const existingReports = await existingRes.json();
+            const existingMap = new Set();
+            (Array.isArray(existingReports) ? existingReports : []).forEach(r => {
+                if (String(r.subject_id) === String(subjectId)) {
+                    const roomStr = String(r.class_room || '').trim();
+                    const periodStr = String(r.period_start || '').trim();
+                    const key = `${r.report_date}_${roomStr}_${periodStr}`;
+                    existingMap.add(key);
+                }
+            });
+
+            // Map Thai day string to Day Index (0: อาทิตย์, 1: จันทร์, ..., 6: เสาร์)
+            const thaiDayMap = { 'อาทิตย์': 0, 'จันทร์': 1, 'อังคาร': 2, 'พุธ': 3, 'พฤหัสบดี': 4, 'ศุกร์': 5, 'เสาร์': 6 };
+
+            const dayPeriodsMap = {};
+            classPeriods.forEach(p => {
+                const dayIdx = thaiDayMap[p.day_of_week];
+                if (dayIdx !== undefined) {
+                    if (!dayPeriodsMap[dayIdx]) dayPeriodsMap[dayIdx] = [];
+                    dayPeriodsMap[dayIdx].push(p);
+                }
+            });
+
+            // Generate dates between startDate and endDate
+            const start = new Date(startDateVal);
+            const end = new Date(endDateVal);
+            const sessionsToCreate = [];
+            const skippedSessions = [];
+
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const currentDayIdx = d.getDay();
+                const matchedPeriods = dayPeriodsMap[currentDayIdx];
+
+                if (matchedPeriods && matchedPeriods.length > 0) {
+                    const dateStr = toISODate(d);
+                    matchedPeriods.forEach(p => {
+                        const roomClean = String(p.class_room || '').replace('ห้อง ', '').trim();
+                        const periodStartClean = String(p.period_start || '').trim();
+                        const checkKey = `${dateStr}_${roomClean}_${periodStartClean}`;
+
+                        const sessionItem = {
+                            date: dateStr,
+                            dayName: p.day_of_week,
+                            room: roomClean,
+                            period_start: periodStartClean,
+                            period_end: String(p.period_end || '').trim()
+                        };
+
+                        if (existingMap.has(checkKey)) {
+                            skippedSessions.push(sessionItem);
+                        } else {
+                            sessionsToCreate.push(sessionItem);
+                        }
+                    });
+                }
+            }
+
+            calculatedBatchSessions = sessionsToCreate;
+
+            // Render Preview
+            if (sessionsToCreate.length === 0) {
+                batchPreviewArea.innerHTML = `
+                    <div class="p-5 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-200 text-sm">
+                        <div class="font-bold flex items-center gap-2 mb-1">
+                            <span>⚠️</span> ไม่พบคาบสอนที่ต้องสร้างใหม่
+                        </div>
+                        <p>${skippedSessions.length > 0 ? `พบรายงานที่มีอยู่แล้วทั้งหมด ${skippedSessions.length} คาบ ในช่วงวันดังกล่าว` : 'ไม่มีคาบสอนตามตารางในวันและช่วงเวลาที่เลือก'}</p>
+                    </div>
+                `;
+                batchSummaryCount.textContent = 'ไม่มีคาบสอนที่ต้องสร้าง';
+            } else {
+                let html = `
+                    <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 mb-3">
+                        <div class="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                            <span>✅</span> พบคาบสอนที่พร้อมสร้างรายงานจำนวน ${sessionsToCreate.length} คาบ
+                            ${skippedSessions.length > 0 ? `<span class="text-xs font-normal text-gray-500 dark:text-gray-400">(ข้ามรายงานเดิมที่มีแล้ว ${skippedSessions.length} คาบ)</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="max-h-56 overflow-y-auto space-y-1.5 pr-1 border border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-gray-50/50 dark:bg-gray-800/50 text-xs">
+                `;
+
+                sessionsToCreate.forEach((s, idx) => {
+                    html += `
+                        <div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-indigo-600 dark:text-indigo-400">#${idx + 1}</span>
+                                <span class="font-medium text-slate-800 dark:text-gray-200">วัน${s.dayName} ที่ ${formatThaiDate(s.date)}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold">ม.${s.room}</span>
+                                <span class="px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-semibold">คาบ ${s.period_start}-${s.period_end}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+                batchPreviewArea.innerHTML = html;
+                batchSummaryCount.textContent = `พร้อมสร้าง ${sessionsToCreate.length} คาบ`;
+            }
+
+            return sessionsToCreate;
+        } catch (err) {
+            console.error(err);
+            batchPreviewArea.innerHTML = `
+                <div class="p-4 rounded-xl bg-red-50 text-red-600 text-sm">
+                    เกิดข้อผิดพลาดในการตรวจสอบคาบสอน กรุณาลองใหม่อีกครั้ง
+                </div>
+            `;
+            return null;
+        }
+    }
+
+    if (btnPreviewBatch) {
+        btnPreviewBatch.addEventListener('click', () => {
+            calculateBatchSessions();
+        });
+    }
+
+    // Helper: Get ISO Week Key (e.g. 2026-W35)
+    function getWeekKey(dateStr) {
+        const d = new Date(dateStr);
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    }
+
+    let batchAiCurriculumPlan = [];
+
+    const btnBatchAiGenerate = document.getElementById('btnBatchAiGenerate');
+    if (btnBatchAiGenerate) {
+        btnBatchAiGenerate.addEventListener('click', async () => {
+            const subjectId = batchSubjectSelect.value;
+            const subjectText = batchSubjectSelect.options[batchSubjectSelect.selectedIndex]?.text || '';
+            if (!subjectId) {
+                Swal.fire('แจ้งเตือน', 'กรุณาเลือกวิชาก่อนใช้งาน AI', 'warning');
+                return;
+            }
+
+            const sessions = await calculateBatchSessions();
+            if (!sessions || sessions.length === 0) {
+                Swal.fire('ไม่มีคาบสอน', 'กรุณาเลือกช่วงวันที่ที่มีคาบสอน', 'info');
+                return;
+            }
+
+            // Count unique weeks
+            const uniqueWeeks = Array.from(new Set(sessions.map(s => getWeekKey(s.date))));
+            const weeksCount = uniqueWeeks.length;
+
+            Swal.fire({
+                title: '✨ AI กำลังวิเคราะห์และจัดทำหลักสูตร...',
+                html: `กำลังจัดโครงสร้างเนื้อหาสำหรับ <strong>วิชา ${subjectText}</strong><br>จำนวน <strong>${weeksCount} สัปดาห์</strong> ไม่ซ้ำกัน`,
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const res = await fetch('../controllers/GeminiController.php?action=generate_curriculum_batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        subject_name: subjectText,
+                        weeks_count: weeksCount
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+                    batchAiCurriculumPlan = data.data;
+                    const sample = batchAiCurriculumPlan[0];
+                    if (document.getElementById('batchPlanTopic')) document.getElementById('batchPlanTopic').value = sample.plan_topic || '';
+                    if (document.getElementById('batchActivity')) document.getElementById('batchActivity').value = sample.activity || '';
+                    if (document.querySelector('[name="batch_reflection_k"]')) document.querySelector('[name="batch_reflection_k"]').value = sample.reflection_k || '';
+                    if (document.querySelector('[name="batch_reflection_p"]')) document.querySelector('[name="batch_reflection_p"]').value = sample.reflection_p || '';
+                    if (document.querySelector('[name="batch_reflection_a"]')) document.querySelector('[name="batch_reflection_a"]').value = sample.reflection_a || '';
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: '✨ จัดทำแผนสำเร็จ!',
+                        html: `AI ได้จัดทำแผนการสอน <strong>${batchAiCurriculumPlan.length} สัปดาห์</strong> ไม่ซ้ำกันเรียบร้อยแล้ว<br><span class="text-xs text-gray-500">คาบในสัปดาห์เดียวกัน (แม้คนละห้อง) จะใช้เนื้อหาตรงกัน ส่วนต่างสัปดาห์เนื้อหาจะไม่ซ้ำกัน</span>`,
+                        confirmButtonColor: '#4f46e5'
+                    });
+                } else {
+                    if (data.needs_key) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: '🔑 ต้องตั้งค่า API Key',
+                            text: data.error || 'กรุณาตั้งค่า Gemini API Key ก่อน',
+                            showCancelButton: true,
+                            confirmButtonText: 'ตั้งค่า API Key'
+                        }).then(r => {
+                            if (r.isConfirmed) {
+                                const btnGeminiSettings = document.getElementById('btnGeminiSettings');
+                                if (btnGeminiSettings) btnGeminiSettings.click();
+                            }
+                        });
+                    } else {
+                        Swal.fire('ข้อผิดพลาด', data.error || 'ไม่สามารถสร้างแผนจาก AI ได้', 'error');
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อ AI ได้ กรุณาลองใหม่อีกครั้ง', 'error');
+            }
+        });
+    }
+
+    // Submit batch creation with weekly distinct contents
+    if (btnSubmitBatch) {
+        btnSubmitBatch.addEventListener('click', async () => {
+            const sessions = await calculateBatchSessions();
+            if (!sessions || sessions.length === 0) {
+                Swal.fire('ไม่มีข้อมูล', 'ไม่มีคาบสอนที่ต้องสร้างรายงาน', 'info');
+                return;
+            }
+
+            const subjectId = batchSubjectSelect.value;
+            const subjectText = batchSubjectSelect.options[batchSubjectSelect.selectedIndex]?.text || '';
+            const fallbackPlanTopic = document.getElementById('batchPlanTopic')?.value || 'การจัดการเรียนรู้ตามหลักสูตร';
+            const fallbackActivity = document.getElementById('batchActivity')?.value || 'จัดกิจกรรมการเรียนรู้ บรรยาย และฝึกปฏิบัติ';
+            const fallbackReflectionK = document.querySelector('[name="batch_reflection_k"]')?.value || 'ผู้เรียนมีความรู้ความเข้าใจตามเนื้อหา';
+            const fallbackReflectionP = document.querySelector('[name="batch_reflection_p"]')?.value || 'ผู้เรียนได้ฝึกปฏิบัติตามกิจกรรม';
+            const fallbackReflectionA = document.querySelector('[name="batch_reflection_a"]')?.value || 'ผู้เรียนมีความกระตือรือร้นและตั้งใจเรียน';
+
+            // Group sessions by ISO week key (e.g. "2026-W30") to map same week -> same content, different week -> different content
+            const weekKeys = Array.from(new Set(sessions.map(s => getWeekKey(s.date)))).sort();
+            const weekIndexMap = {};
+            weekKeys.forEach((wk, idx) => {
+                weekIndexMap[wk] = idx + 1; // 1-based week index
+            });
+
+            const confirmRes = await Swal.fire({
+                title: '⚡ ยืนยันสร้างรายงานย้อนหลัง?',
+                html: `คุณกำลังจะสร้างรายงานการสอนทั้งหมด <strong>${sessions.length} คาบ</strong> (ครอบคลุม ${weekKeys.length} สัปดาห์)<br><span class="text-xs text-gray-500">สัปดาห์เดียวกันเนื้อหาจะตรงกัน ส่วนต่างสัปดาห์เนื้อหาจะไม่ซ้ำกัน</span>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '🚀 เริ่มสร้างรายงานทันที',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#4f46e5'
+            });
+
+            if (!confirmRes.isConfirmed) return;
+
+            // If user hasn't generated with AI, fetch AI curriculum automatically on submit for highest quality
+            if (!batchAiCurriculumPlan || batchAiCurriculumPlan.length < weekKeys.length) {
+                Swal.fire({
+                    title: '✨ AI กำลังสร้างเนื้อหารายสัปดาห์ให้สอดคล้องกับวิชา...',
+                    html: `กำลังจัดเตรียมเนื้อหา ${weekKeys.length} สัปดาห์ สำหรับวิชา <strong>${subjectText}</strong>`,
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                try {
+                    const aiRes = await fetch('../controllers/GeminiController.php?action=generate_curriculum_batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            subject_name: subjectText,
+                            weeks_count: weekKeys.length
+                        })
+                    });
+                    const aiData = await aiRes.json();
+                    if (aiData.success && Array.isArray(aiData.data)) {
+                        batchAiCurriculumPlan = aiData.data;
+                    }
+                } catch (e) {
+                    console.warn('AI curriculum fallback error:', e);
+                }
+            }
+
+            Swal.fire({
+                title: 'กำลังสร้างรายงานย้อนหลัง...',
+                html: `กรุณารอสักครู่ กำลังบันทึกข้อมูล 0 / ${sessions.length} รายการ`,
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            // Map each session to its week's unique topic and activity
+            const rowsToCreate = sessions.map(s => {
+                const wk = getWeekKey(s.date);
+                const weekNum = weekIndexMap[wk] || 1;
+                const aiItem = batchAiCurriculumPlan && batchAiCurriculumPlan[weekNum - 1];
+
+                const planTopic = aiItem?.plan_topic || (fallbackPlanTopic ? `${fallbackPlanTopic} (สัปดาห์ที่ ${weekNum})` : `หน่วยการเรียนรู้ที่ ${weekNum}`);
+                const activity = aiItem?.activity || (fallbackActivity ? `${fallbackActivity} ประจำสัปดาห์ที่ ${weekNum}` : `จัดกิจกรรมการเรียนการสอนสัปดาห์ที่ ${weekNum}`);
+                const reflectionK = aiItem?.reflection_k || fallbackReflectionK;
+                const reflectionP = aiItem?.reflection_p || fallbackReflectionP;
+                const reflectionA = aiItem?.reflection_a || fallbackReflectionA;
+
+                return {
+                    report_date: s.date,
+                    subject_id: subjectId,
+                    class_room: s.room,
+                    period_start: String(s.period_start).trim(),
+                    period_end: String(s.period_end).trim(),
+                    plan_number: String(weekNum),
+                    plan_topic: planTopic,
+                    activity: activity,
+                    absent_students: '',
+                    reflection_k: reflectionK,
+                    reflection_p: reflectionP,
+                    reflection_a: reflectionA,
+                    problems: '',
+                    suggestions: '',
+                    image1: null,
+                    image2: null,
+                    teacher_id: window.TEACHER_ID || '',
+                    created_at: null
+                };
+            });
+
+            try {
+                // Submit in batches of 20
+                const chunkSize = 20;
+                let successCount = 0;
+
+                for (let i = 0; i < rowsToCreate.length; i += chunkSize) {
+                    const chunk = rowsToCreate.slice(i, i + chunkSize);
+                    const res = await fetch('../controllers/TeachingReportController.php?action=create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            rows: chunk,
+                            attendance_logs: []
+                        })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        successCount += chunk.length;
+                        Swal.update({
+                            html: `กำลังบันทึกข้อมูล ${successCount} / ${rowsToCreate.length} รายการ`
+                        });
+                    } else {
+                        throw new Error(result.error || 'เกิดข้อผิดพลาดในการบันทึกบางรายการ');
+                    }
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '🎉 สร้างรายงานสำเร็จ!',
+                    text: `บันทึกรายงานการสอนย้อนหลังเรียบร้อยแล้วทั้งหมด ${successCount} คาบ (จัดสรรเนื้อหาไม่ซ้ำกันตามสัปดาห์)`,
+                    confirmButtonColor: '#10b981'
+                });
+
+                if (modalBatchReport) modalBatchReport.classList.add('hidden');
+                loadReports();
+            } catch (err) {
+                console.error(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: err.message || 'ไม่สามารถบันทึกข้อมูลได้ครบถ้วน'
+                });
+            }
         });
     }
 

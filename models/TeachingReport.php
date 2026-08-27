@@ -542,6 +542,48 @@ class TeachingReport
                         }
                     }
                 }
+            } else if (!empty($reportIds)) {
+                // หากเป็นการสร้างรายงานอัตโนมัติ/ย้อนหลังที่ไม่มีการส่ง attendance_logs มาตรงๆ
+                // ให้ดึงข้อมูลการขาด ลา มาสาย จากระบบดูแลช่วยเหลือนักเรียน (student_attendance) ในวันนั้นๆ มาบันทึกอัตโนมัติ
+                try {
+                    $pdoUsers = $this->dbUsers->getPDO();
+                    $careStatusMap = [
+                        '2' => 'ขาดเรียน',
+                        '4' => 'ลาป่วย',
+                        '5' => 'ลากิจ',
+                        '6' => 'เข้าร่วมกิจกรรม'
+                    ];
+
+                    foreach ($rows as $row) {
+                        $repDate = $row['report_date'] ?? '';
+                        $classRoom = $row['class_room'] ?? '';
+                        $norm = $normalizeRoom($classRoom);
+                        $repId = $classRoomToReportId[$norm] ?? ($classRoomToReportId['ห้อง ' . $norm] ?? ($classRoomToReportId[$classRoom] ?? null));
+
+                        if ($repId && $repDate && $classRoom) {
+                            // ดึงสถานะการเช็คชื่อจากระบบดูแล (student_attendance) ของนักเรียนในห้องและวันที่นั้น
+                            // หมายเหตุ: สถานะ '3' (มาสาย) จากระบบดูแล ให้นับเป็น 'มาเรียน' ในรายงานการสอน (ไม่ดึงมาเป็นสถานะขาด/ลา)
+                            $sqlCare = "SELECT s.Stu_id, a.attendance_status 
+                                        FROM student s
+                                        INNER JOIN student_attendance a ON s.Stu_id = a.student_id AND a.attendance_date = ?
+                                        WHERE s.Stu_room = ? AND s.Stu_status = '1' AND a.attendance_status IN ('2', '4', '5', '6')";
+                            $stmtCare = $pdoUsers->prepare($sqlCare);
+                            $stmtCare->execute([$repDate, $classRoom]);
+                            $careLogs = $stmtCare->fetchAll();
+
+                            foreach ($careLogs as $cl) {
+                                $mappedStatus = $careStatusMap[strval($cl['attendance_status'])] ?? null;
+                                if ($mappedStatus) {
+                                    $stmtIns = $this->pdo->prepare("INSERT INTO teaching_attendance_logs (report_id, student_id, status, class_room) VALUES (?, ?, ?, ?)");
+                                    $stmtIns->execute([$repId, $cl['Stu_id'], $mappedStatus, $classRoom]);
+                                }
+                            }
+                        }
+                    }
+                } catch (\Exception $exCare) {
+                    // หากเกิดข้อผิดพลาดในการดึงข้อมูลระบบดูแล ให้ดำเนินกระบวนการหลักต่อไปได้
+                    error_log("Care attendance auto-sync error: " . $exCare->getMessage());
+                }
             }
             $this->pdo->commit();
             return ['success' => true];
