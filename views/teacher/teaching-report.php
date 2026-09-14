@@ -309,7 +309,7 @@
                         <select name="plan_number"
                             class="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm md:text-base focus:outline-none focus:ring-4 focus:ring-green-500/20 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:border-green-300">
                             <option value="">-- เลือกแผนการสอน --</option>
-                            <?php for($i = 1; $i <= 40; $i++): ?>
+                            <?php for($i = 1; $i <= 80; $i++): ?>
                                 <option value="<?php echo $i; ?>">แผนการจัดการเรียนรู้ที่ <?php echo $i; ?></option>
                             <?php endfor; ?>
                         </select>
