@@ -233,11 +233,18 @@ class Home
                 'color' => 'orange'
             ],
             [
-                'title' => 'เข้าสู่ระบบวครู',
+                'title' => 'LOVES MODEL',
+                'description' => 'นวัตกรรมดูแลช่วยเหลือนักเรียน',
+                'url' => 'loves_model.php',
+                'icon' => 'fa-heart',
+                'color' => 'pink'
+            ],
+            [
+                'title' => 'เข้าสู่ระบบครู',
                 'description' => 'สำหรับครูผู้สอน',
                 'url' => 'login.php',
                 'icon' => 'fa-chalkboard-teacher',
-                'color' => 'pink'
+                'color' => 'green'
             ],
             [
                 'title' => 'ผู้ดูแลระบบ',

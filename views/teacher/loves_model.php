@@ -40,7 +40,7 @@
         <!-- Banner Image Showcase -->
         <div class="lg:col-span-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-3xl p-4 shadow-xl border border-white/20 dark:border-slate-700/50 flex flex-col justify-center items-center">
             <div class="overflow-hidden rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-inner group w-full h-full flex items-center justify-center bg-gray-50 dark:bg-slate-900/50">
-                <img src="../dist/img/loves-model.jpg" alt="LOVES MODEL" class="w-full h-auto max-h-[480px] object-contain transition-transform duration-500 group-hover:scale-[1.02]">
+                <img src="<?php echo (file_exists('dist/img/loves-model.jpg') ? 'dist/img/loves-model.jpg' : '../dist/img/loves-model.jpg'); ?>" alt="LOVES MODEL" class="w-full h-auto max-h-[480px] object-contain transition-transform duration-500 group-hover:scale-[1.02]">
             </div>
             <p class="text-xs text-center text-gray-400 dark:text-gray-500 mt-2 font-medium">
                 แผนภาพโมเดลนวัตกรรม LOVES MODEL
