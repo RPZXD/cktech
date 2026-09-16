@@ -94,6 +94,14 @@ class TeacherIndexController
                 'color' => 'orange',
                 'link' => 'certificate.php'
             ],
+            [
+                'icon' => '💖',
+                'title' => 'LOVES MODEL',
+                'description' => 'นวัตกรรมระบบดูแลช่วยเหลือนักเรียน พาน้องกลับมาเรียน',
+                'details' => ['แนวทางการติดตามนักเรียนกลุ่มเสี่ยง/ออกกลางคัน', 'กระบวนการ 5 ด้าน: Love, Organization, Variety, Encouragement, Sufficiency'],
+                'color' => 'pink',
+                'link' => 'loves_model.php'
+            ],
         ];
     }
 

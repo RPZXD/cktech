@@ -63,6 +63,13 @@ $menuItems = [
         'icon' => 'fa-calendar-alt',
         'gradient' => ['from' => 'pink-500', 'to' => 'rose-600'],
     ],
+    [
+        'key' => 'loves_model',
+        'name' => 'LOVES MODEL',
+        'url' => 'loves_model.php',
+        'icon' => 'fa-heart',
+        'gradient' => ['from' => 'rose-500', 'to' => 'pink-600'],
+    ],
 ];
 ?>
 

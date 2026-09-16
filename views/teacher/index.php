@@ -103,7 +103,8 @@
             'blue' => ['from' => 'from-blue-50', 'to' => 'to-blue-100', 'hover_from' => 'hover:from-blue-100', 'hover_to' => 'hover:to-blue-200', 'text' => 'text-blue-600', 'bg' => 'bg-blue-100', 'text_dark' => 'text-blue-700'],
             'green' => ['from' => 'from-green-50', 'to' => 'to-green-100', 'hover_from' => 'hover:from-green-100', 'hover_to' => 'hover:to-green-200', 'text' => 'text-green-600', 'bg' => 'bg-green-100', 'text_dark' => 'text-green-700'],
             'purple' => ['from' => 'from-purple-50', 'to' => 'to-purple-100', 'hover_from' => 'hover:from-purple-100', 'hover_to' => 'hover:to-purple-200', 'text' => 'text-purple-600', 'bg' => 'bg-purple-100', 'text_dark' => 'text-purple-700'],
-            'orange' => ['from' => 'from-orange-50', 'to' => 'to-orange-100', 'hover_from' => 'hover:from-orange-100', 'hover_to' => 'hover:to-orange-200', 'text' => 'text-orange-600', 'bg' => 'bg-orange-100', 'text_dark' => 'text-orange-700']
+            'orange' => ['from' => 'from-orange-50', 'to' => 'to-orange-100', 'hover_from' => 'hover:from-orange-100', 'hover_to' => 'hover:to-orange-200', 'text' => 'text-orange-600', 'bg' => 'bg-orange-100', 'text_dark' => 'text-orange-700'],
+            'pink' => ['from' => 'from-pink-50', 'to' => 'to-rose-100', 'hover_from' => 'hover:from-pink-100', 'hover_to' => 'hover:to-rose-200', 'text' => 'text-rose-600', 'bg' => 'bg-rose-100', 'text_dark' => 'text-rose-700']
         ];
         foreach ($guides as $guide): 
             $color = $colorClasses[$guide['color']] ?? $colorClasses['blue'];
